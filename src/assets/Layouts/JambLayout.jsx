@@ -53,7 +53,7 @@ const JambLayout = ({
 
   return (
     <div
-      className={`min-h-screen w-full absolute overflow-y-sroll transition-all duration-300 ${
+      className={`min-h-screen w-full absolute overflow-y-auto transition-all duration-300 ${
         dark ? "bg-[#020617] text-white" : "bg-[#f4f7fb] text-slate-900"
       }`}
     >

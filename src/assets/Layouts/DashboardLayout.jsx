@@ -115,20 +115,16 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
   return (
     <div className="h-dvh w-full flex overflow-hidden">
 
-     {/* ================= Navigation OVERLAY ================= */} 
       <Navbar dark={dark} setMenuOpen={setMenuOpen} menuOpen={menuOpen} setDark={setDark}/>
-      {/* ================= MOBILE MENU OVERLAY ================= */}
 
-      {/* ================= SIDEBAR AREA ================= */}
       <div className="relative z-50">
         <SideBar dark={dark} />
         <BottomBar dark={dark} />
       </div>
 
-      {/* ================= MAIN CONTENT (FIXED) ================= */}
       <main
         onClick={() => setMenuOpen(false)}
-        className={`flex-1 h-full overflow-y-auto pb-22.5 md:pb-0 pt-20 md:pt-0 ${
+        className={`flex-1 h-full overflow-y-auto pb-22.5 md:pb-0 pt-10 md:pt-0 ${
           dark ? "bg-[#0b0f1a] text-white" : "bg-gray-100 text-gray-900"
         }`}
       >

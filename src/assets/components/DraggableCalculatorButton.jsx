@@ -4,31 +4,6 @@ import { motion } from "framer-motion";
 
 import { FaCalculator, FaGraduationCap } from "react-icons/fa";
 
-// =============================================
-// RESPONSIVE DRAGGABLE CALCULATOR BUTTON
-// =============================================
-//
-// FEATURES
-// ✅ Fully Responsive
-// ✅ Mobile Optimized
-// ✅ Prevents Drag Outside Screen
-// ✅ Compact Professional Size
-// ✅ Glassmorphism UI
-// ✅ Smooth Animations
-// ✅ Touch Friendly
-// ✅ Dark/Light Mode Support
-//
-// INSTALL:
-// npm install framer-motion react-icons
-//
-// USAGE:
-//
-// <DraggableCalculatorButton
-//    dark={true}
-//    onClick={() => navigate("/calculator")}
-// />
-//
-// =============================================
 
 export default function DraggableCalculatorButton({ onClick, dark = true }) {
   return (
@@ -154,33 +129,12 @@ export default function DraggableCalculatorButton({ onClick, dark = true }) {
         </div>
 
         {/* TEXT */}
-        <div
-          className="
-            relative
-            flex
-            flex-col
-            leading-tight
-          "
-        >
-          <span
-            className="
-              text-[11px]
-              sm:text-xs
-              font-black
-              whitespace-nowrap
-            "
-          >
+        <div className="relative flex max-md:hidden flex-col leading-tight">
+          <span className="text-[11px]sm:text-xs font-black whitespace-nowrap">
             Calculator
           </span>
 
-          <span
-            className="
-              text-[9px]
-              sm:text-[10px]
-              opacity-70
-              whitespace-nowrap
-            "
-          >
+          <span className=" text-[9px] sm:text-[10px] opacity-70 whitespace-nowrap">
             Engineering Toolkit
           </span>
         </div>

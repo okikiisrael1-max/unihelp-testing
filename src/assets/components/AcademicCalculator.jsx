@@ -30,7 +30,7 @@ import {
 // MAIN COMPONENT
 // ======================================================
 
-export default function AcademicCalculator({dark}) {
+export default function AcademicCalculator({ dark }) {
 
 
   const [activeTab, setActiveTab] = useState("scientific");
@@ -46,37 +46,37 @@ export default function AcademicCalculator({dark}) {
   const theme = useMemo(() => {
     return dark
       ? {
-          bg: "bg-[#020617]",
-          card: "bg-[#0f172a]",
-          soft: "bg-[#1e293b]",
-          softHover: "hover:bg-[#334155]",
-          input: "bg-[#020617]",
-          border: "border-slate-800",
-          text: "text-white",
-          muted: "text-slate-400",
-          primary:
-            "bg-indigo-600 hover:bg-indigo-700 active:scale-95",
-          danger:
-            "bg-red-500 hover:bg-red-600 active:scale-95",
-          success:
-            "bg-emerald-500 hover:bg-emerald-600 active:scale-95",
-        }
+        bg: "bg-[#020617]",
+        card: "bg-[#0f172a]",
+        soft: "bg-[#1e293b]",
+        softHover: "hover:bg-[#334155]",
+        input: "bg-[#020617]",
+        border: "border-slate-800",
+        text: "text-white",
+        muted: "text-slate-400",
+        primary:
+          "bg-indigo-600 hover:bg-indigo-700 active:scale-95",
+        danger:
+          "bg-red-500 hover:bg-red-600 active:scale-95",
+        success:
+          "bg-emerald-500 hover:bg-emerald-600 active:scale-95",
+      }
       : {
-          bg: "bg-slate-100",
-          card: "bg-white",
-          soft: "bg-slate-200",
-          softHover: "hover:bg-slate-300",
-          input: "bg-white",
-          border: "border-slate-300",
-          text: "text-black",
-          muted: "text-slate-500",
-          primary:
-            "bg-indigo-500 hover:bg-indigo-600 active:scale-95",
-          danger:
-            "bg-red-500 hover:bg-red-600 active:scale-95",
-          success:
-            "bg-emerald-500 hover:bg-emerald-600 active:scale-95",
-        };
+        bg: "bg-slate-100",
+        card: "bg-white",
+        soft: "bg-slate-200",
+        softHover: "hover:bg-slate-300",
+        input: "bg-white",
+        border: "border-slate-300",
+        text: "text-black",
+        muted: "text-slate-500",
+        primary:
+          "bg-indigo-500 hover:bg-indigo-600 active:scale-95",
+        danger:
+          "bg-red-500 hover:bg-red-600 active:scale-95",
+        success:
+          "bg-emerald-500 hover:bg-emerald-600 active:scale-95",
+      };
   }, [dark]);
 
   // ======================================================
@@ -144,10 +144,9 @@ export default function AcademicCalculator({dark}) {
             border-r
             ${theme.card}
             ${theme.border}
-            ${
-              sidebarOpen
-                ? "translate-x-0"
-                : "-translate-x-full lg:translate-x-0"
+            ${sidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
             }
           `}
         >
@@ -182,10 +181,9 @@ export default function AcademicCalculator({dark}) {
                     }}
                     className={`
                       w-full p-4 rounded-2xl text-left transition-all
-                      ${
-                        activeTab === tab.id
-                          ? `${theme.primary} text-white`
-                          : `${theme.soft} ${theme.softHover}`
+                      ${activeTab === tab.id
+                        ? `${theme.primary} text-white`
+                        : `${theme.soft} ${theme.softHover}`
                       }
                     `}
                   >
@@ -488,10 +486,9 @@ function ScientificCalculator({
                 }
                 className={`
                   h-14 md:h-16 rounded-2xl font-bold text-base md:text-lg transition-all
-                  ${
-                    ["+", "-", "*", "/"].includes(btn)
-                      ? "bg-orange-500 hover:bg-orange-600 text-white"
-                      : `${theme.soft} ${theme.softHover}`
+                  ${["+", "-", "*", "/"].includes(btn)
+                    ? "bg-orange-500 hover:bg-orange-600 text-white"
+                    : `${theme.soft} ${theme.softHover}`
                   }
                 `}
               >

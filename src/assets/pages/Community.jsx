@@ -972,45 +972,15 @@ export default function Community({
       <div
         className={`relative z-20 border-b backdrop-blur-3xl ${theme.border} ${theme.glass} px-4 md:px-8 py-4`}
       >
-        <div className="flex items-center justify-between gap-4">
-          {/* LEFT */}
-
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="h-12 w-12 md:h-14 md:w-14 rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-2xl">
-              <School
-                size={24}
-              />
-            </div>
-
-            <div className="min-w-0">
-              <h1 className="text-xl md:text-2xl font-black flex items-center gap-2 truncate">
-                Unihelp
-
-                <Sparkles
-                  size={16}
-                  className="text-cyan-400 shrink-0"
-                />
-              </h1>
-
-              <p
-                className={`text-xs ${theme.sub}`}
-              >
-                {
-                  onlineCount
-                }{" "}
-                online
+        <div className="flex items-center justify-center">
+              <p className={`text-xs ${theme.sub} mt-2`}>
+                {onlineCount}{" "} online
               </p>
-            </div>
-          </div>
-
           {/* SEARCH */}
 
           <div
-            className={`hidden md:flex items-center gap-3 rounded-2xl border px-4 py-3 ${theme.border} ${theme.glass}`}
-          >
-            <Search
-              size={16}
-            />
+            className={`hidden md:flex items-center gap-3 rounded-2xl border px-4 py-3 ${theme.border} ${theme.glass}`}>
+            <Search size={16}/>
 
             <input
               value={search}
@@ -1232,17 +1202,8 @@ export default function Community({
                     key={
                       emoji
                     }
-                    onClick={() =>
-                      setText(
-                        (
-                          prev
-                        ) =>
-                          prev +
-                          emoji
-                      )
-                    }
-                    className="text-2xl hover:scale-125 transition"
-                  >
+                    onClick={() => setText((prev) =>prev +emoji)}
+                    className="text-2xl hover:scale-125 transition">
                     {
                       emoji
                     }
@@ -1254,11 +1215,7 @@ export default function Community({
 
           {/* TEXTAREA */}
 
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={text}
-            onChange={(
+          <textarea ref={inputRef} rows={1} value={text} onChange={(
               e
             ) =>
               handleChange(

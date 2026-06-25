@@ -230,10 +230,9 @@ const App = () => {
   return (
     <div>
       <InstallPrompt />
-      <ToastContainer/>
+      <ToastContainer />
 
-      <div
-        className={dark ? "bg-[#020617] text-white" : "bg-[#f8fafc] text-black"}>
+      <div className={`${dark ? "bg-[#020617] text-white" : "bg-[#f8fafc] text-black"}`}>
         <Routes>
           {/* ================= AUTH ================= */}
           <Route

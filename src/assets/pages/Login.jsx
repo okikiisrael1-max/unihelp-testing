@@ -181,7 +181,7 @@ const Login = ({ dark }) => {
     : "bg-gray-50 border-gray-200 text-black placeholder:text-gray-400 focus:border-indigo-500";
 
   return (
-    <div className={`min-h-screen relative overflow-y-scroll overflow-x-hidden ${bg}`}>
+    <div className={`min-h-screen relative overflow-y-auto overflow-x-hidden ${bg}`}>
       {/* BACKGROUND EFFECTS */}
 
       <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-500/20 blur-3xl rounded-full" />
@@ -212,7 +212,7 @@ const Login = ({ dark }) => {
             {/* HERO */}
 
             <div className="max-w-xl">
-              <h1 className="text-5xl font-black leading-tight">
+              <h1 className="text-4xl md:text-5xl font-black leading-tight">
                 Welcome
                 <br />
                 Back To

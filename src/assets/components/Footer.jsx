@@ -147,10 +147,10 @@ export default function Footer() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 lg:w-80 h-12 rounded-xl px-4 bg-white/10 border border-white/10 outline-none"
+                className="md:flex-1 lg:w-80 h-12 rounded-xl px-4 bg-white/10 border border-white/10 outline-none"
               />
 
-              <button className="px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-semibold">
+              <button className="px-6 max-md:h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-semibold shrink-0">
                 Subscribe
               </button>
             </div>

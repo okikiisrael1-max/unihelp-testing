@@ -592,7 +592,7 @@ RULES:
   return (
     <div
       className={`
-      relative h-full md:pt-20 overflow-hidden
+      relative min-h-screen md:pt-20 overflow-hidden
       flex flex-col
       ${theme.bg}
       ${theme.text}

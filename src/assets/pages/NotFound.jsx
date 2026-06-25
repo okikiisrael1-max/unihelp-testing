@@ -18,7 +18,7 @@ export default function NotFound({ dark }) {
           <span className="font-semibold tracking-wider text-cyan-300">UNIHELP</span>
         </div>
 
-        <h1 className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-[120px] font-black leading-none text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.4)] md:text-[180px]">
+        <h1 className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-[90px] font-black leading-none text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.4)] md:text-[120px]">
           404
         </h1>
 

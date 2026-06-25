@@ -222,7 +222,7 @@ const Signup = ({ dark }) => {
 
   return (
     <div
-      className={`min-h-screen relative overflow-y-scroll overflow-x-hidden ${bg}`}
+      className={`min-h-screen relative overflow-y-auto overflow-x-hidden ${bg}`}
     >
       {/* BACKGROUND EFFECTS */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-500/20 blur-3xl rounded-full" />
@@ -261,7 +261,7 @@ const Signup = ({ dark }) => {
             {/* HERO TEXT */}
             <div className="max-w-xl">
 
-              <h1 className="text-5xl font-black leading-tight">
+              <h1 className="text-4xl md:text-5xl font-black leading-tight">
                 Learn.
                 <br />
                 Prepare.
