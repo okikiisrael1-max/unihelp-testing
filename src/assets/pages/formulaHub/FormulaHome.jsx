@@ -205,8 +205,7 @@ const FormulaHome = ({ dark }) => {
                     ? "bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800"
                     : "bg-white border border-zinc-200 text-black hover:bg-zinc-100"
                 }
-              `}
-            >
+              `}>
               <Home className="w-5 h-5" />
               Home
             </button>

@@ -30,6 +30,11 @@ const Login = ({ dark }) => {
   const navigate = useNavigate();
 
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    prompt: "select_account",
+  });
+  provider.addScope("profile");
+  provider.addScope("email");
 
   const [email, setEmail] = useState("");
 
@@ -115,8 +120,15 @@ const Login = ({ dark }) => {
     } catch (error) {
       console.log(error);
 
-      if (error.code === "auth/popup-closed-by-user") {
+      if (
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request"
+      ) {
         setErr("Google popup closed");
+      } else if (error.code === "auth/popup-blocked") {
+        setErr("Google popup blocked by the browser");
+      } else if (error.code === "auth/unauthorized-domain") {
+        setErr("Google authentication domain is not authorized");
       } else {
         setErr("Google login failed");
       }

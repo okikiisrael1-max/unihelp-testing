@@ -44,6 +44,11 @@ const Signup = ({ dark }) => {
   const navigate = useNavigate();
 
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    prompt: "select_account",
+  });
+  provider.addScope("profile");
+  provider.addScope("email");
 
   const [isLoading, setIsLoading] =
     useState(false);
@@ -194,10 +199,20 @@ const Signup = ({ dark }) => {
       console.log(error);
 
       if (
-        error.code ===
-        "auth/popup-closed-by-user"
+        error.code === "auth/popup-closed-by-user" ||
+        error.code === "auth/cancelled-popup-request"
       ) {
         setErr("Google popup closed");
+      } else if (error.code === "auth/popup-blocked") {
+        setErr("Google popup blocked by the browser");
+      } else if (
+        error.code === "auth/account-exists-with-different-credential"
+      ) {
+        setErr(
+          "An account already exists with a different login method"
+        );
+      } else if (error.code === "auth/unauthorized-domain") {
+        setErr("Google authentication domain is not authorized");
       } else {
         setErr("Google signup failed");
       }
