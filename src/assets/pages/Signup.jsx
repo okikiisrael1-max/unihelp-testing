@@ -222,7 +222,7 @@ const Signup = ({ dark }) => {
 
   return (
     <div
-      className={`min-h-screen relative overflow-hidden ${bg}`}
+      className={`min-h-screen relative overflow-y-scroll overflow-x-hidden ${bg}`}
     >
       {/* BACKGROUND EFFECTS */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-500/20 blur-3xl rounded-full" />
@@ -396,10 +396,6 @@ const Signup = ({ dark }) => {
 
             {/* HEADER */}
             <div className="text-center mb-8">
-
-              <div className="mx-auto w-20 h-20 rounded-3xl bg-indigo-500/10 flex items-center justify-center mb-5">
-                <BookOpen className="text-indigo-500" size={36} />
-              </div>
 
               <h2 className="text-3xl md:text-4xl font-black">
                 Create Account

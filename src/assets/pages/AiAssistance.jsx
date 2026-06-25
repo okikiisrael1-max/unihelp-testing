@@ -612,22 +612,6 @@ RULES:
         ${theme.card}
       `}
       >
-        <div className="flex items-center gap-4">
-          <div className="h-14 w-14 rounded-3xl bg-linear-to-br text-white from-violet-600 via-fuchsia-500 to-cyan-500 flex items-center justify-center shadow-2xl">
-            <Sparkles size={24} />
-          </div>
-
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-              Unihelp AI
-            </h1>
-
-            <p className={`text-sm ${theme.subtext}`}>
-              Smart academic assistant
-            </p>
-          </div>
-        </div>
-
         <div
           className={`hidden md:flex px-4 py-2 rounded-2xl border text-sm ${theme.border} ${theme.card2}`}
         >
