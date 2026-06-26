@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { toast } from "react-toastify";
 
 import {
   Bell,
@@ -114,14 +115,13 @@ const ViewerModal = ({ note, dark, canDownload, onClose, onDownload }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-3 md:p-5"
+      className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto p-3 md:p-5"
       style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}
       onClick={(event) => event.target === event.currentTarget && onClose()}
     >
       <div
-        className="flex w-full max-w-5xl flex-col overflow-hidden rounded-[28px] shadow-2xl"
+        className="flex w-full max-w-5xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[28px] shadow-2xl"
         style={{
-          height: "92vh",
           background: dark ? "#020617" : "#ffffff",
           border: `1px solid ${dark ? "#1e293b" : "#e5e7eb"}`,
         }}
@@ -367,7 +367,7 @@ export default function LectureNotesMarketplace({ dark }) {
 
   const handleUpload = async () => {
     if (!file) {
-      alert("Select a PDF");
+      toast.error("Select a PDF to upload");
       return;
     }
 
@@ -375,17 +375,17 @@ export default function LectureNotesMarketplace({ dark }) {
       !file.type.includes("pdf") &&
       !file.name.toLowerCase().endsWith(".pdf")
     ) {
-      alert("Only PDF files are supported here");
+      toast.error("Only PDF files are supported here");
       return;
     }
 
     if (!currentUser) {
-      alert("Please login first");
+      toast.error("Please log in before uploading");
       return;
     }
 
     if (!form.title || !form.course || !form.dept || !form.school) {
-      alert("Please fill in the title, course, department, and school");
+      toast.error("Please fill in all required fields before uploading");
       return;
     }
 
@@ -423,10 +423,11 @@ export default function LectureNotesMarketplace({ dark }) {
       setFile(null);
       setProgress(0);
       setShowUpload(false);
+      toast.success("PDF uploaded successfully");
       await loadNotes();
     } catch (error) {
       console.error(error);
-      alert("Upload failed");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
       setProgress(0);
@@ -435,7 +436,7 @@ export default function LectureNotesMarketplace({ dark }) {
 
   const handleDownload = async (note) => {
     if (!canDownload(note)) {
-      alert("Premium required");
+      toast.error("Premium access required to download this note");
       return;
     }
 
@@ -481,7 +482,7 @@ export default function LectureNotesMarketplace({ dark }) {
       setRequestText("");
     } catch (error) {
       console.error(error);
-      alert("Unable to submit request");
+      toast.error("Unable to submit request");
     }
   };
 
@@ -797,113 +798,117 @@ export default function LectureNotesMarketplace({ dark }) {
 
       {showUpload && (
         <div
-          className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[1100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"
           onClick={(event) => event.target === event.currentTarget && setShowUpload(false)}
         >
-          <div className={`w-full max-w-2xl rounded-[32px] p-6 shadow-2xl ${card}`}>
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black">Upload Lecture Note</h2>
-                <p className="mt-1 text-sm opacity-60">PDF only. Cloudinary compresses the file before upload.</p>
-              </div>
-              <button
-                onClick={() => setShowUpload(false)}
-                className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-                  dark ? "bg-white/5" : "bg-slate-100"
-                }`}
-              >
-                <X size={18} />
-              </button>
-            </div>
+          <div className={`w-full max-w-2xl rounded-[32px] bg-transparent p-0 shadow-none`}>
+            <div className={`flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[32px] bg-transparent shadow-2xl ${card}`}>
+              <div className="overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
+                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black">Upload Lecture Note</h2>
+                    <p className="mt-1 text-sm opacity-60">PDF only. Cloudinary compresses the file before upload.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowUpload(false)}
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                      dark ? "bg-white/5" : "bg-slate-100"
+                    }`}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {[
-                { key: "title", placeholder: "Lecture Note Title" },
-                { key: "course", placeholder: "Course Code" },
-                { key: "dept", placeholder: "Department" },
-                { key: "school", placeholder: "School" },
-              ].map((field) => (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {[
+                    { key: "title", placeholder: "Lecture Note Title" },
+                    { key: "course", placeholder: "Course Code" },
+                    { key: "dept", placeholder: "Department" },
+                    { key: "school", placeholder: "School" },
+                  ].map((field) => (
+                    <input
+                      key={field.key}
+                      value={form[field.key]}
+                      onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                      placeholder={field.placeholder}
+                      className={`${inputClass} h-14 px-4`}
+                    />
+                  ))}
+                </div>
+
                 <input
-                  key={field.key}
-                  value={form[field.key]}
-                  onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                  placeholder={field.placeholder}
-                  className={`${inputClass} h-14 px-4`}
+                  value={form.lecturer}
+                  onChange={(event) => setForm({ ...form, lecturer: event.target.value })}
+                  placeholder="Lecturer name"
+                  className={`${inputClass} mt-4 h-14 px-4`}
                 />
-              ))}
-            </div>
 
-            <input
-              value={form.lecturer}
-              onChange={(event) => setForm({ ...form, lecturer: event.target.value })}
-              placeholder="Lecturer name"
-              className={`${inputClass} mt-4 h-14 px-4`}
-            />
-
-            <label
-              className={`mt-4 flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed transition-colors ${
-                dark ? "border-white/10 bg-white/5 hover:bg-white/10" : "border-slate-300 bg-slate-50 hover:bg-slate-100"
-              }`}
-            >
-              <Upload size={40} className="mb-4 opacity-70" />
-              <h3 className="text-lg font-semibold">Choose a PDF to upload</h3>
-              <p className="mt-2 text-sm opacity-60">This file will be compressed before it reaches Cloudinary.</p>
-              <input
-                type="file"
-                hidden
-                accept=".pdf,application/pdf"
-                onChange={(event) => setFile(event.target.files?.[0] || null)}
-              />
-            </label>
-
-            {file && (
-              <div className={`mt-4 rounded-3xl p-4 ${dark ? "bg-white/5" : "bg-slate-100"}`}>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
-                    <FileText size={22} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{file.name}</p>
-                    <p className="text-xs opacity-60">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {uploading && (
-              <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <span>Uploading...</span>
-                  <span>{progress}%</span>
-                </div>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-slate-300/40">
-                  <div
-                    className="h-full rounded-full bg-indigo-600 transition-all"
-                    style={{ width: `${progress}%` }}
+                <label
+                  className={`mt-4 flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed transition-colors ${
+                    dark ? "border-white/10 bg-white/5 hover:bg-white/10" : "border-slate-300 bg-slate-50 hover:bg-slate-100"
+                  }`}
+                >
+                  <Upload size={40} className="mb-4 opacity-70" />
+                  <h3 className="text-lg font-semibold">Choose a PDF to upload</h3>
+                  <p className="mt-2 text-sm opacity-60">This file will be compressed before it reaches Cloudinary.</p>
+                  <input
+                    type="file"
+                    hidden
+                    accept=".pdf,application/pdf"
+                    onChange={(event) => setFile(event.target.files?.[0] || null)}
                   />
-                </div>
-              </div>
-            )}
+                </label>
 
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="mt-5 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload size={18} />
-                  Upload PDF
-                </>
-              )}
-            </button>
+                {file && (
+                  <div className={`mt-4 rounded-3xl p-4 ${dark ? "bg-white/5" : "bg-slate-100"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
+                        <FileText size={22} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{file.name}</p>
+                        <p className="text-xs opacity-60">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {uploading && (
+                  <div className="mt-4">
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span>Uploading...</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-300/40">
+                      <div
+                        className="h-full rounded-full bg-indigo-600 transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="mt-5 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} />
+                      Upload PDF
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

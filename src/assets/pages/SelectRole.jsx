@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import { toast } from "react-toastify";
 
 import {
   ArrowRight,
@@ -32,7 +33,15 @@ const SelectRole = ({ dark }) => {
   /* ================= SAVE ROLE ================= */
 
   const handleContinue = async () => {
-    if (!selected || !user) return;
+    if (!selected) {
+      toast.error("Please select a role to continue");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Unable to find your account. Please sign in again.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -61,20 +70,14 @@ const SelectRole = ({ dark }) => {
           role: selected,
           roleSelectedAt: serverTimestamp(),
         },
-        { merge: true },
+        { merge: true }
       );
 
-      /* REDIRECT */
-
-      if (selected === "jamb") {
-        navigate("/");
-      }
-
-      if (selected === "university") {
-        navigate("/");
-      }
+      toast.success("Role saved successfully");
+      navigate("/");
     } catch (err) {
       console.log(err);
+      toast.error("Could not save role. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -431,9 +431,9 @@ export default function Announcements({
         >
           <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/20 blur-3xl rounded-full" />
 
-          <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:items-center lg:justify-between">
+          <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
 
-            <div className="flex items-start gap-5">
+            <div className="flex flex-col gap-5">
 
               <div className="h-18 w-18 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl text-white">
                 <Megaphone size={34} />
@@ -457,7 +457,7 @@ export default function Announcements({
 
             {/* stats */}
 
-            <div className="grid grid-cols-2 gap-4">
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
               <div
                 className={`rounded-3xl p-5 min-w-[150px] border ${card}`}
@@ -466,7 +466,7 @@ export default function Announcements({
                   Total Posts
                 </p>
 
-                <h2 className="text-4xl font-black mt-2 text-indigo-500">
+                <h2 className="text-3xl sm:text-4xl font-black mt-2 text-indigo-500">
                   {
                     announcements.length
                   }
@@ -480,7 +480,7 @@ export default function Announcements({
                   Unread
                 </p>
 
-                <h2 className="text-4xl font-black mt-2 text-red-500">
+                <h2 className="text-3xl sm:text-4xl font-black mt-2 text-red-500">
                   {
                     unreadNotifications.length
                   }
@@ -627,7 +627,7 @@ export default function Announcements({
 
                       <div className="flex-1 pr-10">
 
-                        <h2 className="text-2xl font-black leading-tight">
+                        <h2 className="text-xl sm:text-2xl font-black leading-tight">
                           {
                             announcement.title
                           }
@@ -661,7 +661,7 @@ export default function Announcements({
                           : "bg-gray-50"
                       }`}
                     >
-                      <p className="leading-8 text-[15px] sm:text-base line-clamp-4 whitespace-pre-wrap opacity-90">
+                      <p className="leading-7 text-sm sm:text-base line-clamp-4 whitespace-pre-wrap opacity-90">
                         {
                           announcement.message
                         }
@@ -755,7 +755,7 @@ export default function Announcements({
 
                   <div className="flex-1">
 
-                    <h1 className="text-3xl sm:text-5xl font-black leading-tight">
+                    <h1 className="text-2xl sm:text-4xl font-black leading-tight">
                       {
                         selectedAnnouncement.title
                       }
@@ -813,7 +813,7 @@ export default function Announcements({
             <div className="p-8 sm:p-10">
 
               <div
-                className={`rounded-[32px] p-6 sm:p-8 leading-9 text-[16px] sm:text-lg whitespace-pre-wrap ${
+                className={`rounded-[32px] p-6 sm:p-8 leading-8 text-base sm:text-lg whitespace-pre-wrap ${
                   dark
                     ? "bg-black/20"
                     : "bg-gray-50"

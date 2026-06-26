@@ -39,6 +39,7 @@ import {
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
+import { toast } from "react-toastify";
 
 const Signup = ({ dark }) => {
   const navigate = useNavigate();
@@ -65,35 +66,23 @@ const Signup = ({ dark }) => {
   const [showPassword, setShowPassword] =
     useState(false);
 
-  const [err, setErr] = useState("");
-
-  const [success, setSuccess] =
-    useState("");
-
   /* ================= EMAIL SIGNUP ================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setErr("");
-    setSuccess("");
-
     if (!username || !email || !password) {
-      setErr("All fields are required");
+      toast.error("All fields are required");
       return;
     }
 
     if (username.length < 3) {
-      setErr(
-        "Username must be at least 3 characters"
-      );
+      toast.error("Username must be at least 3 characters");
       return;
     }
 
     if (password.length < 6) {
-      setErr(
-        "Password must be at least 6 characters"
-      );
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
@@ -126,29 +115,26 @@ const Signup = ({ dark }) => {
         }
       );
 
-      setSuccess(
-        "Account created successfully"
-      );
-
+      toast.success("Account created successfully");
       navigate("/select-role");
     } catch (error) {
       console.log(error);
 
       switch (error.code) {
         case "auth/email-already-in-use":
-          setErr("Email already exists");
+          toast.error("Email already exists");
           break;
 
         case "auth/invalid-email":
-          setErr("Invalid email address");
+          toast.error("Invalid email address");
           break;
 
         case "auth/weak-password":
-          setErr("Password is too weak");
+          toast.error("Password is too weak");
           break;
 
         default:
-          setErr("Unable to create account");
+          toast.error("Unable to create account");
       }
     } finally {
       setIsLoading(false);
@@ -157,10 +143,19 @@ const Signup = ({ dark }) => {
 
   /* ================= GOOGLE SIGNUP ================= */
 
-  const handleGoogleSignup = async () => {
-    setErr("");
-    setSuccess("");
+  const getUserRole = async (userId) => {
+    try {
+      const userSnap = await getDoc(doc(db, "users", userId));
+      if (userSnap.exists()) {
+        return userSnap.data()?.role || null;
+      }
+    } catch (err) {
+      console.error("Failed to read user role:", err);
+    }
+    return null;
+  };
 
+  const handleGoogleSignup = async () => {
     try {
       setIsLoading(true);
 
@@ -194,7 +189,9 @@ const Signup = ({ dark }) => {
         });
       }
 
-      navigate("/select-role");
+      const role = await getUserRole(user.uid);
+      toast.success("Google login successful");
+      navigate(role ? "/" : "/select-role");
     } catch (error) {
       console.log(error);
 
@@ -202,19 +199,19 @@ const Signup = ({ dark }) => {
         error.code === "auth/popup-closed-by-user" ||
         error.code === "auth/cancelled-popup-request"
       ) {
-        setErr("Google popup closed");
+        toast.error("Google popup closed");
       } else if (error.code === "auth/popup-blocked") {
-        setErr("Google popup blocked by the browser");
+        toast.error("Google popup blocked by the browser");
       } else if (
         error.code === "auth/account-exists-with-different-credential"
       ) {
-        setErr(
+        toast.error(
           "An account already exists with a different login method"
         );
       } else if (error.code === "auth/unauthorized-domain") {
-        setErr("Google authentication domain is not authorized");
+        toast.error("Google authentication domain is not authorized");
       } else {
-        setErr("Google signup failed");
+        toast.error("Google signup failed");
       }
     } finally {
       setIsLoading(false);
@@ -517,19 +514,7 @@ const Signup = ({ dark }) => {
                 </span>
               </div>
 
-              {/* ERRORS */}
-              {err && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-500 rounded-2xl p-4 text-sm">
-                  {err}
-                </div>
-              )}
 
-              {/* SUCCESS */}
-              {success && (
-                <div className="bg-green-500/10 border border-green-500/30 text-green-500 rounded-2xl p-4 text-sm">
-                  {success}
-                </div>
-              )}
 
               {/* BUTTON */}
               <button

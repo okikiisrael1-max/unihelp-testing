@@ -1,121 +1,78 @@
 import { useEffect, useState } from "react";
-
-let deferredPrompt;
+import { Sparkles } from "lucide-react";
 
 export default function InstallPrompt() {
   const [show, setShow] = useState(false);
+  const [promptEvent, setPromptEvent] = useState(null);
 
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-
-      setTimeout(() => setShow(true), 3000);
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setPromptEvent(event);
+      setTimeout(() => setShow(true), 800);
     };
 
-    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
   }, []);
 
   const installApp = async () => {
-    if (!deferredPrompt) return;
+    if (!promptEvent) return;
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
 
     if (outcome === "accepted") {
       console.log("App installed");
     }
 
-    deferredPrompt = null;
+    setPromptEvent(null);
     setShow(false);
   };
 
   const closeModal = () => {
     setShow(false);
-    const dismissedTime = localStorage.getItem("install-dismissed");
-    if (dismissedTime && Date.now() - dismissedTime < 86400000) {
-      return null;
-    }
   };
 
-  if (localStorage.getItem("install-dismissed")) return null;
-
-  if (!show) return null;
+  if (!show || !promptEvent) return null;
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        <h2 style={styles.title}>Install Unihelp</h2>
-        <p style={styles.text}>
-          Get a faster, app-like experience. Install Unihelp on your device.
-        </p>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl border border-slate-200">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">Install UniHelp</p>
+            <h2 className="mt-3 text-2xl font-black text-slate-900">Install the app</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Enjoy a faster, app-like experience with offline-ready access and cleaner navigation.
+            </p>
+          </div>
 
-        <div style={styles.buttons}>
-          <button style={styles.installBtn} onClick={installApp}>
-            Install
+          <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-indigo-500 text-white shadow-lg">
+            <Sparkles size={22} />
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={installApp}
+            className="rounded-3xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
+          >
+            Install App
           </button>
-          <button style={styles.cancelBtn} onClick={closeModal}>
+          <button
+            onClick={closeModal}
+            className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
+          >
             Not now
           </button>
         </div>
+
+        <p className="mt-4 text-xs text-slate-500">
+          This prompt can appear again on the next reload if the app is not installed yet.
+        </p>
       </div>
     </div>
   );
 }
-
-const styles = {
-  overlay: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    zIndex: 9999,
-  },
-  modal: {
-    width: "100%",
-    maxWidth: "400px",
-    background: "#fff",
-    borderTopLeftRadius: "20px",
-    borderTopRightRadius: "20px",
-    padding: "20px",
-    boxShadow: "0 -5px 20px rgba(0,0,0,0.2)",
-    animation: "slideUp 0.3s ease",
-  },
-  title: {
-    margin: 0,
-    fontSize: "20px",
-    fontWeight: "600",
-  },
-  text: {
-    margin: "10px 0 20px",
-    color: "#555",
-  },
-  buttons: {
-    display: "flex",
-    gap: "10px",
-  },
-  installBtn: {
-    flex: 1,
-    padding: "12px",
-    background: "#000",
-    color: "#fff",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-  },
-  cancelBtn: {
-    flex: 1,
-    padding: "12px",
-    background: "#eee",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-  },
-};
