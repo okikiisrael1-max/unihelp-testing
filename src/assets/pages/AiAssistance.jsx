@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 import {
   Send,
@@ -36,6 +37,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 
 import remarkGfm from "remark-gfm";
+import { useNavigate } from "react-router-dom";
 
 /* =====================================================
    GEMINI
@@ -95,8 +97,8 @@ export default function AIAssistant({ dark = true }) {
       role: "ai",
 
       text:
-        "# ✨ Welcome to Unihelp AI\n\n" +
-        "Your intelligent study companion for:\n\n" +
+        "### Welcome to Unihelp AI\n\n" +
+        "Your intelligent study companion for:\n" +
         "- PDF analysis\n" +
         "- Exam preparation\n" +
         "- Assignment assistance\n" +
@@ -320,7 +322,7 @@ export default function AIAssistant({ dark = true }) {
     if (!file) return;
 
     if (file.type !== "application/pdf") {
-      alert("Only PDF files are allowed");
+      toast.error("Only PDF files are allowed");
 
       return;
     }
@@ -625,36 +627,11 @@ RULES:
         ref={chatRef}
         className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-8 space-y-8"
       >
-        {/* QUICK PROMPTS */}
-
-        {messages.length === 1 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-            {quickPrompts.map((item, i) => {
-              const Icon = item.icon;
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => setInput(item.text)}
-                  className={`rounded-[30px] border p-6 text-left transition-all hover:scale-[1.02] backdrop-blur-2xl ${theme.border} ${theme.card}`}
-                >
-                  <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-xl mb-5 text-white">
-                    <Icon size={24} />
-                  </div>
-
-                  <h3 className="font-bold text-lg mb-2">{item.text}</h3>
-
-                  <p className={`text-sm ${theme.subtext}`}>Tap to start</p>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {/* MESSAGES */}
 
         {messages.map((msg, i) => (
-          <div
+          <div id="chat"
             key={i}
             className={`flex gap-4 ${
               msg.role === "user" ? "justify-end" : "justify-start"

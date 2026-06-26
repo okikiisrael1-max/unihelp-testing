@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const PAGE_SIZE = 12;
 
@@ -185,7 +186,7 @@ export default function TutorialMarketplace({ dark }) {
   ========================= */
   const handleDelete = async (id, tutorId) => {
     if (auth.currentUser?.uid !== tutorId) {
-      alert("Not allowed");
+      toast.error("You are not authorized to delete this tutorial.");
       return;
     }
 
@@ -203,7 +204,7 @@ export default function TutorialMarketplace({ dark }) {
       );
     } catch (err) {
       console.log(err);
-      alert("Failed to delete tutorial");
+      toast.error("Failed to delete tutorial. Please try again.");
     }
   };
 
@@ -226,7 +227,7 @@ export default function TutorialMarketplace({ dark }) {
       } else {
         await navigator.clipboard.writeText(url);
 
-        alert("Tutorial link copied!");
+        toast.success("Tutorial link copied to clipboard.");
       }
     } catch (err) {
       console.log(err);
@@ -239,7 +240,7 @@ export default function TutorialMarketplace({ dark }) {
     try {
       await navigator.clipboard.writeText(url);
 
-      alert("Link copied successfully!");
+      toast.success("Link copied successfully.");
     } catch (err) {
       console.log(err);
     }

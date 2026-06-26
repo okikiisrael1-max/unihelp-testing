@@ -102,7 +102,7 @@ export default function FAQPage({ dark = false }) {
     <div className={`min-h-screen ${bg}`}>
       <div className="max-w-5xl mx-auto px-4 py-10">
 
-      <span onClick={()=> navigate(-1)} className="text-black text-2xl cursor-pointer flex items-center gap-1 font-medium"><ArrowLeft size={22}/> Back</span>
+      <span onClick={()=> navigate(-1)} className="bg-indigo-400/20 p-2.5 rounded-lg w-30 text-2xl cursor-pointer flex items-center gap-1 font-medium"><ArrowLeft size={22}/> Back</span>
 
 
         <div className="text-center mb-12">

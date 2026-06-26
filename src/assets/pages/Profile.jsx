@@ -397,6 +397,75 @@ const Profile = ({
   const activeRole =
     roleThemes[currentRole];
 
+  const sectionLinks = [
+    {
+      id: "overview",
+      label: "Overview",
+      icon: <User2 size={16} />,
+    },
+    {
+      id: "about",
+      label: "About",
+      icon: <BookOpen size={16} />,
+    },
+    {
+      id: "switch-dashboard",
+      label: "Dashboard",
+      icon: <LayoutDashboard size={16} />,
+    },
+    {
+      id: "premium",
+      label: "Premium",
+      icon: <WalletCards size={16} />,
+    },
+    {
+      id: "security",
+      label: "Security",
+      icon: <ShieldCheck size={16} />,
+    },
+  ];
+
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  const profileStats = [
+    {
+      title: "Uploads",
+      value:
+        profile?.uploadCount ||
+        profile?.uploads ||
+        profile?.files ||
+        "0",
+      icon: <BookOpen />,
+      gradient: "from-indigo-500 to-purple-600",
+    },
+    {
+      title: "Achievements",
+      value: profile?.achievements || "0",
+      icon: <Trophy />,
+      gradient: "from-yellow-500 to-orange-500",
+    },
+    {
+      title: "Rank",
+      value: profile?.rank || "0",
+      icon: <Medal />,
+      gradient: "from-pink-500 to-rose-500",
+    },
+    {
+      title: "Streak",
+      value: profile?.streak || "0d",
+      icon: <Flame />,
+      gradient: "from-cyan-500 to-blue-500",
+    },
+  ];
+
   // =====================================================
   // LOADING
   // =====================================================
@@ -432,28 +501,19 @@ const Profile = ({
       <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* TOP BAR */}
 
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <button
-            onClick={() =>
-              navigate(-1)
-            }
-            className={`${glass} h-12 px-5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all`}
-          >
-            <ArrowLeft size={18} />
+        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 flex-wrap">
+          <div className="flex flex-wrap w-full items-center justify-between gap-2">
+            <button
+              onClick={() =>navigate(-1)} className={`${glass} h-12 px-5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all`}>
+              <ArrowLeft size={18} /> Back
+            </button>
 
-            Back
-          </button>
+            <button
+              onClick={() => setEditOpen(true)}
+              className="h-12 px-5 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all text-white flex items-center gap-2 font-semibold">
+              <Edit3 size={18} />Edit Profile</button>
+          </div>
 
-          <button
-            onClick={() =>
-              setEditOpen(true)
-            }
-            className="h-12 px-5 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all text-white flex items-center gap-2 font-semibold"
-          >
-            <Edit3 size={18} />
-
-            Edit Profile
-          </button>
         </div>
 
         {/* HERO */}
@@ -465,7 +525,7 @@ const Profile = ({
             className={`absolute inset-0 bg-gradient-to-br ${activeRole.gradient} opacity-10`}
           />
 
-          <div className="relative z-10 flex flex-col xl:flex-row gap-10 xl:items-center xl:justify-between">
+          <div className="relative z-10 flex flex-col xl:flex-row gap-10 xl:items-center xl:justify-between" id="overview">
             {/* LEFT */}
 
             <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start">

@@ -4,6 +4,7 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { toast } from "react-toastify";
 
 import {
   Upload,
@@ -119,15 +120,14 @@ export default function CreateTutorial({ dark }) {
 
     try {
       if (!auth.currentUser) {
-        alert("Login required");
-        return;
-      }
+          toast.error("Login required");
+          return;
+        }
 
-      if (!videoFile) {
-        alert("Please upload a video");
-        return;
-      }
-
+        if (!videoFile) {
+          toast.error("Please upload a video file before publishing.");
+          return;
+        }
       setUploading(true);
 
       /* VIDEO */
@@ -192,12 +192,11 @@ export default function CreateTutorial({ dark }) {
         createdAt: serverTimestamp(),
       });
 
-      alert("Tutorial uploaded 🚀");
+      toast.success("Tutorial uploaded successfully.");
 
       navigate("/tutorial-marketplace");
     } catch (err) {
-      console.error(err);
-      alert("Upload failed");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
       setProgress({
@@ -240,13 +239,13 @@ export default function CreateTutorial({ dark }) {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-10">
-        <div className="grid lg:grid-cols-2 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           {/* LEFT */}
-          <div className="space-y-8">
+          <div className="space-y-8 max-md:hidden">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-5">
                 <Sparkles size={16} />
-                Startup Creator Studio
+                Creator Studio
               </div>
 
               <h1 className="text-5xl font-black leading-tight">
@@ -307,15 +306,14 @@ export default function CreateTutorial({ dark }) {
                   </h3>
 
                   <p className="text-sm text-gray-400 mt-1">
-                    {category || "Development"} • ₦
-                    {price || "0"}
+                    {category || "General"} • {price ? `₦${price}` : "Price not set"}
                   </p>
                 </div>
               </div>
 
               <div className="mt-5 text-gray-400 text-sm leading-relaxed">
                 {description ||
-                  "Your course description preview appears here. Make it engaging and professional for students."}
+                  "A concise course summary will appear here after you type it above."}
               </div>
             </div>
           </div>

@@ -637,26 +637,21 @@ useEffect(() => {
             );
           })}
         </div>
+        <div onClick={() => setMobileOpen(false)}>
+          <UpgradeButton dark={dark}/>
+        </div>
 
-        <UpgradeButton dark={dark}/>
+        
 
         {/* PROFILE */}
         <div className="mt-6">
 
-          <div
-            className={`
-              rounded-2xl p-4
-              ${
-                dark
-                  ? "bg-white/5 border border-white/10"
-                  : "bg-white border border-gray-200"
-              }
-            `}
-          >
+          <div className={`rounded-2xl p-4 ${dark ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200"}`}>
 
             <div className="flex items-center relative">
 
               <div onClick={(e)=> navigate('/profile')} className="cursor-pointer flex flex-col gap-2">
+                <p className="font-medium">Profile</p>
                 <div className="text-sm font-medium flex items-center gap-2">
                   <ProfilePhoto user={user} /> {user?.displayName ||
                     "Student"}
@@ -687,7 +682,7 @@ useEffect(() => {
             {/* LOGOUT */}
             <button
               onClick={handleLogout}
-              className="mb-30 
+              className="mb-20 
                 mt-5 w-full cursor-pointer
                 flex items-center justify-center gap-2
                 bg-red-500 hover:bg-red-600

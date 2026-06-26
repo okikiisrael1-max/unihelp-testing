@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 import {
   doc,
@@ -178,14 +179,12 @@ export default function TutorialDetails({
     async () => {
       try {
         if (!auth.currentUser) {
-          alert("Login required");
+          toast.error("Login required");
           return;
         }
 
         if (!proofImage) {
-          alert(
-            "Upload payment screenshot"
-          );
+          toast.error("Please upload your payment screenshot.");
           return;
         }
 
@@ -219,11 +218,9 @@ export default function TutorialDetails({
 
         setSubmitted(true);
 
-        alert("Payment submitted");
+        toast.success("Payment submitted successfully.");
       } catch (err) {
-        console.error(err);
-
-        alert("Upload failed");
+        toast.error("Payment submission failed. Please try again.");
       } finally {
         setUploading(false);
       }

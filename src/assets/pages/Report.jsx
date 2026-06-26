@@ -40,7 +40,7 @@ export default function Report({
     useState("");
 
   const API_URL =
-    import.meta.env.VITE_API_URL;
+    import.meta.env.VITE_API_URL || "http://localhost:5000";
   const navigate = useNavigate();
 
   const handleSubmit = async (
@@ -66,7 +66,7 @@ export default function Report({
       setLoading(true);
 
       const res = await fetch(
-        `${API_URL}/api/report`,
+        `${API_URL}/api/reports/report`,
         {
           method: "POST",
 

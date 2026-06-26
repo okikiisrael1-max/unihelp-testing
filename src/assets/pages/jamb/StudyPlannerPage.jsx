@@ -155,7 +155,7 @@ export default function StudyPlannerPage({
 
   const handleAddPlan = async () => {
     if (!user?.uid) {
-      alert("Please login first");
+      toast.error("Please login first.");
       return;
     }
 
@@ -165,7 +165,7 @@ export default function StudyPlannerPage({
       !studyTime ||
       !studyDate
     ) {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields.");
       return;
     }
 
@@ -191,7 +191,7 @@ export default function StudyPlannerPage({
       resetForm();
     } catch (error) {
       console.log(error);
-      alert("Something went wrong");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setCreating(false);
     }

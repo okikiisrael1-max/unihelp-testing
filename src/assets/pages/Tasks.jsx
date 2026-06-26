@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 
 import {
   Plus,
@@ -136,7 +137,7 @@ export default function Tasks({ dark = true }) {
           "Notification" in window
         )
       ) {
-        alert(
+        toast.error(
           "Notifications are not supported on this browser."
         );
 
@@ -363,7 +364,7 @@ export default function Tasks({ dark = true }) {
       if (
         !form.title.trim()
       ) {
-        alert(
+        toast.error(
           "Task title is required"
         );
 
@@ -373,7 +374,7 @@ export default function Tasks({ dark = true }) {
       if (
         !currentUser
       ) {
-        alert(
+        toast.error(
           "Please login first"
         );
 
@@ -433,7 +434,7 @@ export default function Tasks({ dark = true }) {
       } catch (error) {
         console.log(error);
 
-        alert(
+        toast.error(
           "Something went wrong"
         );
       } finally {

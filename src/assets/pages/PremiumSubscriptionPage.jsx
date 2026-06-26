@@ -4,6 +4,7 @@ import React, {
   useState,
 } from "react";
 
+import { toast } from "react-toastify";
 import {
   Check,
   Crown,
@@ -59,7 +60,7 @@ export default function PremiumSubscriptionPage({
     useState(null);
 
   const API_URL =
-    import.meta.env.VITE_API_URL;
+    import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // ======================================================
   // PLAN
@@ -281,8 +282,8 @@ export default function PremiumSubscriptionPage({
     async () => {
       try {
         if (!auth.currentUser) {
-          alert(
-            "Please login first"
+          toast.error(
+            "Please login first."
           );
 
           return;
@@ -295,11 +296,6 @@ export default function PremiumSubscriptionPage({
             response
           ) => {
             try {
-              console.log(
-                "Flutterwave Response:",
-                response
-              );
-
               // CLOSE MODAL
               closePaymentModal();
 
@@ -311,12 +307,8 @@ export default function PremiumSubscriptionPage({
                 response.status !==
                 "successful"
               ) {
-                alert(
-                  "Payment not successful"
-                );
-
-                setLoadingPlan(
-                  false
+                  toast.error(
+                    "Payment was not successful."
                 );
 
                 return;
@@ -369,11 +361,6 @@ export default function PremiumSubscriptionPage({
 
               const data =
                 await verify.json();
-
-              console.log(
-                "Verification:",
-                data
-              );
 
               // ======================================================
               // VERIFIED
@@ -516,11 +503,11 @@ export default function PremiumSubscriptionPage({
                   remainingDays
                 );
 
-                alert(
+                toast.success(
                   "Student Premium activated successfully 🚀"
                 );
               } else {
-                alert(
+                toast.error(
                   data.error ||
                     "Payment verification failed"
                 );
@@ -530,13 +517,7 @@ export default function PremiumSubscriptionPage({
                 false
               );
             } catch (error) {
-              console.log(
-                "Verification error:",
-                error
-              );
-
-              alert(
-                "Payment verification failed"
+              toast.error(
               );
 
               setLoadingPlan(
@@ -552,15 +533,10 @@ export default function PremiumSubscriptionPage({
           },
         });
       } catch (error) {
-        console.log(
-          "Subscription error:",
-          error
-        );
-
         setLoadingPlan(false);
 
-        alert(
-          "Something went wrong"
+        toast.error(
+          "Something went wrong. Please try again."
         );
       }
     };

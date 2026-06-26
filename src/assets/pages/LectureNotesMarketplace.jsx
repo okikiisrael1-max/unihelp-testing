@@ -740,7 +740,7 @@ export default function LectureNotesMarketplace({ dark }) {
               <textarea
                 value={requestText}
                 onChange={(event) => setRequestText(event.target.value)}
-                placeholder="Need CSC301 lecture notes..."
+                placeholder="Describe the lecture notes you need"
                 className={`min-h-[180px] w-full rounded-3xl p-5 outline-none resize-none ${
                   dark ? "bg-slate-950" : "bg-slate-100"
                 }`}
@@ -839,7 +839,7 @@ export default function LectureNotesMarketplace({ dark }) {
                 <input
                   value={form.lecturer}
                   onChange={(event) => setForm({ ...form, lecturer: event.target.value })}
-                  placeholder="Lecturer name"
+                  placeholder="Lecturer name (optional)"
                   className={`${inputClass} mt-4 h-14 px-4`}
                 />
 

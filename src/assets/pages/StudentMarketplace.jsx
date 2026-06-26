@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import imageCompression from "browser-image-compression";
 
+import { toast } from "react-toastify";
 import {
   ShoppingBag,
   Search,
@@ -379,9 +380,8 @@ export default function StudentMarketplace({
   const handleUpload =
     async () => {
       if (!auth.currentUser) {
-        return alert(
-          "Please login first"
-        );
+        toast.error("Please login first.");
+        return;
       }
 
       if (
@@ -389,11 +389,12 @@ export default function StudentMarketplace({
         userUploads >=
           uploadLimit
       ) {
-        return alert(
+        toast.error(
           isPremium
             ? "Premium upload limit reached."
             : "Free users can upload only 1 listing."
         );
+        return;
       }
 
       if (
@@ -402,9 +403,8 @@ export default function StudentMarketplace({
         !form.price ||
         !form.phone
       ) {
-        return alert(
-          "Please fill all required fields."
-        );
+        toast.error("Please fill all required fields.");
+        return;
       }
 
       setUploading(true);
@@ -457,7 +457,7 @@ export default function StudentMarketplace({
             }
           );
 
-          alert(
+          toast.success(
             "Listing updated successfully 🚀"
           );
         } else {
@@ -493,7 +493,7 @@ export default function StudentMarketplace({
             }
           );
 
-          alert(
+          toast.success(
             "Listing uploaded successfully 🚀"
           );
         }
@@ -506,8 +506,8 @@ export default function StudentMarketplace({
       } catch (err) {
         console.log(err);
 
-        alert(
-          "Operation failed"
+        toast.error(
+          "Operation failed. Please try again."
         );
       }
 
@@ -625,8 +625,8 @@ export default function StudentMarketplace({
 
         fetchUserPlan();
 
-        alert(
-          "Listing deleted"
+        toast.success(
+          "Listing deleted successfully."
         );
       } catch (err) {
         console.log(err);

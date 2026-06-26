@@ -86,7 +86,7 @@ export default function GoalsPage({
 
   const handleAddGoal = async () => {
     if (!title || !targetScore || !deadline) {
-      alert("Fill all fields");
+      toast.error("Fill all fields.");
       return;
     }
 
@@ -111,7 +111,7 @@ export default function GoalsPage({
       setDeadline("");
     } catch (error) {
       console.log(error);
-      alert("Something went wrong");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 

@@ -84,7 +84,6 @@ export default function UploadFile({ dark }) {
 
       return compressedFile;
     } catch (err) {
-      console.log("Image compression failed", err);
       return file;
     }
   };
@@ -98,7 +97,6 @@ export default function UploadFile({ dark }) {
         type: file.type,
       });
     } catch (err) {
-      console.log("PDF compression failed", err);
       return file;
     }
   };
@@ -114,7 +112,6 @@ export default function UploadFile({ dark }) {
         type: file.type,
       });
     } catch (err) {
-      console.log("Document compression failed", err);
       return file;
     }
   };
@@ -167,8 +164,7 @@ export default function UploadFile({ dark }) {
 
       setFiles((prev) => [...prev, ...compressedFiles]);
     } catch (err) {
-      console.log(err);
-      setError("Compression failed");
+      setError("File processing failed. Please try again.");
     }
   };
 
@@ -288,7 +284,6 @@ export default function UploadFile({ dark }) {
 
       navigate("/questions");
     } catch (err) {
-      console.log(err);
       setError("❌ Upload failed. Try again.");
     }
 

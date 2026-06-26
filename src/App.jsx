@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import { auth, db } from "./firebase/config";
 
@@ -105,6 +105,7 @@ const App = () => {
     return localStorage.getItem("theme") === "true";
   });
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [userRole, setUserRole] = useState(null);
 
@@ -116,6 +117,12 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem("theme", dark);
   }, [dark]);
+
+  /* ================= ROUTE SCROLL RESET ================= */
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [location.pathname]);
 
   /* ================= AUTH LISTENER ================= */
 

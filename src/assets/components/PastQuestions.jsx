@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { db, auth } from "../../firebase/config";
+import { toast } from "react-toastify";
 import {
   collection, getDocs, query,
   doc, setDoc, deleteDoc, getDoc,
@@ -300,7 +301,10 @@ const Questions = ({ dark }) => {
 
   // ── Bookmark ─────────────────────────────────────────────
   const toggleBookmark = async (item) => {
-    if (!auth.currentUser) return alert("Login required");
+    if (!auth.currentUser) {
+      toast.error("Please login to bookmark this item.");
+      return;
+    }
     try {
       const ref = doc(db, "users", auth.currentUser.uid, "bookmarks", item.id);
       if (bookmarks[item.id]) {
@@ -326,10 +330,14 @@ const Questions = ({ dark }) => {
   }, []);
 
   const handleDownload = useCallback((file) => {
-    if (!auth.currentUser)
-      return alert("Please login to access premium downloads.");
-    if (!isPremium)
-      return alert("PDF downloads are only available for premium users 🚀");
+    if (!auth.currentUser) {
+      toast.error("Please login to access premium downloads.");
+      return;
+    }
+    if (!isPremium) {
+      toast.error("PDF downloads are only available for premium users.");
+      return;
+    }
 
     const downloadUrl = file?.url;
     const fileName = file?.name || file?.original_filename || "document.pdf";

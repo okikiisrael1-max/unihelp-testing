@@ -23,6 +23,7 @@ import {
   Link,
 } from "react-router-dom";
 
+import { toast } from "react-toastify";
 import {
   ArrowLeft,
   BookOpen,
@@ -146,7 +147,7 @@ export default function StoryDetails({
   ========================= */
   const handleLike = async () => {
     if (!auth.currentUser) {
-      alert("Login first");
+      toast.error("Please login first.");
       return;
     }
 
@@ -177,7 +178,7 @@ export default function StoryDetails({
   const toggleBookmark =
     async () => {
       if (!auth.currentUser) {
-        alert("Login first");
+        toast.error("Please login first.");
         return;
       }
 
@@ -252,7 +253,7 @@ export default function StoryDetails({
           url
         );
 
-        alert("Story link copied!");
+        toast.success("Story link copied to clipboard.");
       }
     } catch (err) {
       console.log(err);

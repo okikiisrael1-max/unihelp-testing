@@ -107,7 +107,6 @@ const optimizePdfFile = async (file) => {
       lastModified: file.lastModified,
     });
   } catch (error) {
-    console.warn("PDF compression failed", error);
     return file;
   }
 };
@@ -220,27 +219,11 @@ export const uploadVideo = async (file, onProgress) => {
 export const uploadPDF = async (file, onProgress) => {
   const optimizedFile = await optimizePdfFile(file);
 
-  try {
-    return await uploadToCloudinary(optimizedFile, {
-      resourceType: "image",
-      validationKind: "pdf",
-      onProgress,
-    });
-  } catch (error) {
-    const message = Array.isArray(error?.errors)
-      ? error.errors.join(" ").toLowerCase()
-      : "";
-
-    if (message.includes("password") || message.includes("protected")) {
-      return uploadToCloudinary(optimizedFile, {
-        resourceType: "raw",
-        validationKind: "pdf",
-        onProgress,
-      });
-    }
-
-    throw error;
-  }
+  return uploadToCloudinary(optimizedFile, {
+    resourceType: "raw",
+    validationKind: "pdf",
+    onProgress,
+  });
 };
 
 export const uploadFile = async (file, onProgress) => {
@@ -266,6 +249,12 @@ export const uploadFile = async (file, onProgress) => {
 export const getCloudinaryPreviewUrl = (url) => {
   if (!url) return "";
   if (!url.includes("/upload/")) return url;
+
+  if (url.includes("/raw/upload/")) {
+    return url
+      .replace("/raw/upload/", "/image/upload/c_fit,w_900,f_auto/")
+      .replace(/\.pdf(\?.*)?$/i, ".jpg$1");
+  }
 
   const transformed = url.replace(
     "/upload/",
