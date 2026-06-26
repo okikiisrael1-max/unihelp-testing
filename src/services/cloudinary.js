@@ -267,7 +267,12 @@ export const getCloudinaryPreviewUrl = (url) => {
   if (!url) return "";
   if (!url.includes("/upload/")) return url;
 
-  return url.replace(/\.pdf(\?.*)?$/i, ".jpg$1");
+  const transformed = url.replace(
+    "/upload/",
+    "/upload/c_fit,w_900,f_auto/"
+  );
+
+  return transformed.replace(/\.pdf(\?.*)?$/i, ".jpg$1");
 };
 
 export const getCloudinaryAttachmentUrl = (url, fileName) => {

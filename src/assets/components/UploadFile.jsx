@@ -8,7 +8,7 @@ import {
   FileText,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import imageCompression from "browser-image-compression";
 
 import { useNavigate } from "react-router-dom";
@@ -29,6 +29,7 @@ export default function UploadFile({ dark }) {
   const [progress, setProgress] = useState({});
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const [form, setForm] = useState({
     school: "",
@@ -193,6 +194,30 @@ export default function UploadFile({ dark }) {
       return updated;
     });
   };
+
+  useEffect(() => {
+    if (!files.length) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const firstPdf = files.find(
+      (file) =>
+        file.type === "application/pdf" ||
+        file.name?.toLowerCase().endsWith(".pdf")
+    );
+    if (!firstPdf) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(firstPdf);
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [files]);
 
   // =========================
   // GET FILE ICON
@@ -439,6 +464,37 @@ export default function UploadFile({ dark }) {
                   </p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {previewUrl && (
+          <div
+            className={`mt-5 overflow-hidden rounded-3xl border ${
+              dark ? "border-white/10 bg-[#111827]" : "border-slate-200 bg-slate-50"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b">
+              <div>
+                <p className="text-sm font-semibold">Selected PDF preview</p>
+                <p className="text-xs opacity-60">Review the selected PDF before uploading.</p>
+              </div>
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-indigo-500 hover:underline"
+              >
+                Open
+              </a>
+            </div>
+            <div className="h-72 md:h-[28rem]">
+              <iframe
+                src={previewUrl}
+                title="Selected PDF Preview"
+                className="h-full w-full"
+                style={{ border: "none" }}
+              />
             </div>
           </div>
         )}

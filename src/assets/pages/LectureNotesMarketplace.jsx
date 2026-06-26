@@ -120,7 +120,7 @@ const ViewerModal = ({ note, dark, canDownload, onClose, onDownload }) => {
       onClick={(event) => event.target === event.currentTarget && onClose()}
     >
       <div
-        className="flex w-full max-w-5xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-[28px] shadow-2xl"
+        className="flex w-full max-w-5xl max-h-[calc(100vh-2rem)] min-h-[60vh] flex-col overflow-hidden rounded-[28px] shadow-2xl"
         style={{
           background: dark ? "#020617" : "#ffffff",
           border: `1px solid ${dark ? "#1e293b" : "#e5e7eb"}`,
@@ -179,7 +179,7 @@ const ViewerModal = ({ note, dark, canDownload, onClose, onDownload }) => {
           </button>
         </div>
 
-        <div className="relative flex-1" style={{ background: "#111827" }}>
+        <div className="relative flex-1 min-h-[55vh]" style={{ background: "#111827" }}>
           <iframe
             key={frameKey}
             src={viewerUrl}
@@ -533,7 +533,7 @@ export default function LectureNotesMarketplace({ dark }) {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
             {stats.map((item) => {
               const Icon = item.icon;
               return (

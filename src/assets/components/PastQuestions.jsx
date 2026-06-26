@@ -146,14 +146,13 @@ const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) =
 
   return (
     <div
-      className="fixed inset-0 z-504 flex items-center justify-center p-3 md:p-5"
+      className="fixed inset-0 z-504 flex items-center justify-center p-3 md:p-5 overflow-y-auto"
       style={{ background: "rgba(0,0,0,0.82)", backdropFilter: "blur(5px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="relative flex flex-col w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl"
+        className="relative flex flex-col w-full max-w-5xl max-h-[calc(100vh-2rem)] rounded-2xl overflow-hidden shadow-2xl"
         style={{
-          height: "92vh",
           background: dark ? "#0b0f1a" : "#fff",
           border: `1px solid ${dividerColor}`,
         }}
@@ -193,7 +192,7 @@ const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) =
             {/* Download (premium) or locked badge */}
             {isPremium ? (
               <button
-                onClick={() => onDownload(file.url)}
+                onClick={() => onDownload(file)}
                 className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors"
               >
                 <Download size={13} /> Download
@@ -220,7 +219,7 @@ const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) =
         </div>
 
         {/* ── PDF iframe ── */}
-        <div className="flex-1 relative" style={{ background: "#18181b" }}>
+        <div className="flex-1 relative min-h-[60vh]" style={{ background: "#18181b" }}>
           <iframe
             key={frameKey}
             src={src}
@@ -315,12 +314,42 @@ const Questions = ({ dark }) => {
   };
 
   // ── Download (premium gate) ──────────────────────────────
-  const handleDownload = useCallback((url) => {
+  const downloadFile = useCallback((url, fileName) => {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName || "document.pdf";
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  }, []);
+
+  const handleDownload = useCallback((file) => {
     if (!auth.currentUser)
       return alert("Please login to access premium downloads.");
     if (!isPremium)
       return alert("PDF downloads are only available for premium users 🚀");
-    window.open(url, "_blank");
+
+    const downloadUrl = file?.url;
+    const fileName = file?.name || file?.original_filename || "document.pdf";
+
+    if (!downloadUrl) return;
+
+    const anchor = document.createElement("a");
+    anchor.href = downloadUrl;
+    anchor.download = fileName;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    document.body.appendChild(anchor);
+
+    if (typeof anchor.download === "string") {
+      anchor.click();
+    } else {
+      window.open(downloadUrl, "_blank");
+    }
+
+    document.body.removeChild(anchor);
   }, [isPremium]);
 
   const openViewer  = (file, question) => setViewer({ file, question });
@@ -512,7 +541,7 @@ const Questions = ({ dark }) => {
 
                       {/* Download — premium only */}
                       <button
-                        onClick={() => handleDownload(file.url)}
+                        onClick={() => handleDownload(file)}
                         className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors"
                         style={
                           isPremium
