@@ -17,7 +17,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { Images } from "../data/data";
 
-import { auth } from "../../firebase/config";
+import { auth, db } from "../../firebase/config";
 
 import {
   GoogleAuthProvider,
@@ -25,6 +25,9 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+
+import { doc, getDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 
 const Login = ({ dark }) => {
   const navigate = useNavigate();
@@ -43,62 +46,67 @@ const Login = ({ dark }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
-
-  const [err, setErr] = useState("");
-
-  const [success, setSuccess] = useState("");
-
   const [showForgotModal, setShowForgotModal] = useState(false);
-
   const [resetEmail, setResetEmail] = useState("");
-
   const [resetLoading, setResetLoading] = useState(false);
 
-  const [resetMessage, setResetMessage] = useState("");
-
   /* ================= LOGIN ================= */
+
+  const getUserRole = async (userId) => {
+    try {
+      const userSnap = await getDoc(doc(db, "users", userId));
+      if (userSnap.exists()) {
+        return userSnap.data()?.role || null;
+      }
+    } catch (err) {
+      console.error("Failed to read user role:", err);
+    }
+    return null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setErr("");
-    setSuccess("");
-
     if (!email || !password) {
-      setErr("All fields are required");
+      toast.error("All fields are required");
       return;
     }
 
     try {
       setIsLoading(true);
 
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
 
-      setSuccess("Login successful");
+      const role = await getUserRole(credential.user.uid);
+      toast.success("Login successful");
 
-      navigate("/select-role");
+      if (role) {
+        navigate("/");
+      } else {
+        navigate("/select-role");
+      }
     } catch (error) {
       console.log(error);
 
       switch (error.code) {
         case "auth/user-not-found":
-          setErr("Account does not exist");
+          toast.error("Account does not exist");
           break;
 
         case "auth/wrong-password":
-          setErr("Incorrect password");
+          toast.error("Incorrect password");
           break;
 
         case "auth/invalid-email":
-          setErr("Invalid email address");
+          toast.error("Invalid email address");
           break;
 
         case "auth/invalid-credential":
-          setErr("Invalid login credentials");
+          toast.error("Invalid login credentials");
           break;
 
         default:
-          setErr("Unable to login");
+          toast.error("Unable to login");
       }
     } finally {
       setIsLoading(false);
@@ -108,15 +116,18 @@ const Login = ({ dark }) => {
   /* ================= GOOGLE LOGIN ================= */
 
   const handleGoogleLogin = async () => {
-    setErr("");
-    setSuccess("");
-
     try {
       setIsLoading(true);
 
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const role = await getUserRole(result.user.uid);
 
-      navigate("/select-role");
+      toast.success("Google login successful");
+      if (role) {
+        navigate("/");
+      } else {
+        navigate("/select-role");
+      }
     } catch (error) {
       console.log(error);
 
@@ -124,13 +135,13 @@ const Login = ({ dark }) => {
         error.code === "auth/popup-closed-by-user" ||
         error.code === "auth/cancelled-popup-request"
       ) {
-        setErr("Google popup closed");
+        toast.error("Google popup closed");
       } else if (error.code === "auth/popup-blocked") {
-        setErr("Google popup blocked by the browser");
+        toast.error("Google popup blocked by the browser");
       } else if (error.code === "auth/unauthorized-domain") {
-        setErr("Google authentication domain is not authorized");
+        toast.error("Google authentication domain is not authorized");
       } else {
-        setErr("Google login failed");
+        toast.error("Google login failed");
       }
     } finally {
       setIsLoading(false);
@@ -142,10 +153,8 @@ const Login = ({ dark }) => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
 
-    setResetMessage("");
-
     if (!resetEmail) {
-      setResetMessage("Please enter your email");
+      toast.error("Please enter your email");
       return;
     }
 
@@ -154,26 +163,24 @@ const Login = ({ dark }) => {
 
       await sendPasswordResetEmail(auth, resetEmail);
 
-      setResetMessage("Password reset email sent successfully");
-
+      toast.success("Password reset email sent successfully");
       setTimeout(() => {
         setShowForgotModal(false);
-        setResetMessage("");
       }, 3000);
     } catch (error) {
       console.log(error);
 
       switch (error.code) {
         case "auth/user-not-found":
-          setResetMessage("No account found with this email");
+          toast.error("No account found with this email");
           break;
 
         case "auth/invalid-email":
-          setResetMessage("Invalid email address");
+          toast.error("Invalid email address");
           break;
 
         default:
-          setResetMessage("Unable to send reset email");
+          toast.error("Unable to send reset email");
       }
     } finally {
       setResetLoading(false);
@@ -387,19 +394,6 @@ const Login = ({ dark }) => {
 
               {/* ERRORS */}
 
-              {err && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-500 rounded-2xl p-4 text-sm">
-                  {err}
-                </div>
-              )}
-
-              {/* SUCCESS */}
-
-              {success && (
-                <div className="bg-green-500/10 border border-green-500/30 text-green-500 rounded-2xl p-4 text-sm">
-                  {success}
-                </div>
-              )}
 
               {/* LOGIN BUTTON */}
 
@@ -509,11 +503,6 @@ const Login = ({ dark }) => {
                 />
               </div>
 
-              {resetMessage && (
-                <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 rounded-2xl p-4 text-sm">
-                  {resetMessage}
-                </div>
-              )}
 
               <button
                 type="submit"
