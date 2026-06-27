@@ -34,6 +34,7 @@ import {
   Upload,
   CreditCard,
   Clock3,
+  Info,
 } from "lucide-react";
 
 export default function TutorialDetails({
@@ -192,6 +193,9 @@ export default function TutorialDetails({
 
         const result = await uploadImage(proofImage);
         const proofUrl = result.secure_url;
+        const tutorialAmount = Number(tutorial.price) || 0;
+        const platformFee = tutorialAmount * 0.2;
+        const creatorShare = tutorialAmount - platformFee;
 
         await addDoc(
           collection(db, "purchases"),
@@ -206,6 +210,12 @@ export default function TutorialDetails({
 
             tutorialTitle:
               tutorial.title,
+
+            amount: tutorialAmount,
+            platformFee,
+            creatorShare,
+            platformFeeRate: 0.2,
+            tutorialPrice: tutorialAmount,
 
             proofUrl,
 
@@ -325,10 +335,57 @@ export default function TutorialDetails({
               </div>
             </div>
 
+            {!hasAccess && (
+              <div
+                className={`mt-8 rounded-[28px] border p-5 ${
+                  dark
+                    ? "border-blue-500/20 bg-blue-500/10"
+                    : "border-blue-200 bg-blue-50"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-2xl bg-blue-500/15 p-2 text-blue-500">
+                    <Info size={18} />
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-bold">
+                      Free preview only
+                    </h3>
+
+                    <p
+                      className={`mt-1 text-sm leading-relaxed ${
+                        dark
+                          ? "text-blue-100"
+                          : "text-blue-900/80"
+                      }`}
+                    >
+                      This tutorial plays for the first 30 seconds as a free
+                      preview. After that, the video locks until your payment is
+                      submitted and approved.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* VIDEO */}
             <div
               className={`mt-8 rounded-[32px] overflow-hidden border ${card}`}
             >
+              {!hasAccess && (
+                <div
+                  className={`flex items-center justify-between gap-3 px-5 py-3 text-sm font-semibold ${
+                    dark
+                      ? "bg-blue-500/10 text-blue-100"
+                      : "bg-blue-50 text-blue-900"
+                  }`}
+                >
+                  <span>Preview limit: 30 seconds free</span>
+                  <span>Pay to unlock the full tutorial</span>
+                </div>
+              )}
+
               <div className="relative">
                 <video
                   ref={videoRef}
@@ -349,10 +406,8 @@ export default function TutorialDetails({
                       </h2>
 
                       <p className="text-zinc-300 mt-3 max-w-md">
-                        Purchase this
-                        tutorial to unlock
-                        the full premium
-                        course.
+                        The free preview is limited to 30 seconds. Submit your
+                        payment proof to unlock the full tutorial.
                       </p>
                     </div>
                   )}
@@ -439,6 +494,19 @@ export default function TutorialDetails({
                   text="Secure payment verification"
                 />
               </div>
+
+              {!hasAccess && (
+                <div
+                  className={`mt-6 rounded-2xl border px-4 py-4 text-sm leading-relaxed ${
+                    dark
+                      ? "border-blue-500/20 bg-blue-500/10 text-blue-100"
+                      : "border-blue-200 bg-blue-50 text-blue-900/80"
+                  }`}
+                >
+                  Free preview is limited to the first 30 seconds. Once your
+                  payment is approved, the full tutorial opens automatically.
+                </div>
+              )}
 
               {/* PDF */}
               {hasAccess &&

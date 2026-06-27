@@ -10,7 +10,10 @@ import {
   orderBy,
 } from "firebase/firestore";
 
+import { onAuthStateChanged } from "firebase/auth";
+
 import { db, auth } from "./../../../firebase/config";
+import { summarizeTutorFinances } from "../../utils/tutorialEarnings";
 
 import { Link } from "react-router-dom";
 
@@ -22,7 +25,6 @@ import {
   Wallet,
   DollarSign,
   Sparkles,
-  TrendingUp,
   PlayCircle,
   Loader2,
   ArrowRight,
@@ -33,31 +35,80 @@ import {
 export default function TutorDashboard({
   dark,
 }) {
+  const naira = String.fromCharCode(8358);
+
+  const [currentUser, setCurrentUser] =
+    useState(null);
+
   const [tutorials, setTutorials] =
+    useState([]);
+
+  const [purchases, setPurchases] =
+    useState([]);
+
+  const [withdrawals, setWithdrawals] =
     useState([]);
 
   const [loading, setLoading] =
     useState(true);
 
-  const [stats, setStats] = useState({
-    totalTutorials: 0,
-    totalSales: 0,
-    totalRevenue: 0,
-  });
+  const [authReady, setAuthReady] =
+    useState(false);
+  const [tutorialsLoaded, setTutorialsLoaded] =
+    useState(false);
+  const [purchasesLoaded, setPurchasesLoaded] =
+    useState(false);
+  const [withdrawalsLoaded, setWithdrawalsLoaded] =
+    useState(false);
+
+  const financials = useMemo(
+    () =>
+      summarizeTutorFinances({
+        tutorials,
+        purchases,
+        withdrawals,
+      }),
+    [tutorials, purchases, withdrawals]
+  );
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        setCurrentUser(user);
+        setAuthReady(true);
+
+        if (!user) {
+          setTutorials([]);
+          setPurchases([]);
+          setWithdrawals([]);
+          setTutorialsLoaded(true);
+          setPurchasesLoaded(true);
+          setWithdrawalsLoaded(true);
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   // ============================
   // FETCH TUTORIALS
   // ============================
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!authReady) return undefined;
+
+    if (!currentUser?.uid) {
+      setTutorialsLoaded(true);
+      return undefined;
+    }
+
+    setTutorialsLoaded(false);
 
     const q = query(
       collection(db, "tutorials"),
-      where(
-        "tutorId",
-        "==",
-        auth.currentUser.uid
-      ),
+      where("tutorId", "==", currentUser.uid),
       orderBy("createdAt", "desc")
     );
 
@@ -68,54 +119,74 @@ export default function TutorDashboard({
       }));
 
       setTutorials(data);
-
-      setStats((prev) => ({
-        ...prev,
-        totalTutorials: data.length,
-      }));
-
-      setLoading(false);
+      setTutorialsLoaded(true);
     });
 
     return () => unsub();
-  }, []);
+  }, [authReady, currentUser?.uid]);
 
   // ============================
   // FETCH SALES
   // ============================
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!authReady) return undefined;
+
+    if (!currentUser?.uid) {
+      setPurchasesLoaded(true);
+      return undefined;
+    }
+
+    setPurchasesLoaded(false);
 
     const q = query(
       collection(db, "purchases"),
-      where(
-        "tutorId",
-        "==",
-        auth.currentUser.uid
-      ),
-      where("status", "==", "approved")
+      where("tutorId", "==", currentUser.uid)
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const purchases = snap.docs.map((doc) =>
-        doc.data()
-      );
-
-      const revenue = purchases.reduce(
-        (acc, item) =>
-          acc + (item.amount || 0),
-        0
-      );
-
-      setStats((prev) => ({
-        ...prev,
-        totalSales: purchases.length,
-        totalRevenue: revenue,
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
       }));
+
+      setPurchases(data);
+      setPurchasesLoaded(true);
     });
 
     return () => unsub();
-  }, []);
+  }, [authReady, currentUser?.uid]);
+
+  // ============================
+  // FETCH WITHDRAWALS
+  // ============================
+  useEffect(() => {
+    if (!authReady) return undefined;
+
+    if (!currentUser?.uid) {
+      setWithdrawalsLoaded(true);
+      return undefined;
+    }
+
+    setWithdrawalsLoaded(false);
+
+    const q = query(
+      collection(db, "withdrawals"),
+      where("tutorId", "==", currentUser.uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setWithdrawals(data);
+      setWithdrawalsLoaded(true);
+    });
+
+    return () => unsub();
+  }, [authReady, currentUser?.uid]);
 
   // ============================
   // DELETE TUTORIAL
@@ -140,16 +211,15 @@ export default function TutorDashboard({
     }
   };
 
-  // ============================
-  // TOTAL VIEWS MOCK
-  // ============================
-  const totalViews = useMemo(() => {
-    return tutorials.reduce(
-      (acc, item) =>
-        acc + (item.views || 0),
-      0
-    );
-  }, [tutorials]);
+  const balanceReady =
+    authReady &&
+    tutorialsLoaded &&
+    purchasesLoaded &&
+    withdrawalsLoaded;
+
+  useEffect(() => {
+    setLoading(!balanceReady);
+  }, [balanceReady]);
 
   return (
     <div
@@ -198,6 +268,18 @@ export default function TutorDashboard({
                 sales, and grow your earnings
                 inside CampusFlow.
               </p>
+
+              <div
+                className={`mt-6 rounded-2xl border px-4 py-4 text-sm leading-relaxed ${
+                  dark
+                    ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
+                    : "border-amber-200 bg-amber-50 text-amber-900/80"
+                }`}
+              >
+                UniHelp keeps a 20% platform fee on every approved tutorial
+                payment. The balance cards below already reflect the creator
+                share after fees, withdrawals, and reserved payout requests.
+              </div>
 
               {/* ACTIONS */}
               <div className="flex flex-wrap gap-4 mt-8">
@@ -250,32 +332,30 @@ export default function TutorDashboard({
                   </span>
 
                   <span className="font-bold text-xl">
-                    {
-                      stats.totalTutorials
-                    }
+                    {financials.totalTutorials}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="opacity-70">
-                    Sales
+                    Approved Sales
                   </span>
 
                   <span className="font-bold text-xl">
-                    {stats.totalSales}
+                    {financials.totalSales}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="opacity-70">
-                    Revenue
+                    Gross Revenue
                   </span>
 
-                  <span className="font-bold text-xl text-green-500">
-                    ₦
-                    {stats.totalRevenue.toLocaleString()}
-                  </span>
-                </div>
+                <span className="font-bold text-xl text-green-500">
+                    {naira}
+                    {financials.grossRevenue.toLocaleString()}
+                </span>
+              </div>
               </div>
             </div>
           </div>
@@ -301,7 +381,7 @@ export default function TutorDashboard({
 
                 <h2 className="text-4xl font-black mt-3">
                   {
-                    stats.totalTutorials
+                    financials.totalTutorials
                   }
                 </h2>
               </div>
@@ -327,7 +407,7 @@ export default function TutorDashboard({
                 </p>
 
                 <h2 className="text-4xl font-black mt-3">
-                  {stats.totalSales}
+                  {financials.totalSales}
                 </h2>
               </div>
 
@@ -352,8 +432,8 @@ export default function TutorDashboard({
                 </p>
 
                 <h2 className="text-4xl font-black mt-3 text-yellow-500">
-                  ₦
-                  {stats.totalRevenue.toLocaleString()}
+                  {naira}
+                  {financials.grossRevenue.toLocaleString()}
                 </h2>
               </div>
 
@@ -374,16 +454,17 @@ export default function TutorDashboard({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-70">
-                  Total Views
+                  Withdrawable
                 </p>
 
                 <h2 className="text-4xl font-black mt-3">
-                  {totalViews}
+                  {naira}
+                  {financials.withdrawableBalance.toLocaleString()}
                 </h2>
               </div>
 
               <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-                <TrendingUp className="text-purple-500" />
+                <Wallet className="text-purple-500" />
               </div>
             </div>
           </div>
@@ -505,7 +586,7 @@ export default function TutorDashboard({
 
                     {/* PRICE */}
                     <div className="absolute bottom-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-xl font-bold backdrop-blur-xl">
-                      ₦
+                      {naira}
                       {tutorial.price?.toLocaleString?.() ||
                         tutorial.price}
                     </div>
@@ -604,3 +685,5 @@ export default function TutorDashboard({
     </div>
   );
 }
+
+
