@@ -641,31 +641,25 @@ export default function Community({ dark = true }) {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-500">
                 <Sparkles size={14} />
-                Campus community
+                Group
               </div>
 
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl md:text-5xl">
-                A polished space for campus conversation.
+                Campus Global
               </h1>
 
               <p className={`mt-3 max-w-2xl text-sm leading-7 sm:text-base ${theme.sub}`}>
-                Share updates, ask questions, react to classmates, and keep the discussion
-                moving in real time. The chat is optimized for fast reading on mobile and
-                desktop alike.
+                Student group chat.
               </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${theme.border} ${theme.glass}`}>
                   <Mic2 size={14} />
-                  Live chat
+                  Live
                 </span>
                 <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${theme.border} ${theme.glass}`}>
-                  <Clock3 size={14} />
-                  Real-time presence
-                </span>
-                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${theme.border} ${theme.glass}`}>
-                  <AtSign size={14} />
-                  Mention classmates
+                  <Users size={14} />
+                  {currentOnlineMembers.length} online
                 </span>
               </div>
             </div>
@@ -687,11 +681,9 @@ export default function Community({ dark = true }) {
             >
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div>
-                  <h2 className="text-xl font-black sm:text-2xl">Community Chat</h2>
+                  <h2 className="text-xl font-black sm:text-2xl">Messages</h2>
                   <p className={`mt-1 text-sm ${theme.sub}`}>
-                    {typingUsers.length > 0
-                      ? `${typingUsers[0]?.name || "Someone"} is typing...`
-                      : `Fresh conversation from ${currentOnlineMembers.length} online members.`}
+                    {typingUsers.length > 0 ? "Typing..." : `${currentOnlineMembers.length} online`}
                   </p>
                 </div>
 
@@ -700,7 +692,7 @@ export default function Community({ dark = true }) {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search messages..."
+                    placeholder="Search"
                     className="w-full bg-transparent text-sm outline-none"
                   />
                 </div>
@@ -712,7 +704,7 @@ export default function Community({ dark = true }) {
                 <div className="flex min-h-[42vh] items-center justify-center">
                   <div className="text-center">
                     <div className="mx-auto h-14 w-14 animate-pulse rounded-2xl bg-indigo-500/15" />
-                    <p className={`mt-4 text-sm ${theme.sub}`}>Loading community chat...</p>
+                    <p className={`mt-4 text-sm ${theme.sub}`}>Loading...</p>
                   </div>
                 </div>
               ) : (
@@ -731,10 +723,10 @@ export default function Community({ dark = true }) {
                         {loadingMore ? (
                           <>
                             <LoaderIcon />
-                            Loading older messages
+                            Loading
                           </>
                         ) : (
-                          "Load older messages"
+                          "Load more"
                         )}
                       </button>
                     </div>
@@ -745,9 +737,6 @@ export default function Community({ dark = true }) {
                       <div className={`rounded-[28px] border p-10 text-center ${theme.border} ${dark ? "bg-white/[0.03]" : "bg-white"}`}>
                         <MessageSquareMore size={46} className="mx-auto opacity-30" />
                         <h3 className="mt-4 text-xl font-bold">No messages yet</h3>
-                        <p className={`mt-2 text-sm ${theme.sub}`}>
-                          Be the first to kick off the discussion.
-                        </p>
                       </div>
                     ) : (
                       filteredMessages.map((message) => (
@@ -832,8 +821,8 @@ export default function Community({ dark = true }) {
                       onChange={(event) => handleChange(event.target.value)}
                       placeholder={
                         isSignedIn
-                          ? "Message UniHelp community..."
-                          : "Sign in to join the conversation..."
+                          ? "Message..."
+                          : "Sign in to chat..."
                       }
                       disabled={!isSignedIn}
                       rows={1}
@@ -862,15 +851,11 @@ export default function Community({ dark = true }) {
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-2 text-xs opacity-60">
                 <div className="flex items-center gap-2">
                   <Clock3 size={13} />
-                  Live across campus
+                  Live
                 </div>
                 <div className="flex items-center gap-2">
                   <AtSign size={13} />
-                  Use @ to mention members
-                </div>
-                <div className="flex items-center gap-2">
-                  <Sparkles size={13} />
-                  Built for fast, focused discussion
+                  Mentions
                 </div>
               </div>
 
@@ -913,10 +898,7 @@ export default function Community({ dark = true }) {
                 </div>
               </div>
 
-              <p className={`mt-3 text-sm leading-7 ${theme.sub}`}>
-                Keep it helpful, respectful, and academic. Share opportunities, ask questions,
-                and help the next person.
-              </p>
+              <p className={`mt-3 text-sm leading-7 ${theme.sub}`}>Short posts. Fast replies.</p>
             </div>
 
             <div className={`rounded-[28px] border p-4 ${theme.border} ${dark ? "bg-white/[0.03]" : "bg-slate-50"}`}>
@@ -930,9 +912,7 @@ export default function Community({ dark = true }) {
                 </div>
               </div>
               <p className={`mt-3 text-sm ${theme.sub}`}>
-                {typingUsers.length > 0
-                  ? `${typingUsers[0]?.name || "Someone"} is typing right now.`
-                  : "No one is typing at the moment."}
+                {typingUsers.length > 0 ? "Typing..." : "Quiet now."}
               </p>
             </div>
 
@@ -965,21 +945,17 @@ export default function Community({ dark = true }) {
                   <Sparkles size={18} />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] opacity-55">Tips</p>
-                  <h3 className="font-bold">Make the chat useful</h3>
+                  <p className="text-xs uppercase tracking-[0.22em] opacity-55">Info</p>
+                  <h3 className="font-bold">Group chat</h3>
                 </div>
               </div>
 
-              <ul className={`mt-4 space-y-3 text-sm leading-6 ${theme.sub}`}>
-                <li>Use clear questions so people can answer fast.</li>
-                <li>Tag classmates with @ to bring them into the thread.</li>
-                <li>Keep reactions short and the discussion focused.</li>
-              </ul>
+              <p className={`mt-3 text-sm leading-6 ${theme.sub}`}>Quick updates. Questions. Replies.</p>
             </div>
 
             {!isSignedIn && (
               <div className="rounded-[28px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200">
-                Sign in to send messages, react, and join the live discussion.
+                Sign in to chat.
               </div>
             )}
           </aside>
