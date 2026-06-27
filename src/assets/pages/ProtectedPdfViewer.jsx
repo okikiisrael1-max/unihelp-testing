@@ -10,7 +10,10 @@ import {
 } from "firebase/firestore";
 
 import { db, auth } from "../../firebase/config";
-import { getCloudinaryAttachmentUrl } from "../../services/cloudinary";
+import {
+  getCloudinaryAttachmentUrl,
+  getCloudinaryPreviewUrl,
+} from "../../services/cloudinary";
 
 import {
   useParams,
@@ -150,6 +153,8 @@ export default function ProtectedPdfViewer({
     );
   }
 
+  const previewUrl = getCloudinaryPreviewUrl(tutorial.pdfUrl);
+
   // ============================
   // BLOCK ACCESS
   // ============================
@@ -260,7 +265,7 @@ export default function ProtectedPdfViewer({
 
             {/* IFRAME */}
             <iframe
-              src={tutorial.pdfUrl}
+              src={previewUrl}
               title="PDF Viewer"
               className="w-full h-[85vh]"
             />

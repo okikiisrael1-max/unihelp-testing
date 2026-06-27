@@ -412,12 +412,13 @@ const JambStudyMaterials = ({
         return;
       }
 
-      const downloadUrl =
+    const downloadUrl =
         material.downloadUrl ||
         getCloudinaryAttachmentUrl(
           material.fileUrl,
           material.fileName,
-        );
+        ) ||
+        material.fileUrl;
 
       window.open(
         downloadUrl,

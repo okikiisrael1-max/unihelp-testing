@@ -446,8 +446,8 @@ export default function LectureNotesMarketplace({ dark }) {
     }
 
     const downloadLink =
-      note.fileUrl ||
       note.downloadUrl ||
+      note.fileUrl ||
       getCloudinaryAttachmentUrl(note.fileUrl, note.fileName || note.title);
 
     if (!downloadLink) {

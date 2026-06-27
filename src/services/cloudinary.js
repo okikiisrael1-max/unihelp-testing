@@ -220,7 +220,7 @@ export const uploadPDF = async (file, onProgress) => {
   const optimizedFile = await optimizePdfFile(file);
 
   return uploadToCloudinary(optimizedFile, {
-    resourceType: "raw",
+    resourceType: "image",
     validationKind: "pdf",
     onProgress,
   });
@@ -251,9 +251,7 @@ export const getCloudinaryPreviewUrl = (url) => {
   if (!url.includes("/upload/")) return url;
 
   if (/\.(pdf)(\?.*)?$/i.test(url)) {
-    return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-      url
-    )}`;
+    return url.replace(/\.pdf(\?.*)?$/i, ".jpg$1");
   }
 
   return url;
@@ -262,10 +260,6 @@ export const getCloudinaryPreviewUrl = (url) => {
 export const getCloudinaryAttachmentUrl = (url, fileName) => {
   if (!url) return "";
   if (!url.includes("/upload/")) return url;
-
-  if (/\.(pdf)(\?.*)?$/i.test(url)) {
-    return url;
-  }
 
   const attachmentName = sanitizeAttachmentName(
     fileName || extractFileNameFromUrl(url)

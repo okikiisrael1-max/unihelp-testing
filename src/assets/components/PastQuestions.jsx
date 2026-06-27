@@ -303,10 +303,10 @@ const Questions = ({ dark }) => {
       return;
     }
 
-    const downloadUrl = file?.url || getCloudinaryAttachmentUrl(
+    const downloadUrl = getCloudinaryAttachmentUrl(
       file?.url,
       file?.name || file?.original_filename || "document.pdf"
-    );
+    ) || file?.url;
     const fileName = file?.name || file?.original_filename || "document.pdf";
 
     if (!downloadUrl) {
