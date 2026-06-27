@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { db, auth } from "../../firebase/config";
 import { toast } from "react-toastify";
 import {
@@ -10,47 +10,19 @@ import {
   Calendar, User, HardDrive, Search,
   Star, Crown, Lock, Eye, X, RefreshCw,
 } from "lucide-react";
+import {
+  getCloudinaryAttachmentUrl,
+  getCloudinaryPreviewUrl,
+} from "../../services/cloudinary";
 
 const PDFThumbnail = ({ url, dark }) => {
-  const canvasRef = useRef(null);
-  const [state, setState] = useState("loading");
+  const previewUrl = getCloudinaryPreviewUrl(url);
+  const [failed, setFailed] = useState(false);
+  const useFramePreview = previewUrl.includes("docs.google.com/gview");
 
   useEffect(() => {
-    if (!url) { setState("error"); return; }
-    let cancelled = false;
-    setState("loading");
-
-    (async () => {
-      try {
-        const pdfjsLib = await import("pdfjs-dist");
-        // Worker URL must match the installed pdfjs-dist version
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
-        const pdf = await pdfjsLib.getDocument({ url }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 0.6 });
-
-        if (cancelled) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        await page.render({
-          canvasContext: canvas.getContext("2d"),
-          viewport,
-        }).promise;
-
-        if (!cancelled) setState("done");
-      } catch {
-        if (!cancelled) setState("error");
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [url]);
+    setFailed(false);
+  }, [previewUrl]);
 
   return (
     <div
@@ -60,40 +32,35 @@ const PDFThumbnail = ({ url, dark }) => {
         background: dark ? "#1a2235" : "#f0f2f7",
       }}
     >
-      {/* Animated skeleton while loading */}
-      {state === "loading" && (
-        <div
-          className="absolute inset-0 animate-pulse rounded-xl"
-          style={{ background: dark ? "#252d40" : "#e2e6ef" }}
-        />
-      )}
-
-      {/* Fallback placeholder */}
-      {state === "error" && (
+      {previewUrl && !failed ? (
+        useFramePreview ? (
+          <iframe
+            src={previewUrl}
+            title="PDF thumbnail"
+            loading="lazy"
+            className="absolute inset-0 h-full w-full border-0"
+          />
+        ) : (
+          <img
+            src={previewUrl}
+            alt="PDF thumbnail"
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )
+      ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-25">
           <FileText size={40} />
           <span className="text-xs font-semibold tracking-wide uppercase">
-            No Preview
+            PDF
           </span>
         </div>
       )}
 
-      {/* Rendered canvas */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full object-contain"
-        style={{ display: state === "done" ? "block" : "none" }}
-      />
-
-      {/* PDF badge shown on success */}
-      {state === "done" && (
-        <span
-          className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
-          style={{ background: "rgba(99,102,241,0.85)", color: "#fff", letterSpacing: "0.06em" }}
-        >
-          PDF
-        </span>
-      )}
+      <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.85)", color: "#fff", letterSpacing: "0.06em" }}>
+        PDF
+      </span>
     </div>
   );
 };
@@ -134,10 +101,11 @@ const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) =
     setFrameKey((k) => k + 1);
   };
 
+  const fileUrl = file.url;
   const src =
     mode === "gdocs"
-      ? `https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`
-      : file.url;
+      ? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`
+      : fileUrl;
 
   const dividerColor = dark ? "#1f2937" : "#e5e7eb";
   const btnMuted = {
@@ -321,7 +289,6 @@ const Questions = ({ dark }) => {
   const downloadFile = useCallback((url, fileName) => {
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = fileName || "document.pdf";
     anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
     document.body.appendChild(anchor);
@@ -339,23 +306,24 @@ const Questions = ({ dark }) => {
       return;
     }
 
-    const downloadUrl = file?.url;
+      const downloadUrl = getCloudinaryAttachmentUrl(
+      file?.url,
+      file?.name || file?.original_filename || "document.pdf"
+    );
     const fileName = file?.name || file?.original_filename || "document.pdf";
 
-    if (!downloadUrl) return;
+    if (!downloadUrl) {
+      toast.error("Unable to generate download link. Please try again later.");
+      return;
+    }
 
     const anchor = document.createElement("a");
     anchor.href = downloadUrl;
-    anchor.download = fileName;
     anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
     document.body.appendChild(anchor);
 
-    if (typeof anchor.download === "string") {
-      anchor.click();
-    } else {
-      window.open(downloadUrl, "_blank");
-    }
+    anchor.click();
 
     document.body.removeChild(anchor);
   }, [isPremium]);

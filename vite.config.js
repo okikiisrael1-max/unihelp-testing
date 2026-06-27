@@ -47,17 +47,22 @@ export default defineConfig({
         short_name:
           "UniHelp",
 
+        id: "/",
+
         start_url:
-          "/dashboard?v=2",
+          "/",
+
+        scope:
+          "/",
 
         display:
           "standalone",
 
         theme_color:
-          "#000000",
+          "#0f172a",
 
         background_color:
-          "#000000",
+          "#0b0f1a",
 
         icons: [
           {
@@ -70,7 +75,7 @@ export default defineConfig({
           },
 
           {
-            src: "/favicon.png",
+            src: "/logo.png",
 
             sizes:
               "512x512",

@@ -54,6 +54,7 @@ const PDFThumbnail = ({ note, dark }) => {
   const previewUrl = getCloudinaryPreviewUrl(
     note.previewUrl || note.fileUrl
   );
+  const useFramePreview = previewUrl.includes("docs.google.com/gview");
 
   useEffect(() => {
     setFailed(false);
@@ -65,13 +66,22 @@ const PDFThumbnail = ({ note, dark }) => {
       style={{ height: 180, background: dark ? "#0f172a" : "#eef2ff" }}
     >
       {previewUrl && !failed ? (
-        <img
-          src={previewUrl}
-          alt={`${note.title} preview`}
-          loading="lazy"
-          onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        useFramePreview ? (
+          <iframe
+            src={previewUrl}
+            title={`${note.title} preview`}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full border-0"
+          />
+        ) : (
+          <img
+            src={previewUrl}
+            alt={`${note.title} preview`}
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
           <FileText size={44} />
@@ -440,10 +450,17 @@ export default function LectureNotesMarketplace({ dark }) {
       return;
     }
 
+    const downloadLink =
+      note.downloadUrl ||
+      getCloudinaryAttachmentUrl(note.fileUrl, note.fileName || note.title);
+
+    if (!downloadLink) {
+      toast.error("Unable to create a download link. Please try again.");
+      return;
+    }
+
     const link = document.createElement("a");
-    link.href = note.downloadUrl || getCloudinaryAttachmentUrl(note.fileUrl, note.fileName);
-    link.download = note.fileName || note.title || "lecture-note.pdf";
-    link.target = "_blank";
+    link.href = downloadLink;
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
@@ -506,7 +523,6 @@ export default function LectureNotesMarketplace({ dark }) {
                   <Sparkles size={14} />
                   Lecture Notes Hub
                 </div>
-                <h1 className="text-2xl font-black md:text-4xl">Lecture Notes Marketplace</h1>
                 <p className="mt-1 opacity-70">
                   Upload, preview, and download campus notes without storage bottlenecks.
                 </p>
@@ -537,7 +553,7 @@ export default function LectureNotesMarketplace({ dark }) {
             {stats.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.label} className={`rounded-3xl p-4 ${softCard}`}>
+                <div key={item.label} className={`rounded-3xl w-full p-4 ${softCard}`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[0.25em] opacity-60">
@@ -584,12 +600,11 @@ export default function LectureNotesMarketplace({ dark }) {
 
               {showNotifications && (
                 <div
-                  className={`absolute right-0 top-14 z-20 w-80 overflow-hidden rounded-3xl border p-3 shadow-2xl ${
+                  className={`absolute left-0 md:right-0 top-14 z-20 w-80 overflow-hidden rounded-3xl border p-3 shadow-2xl ${
                     dark
                       ? "border-white/10 bg-slate-950"
                       : "border-slate-200 bg-white"
-                  }`}
-                >
+                  }`}>
                   <div className="mb-3 flex items-center justify-between px-2">
                     <p className="font-bold">Notifications</p>
                     <span className="text-xs opacity-60">{notifications.length} items</span>
@@ -653,7 +668,7 @@ export default function LectureNotesMarketplace({ dark }) {
             <Loader2 className="h-10 w-10 animate-spin" />
           </div>
         ) : tab === "notes" ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+          <div className="mt-6 grid gap-6 grid-cols-1 xl:grid-cols-2">
             {filteredNotes.length === 0 ? (
               <div className={`${card} rounded-[32px] p-12 text-center xl:col-span-2`}>
                 <FileText size={44} className="mx-auto mb-4 opacity-40" />
@@ -662,10 +677,7 @@ export default function LectureNotesMarketplace({ dark }) {
               </div>
             ) : (
               filteredNotes.map((note) => (
-                <article
-                  key={note.id}
-                  className={`rounded-[32px] p-5 transition-transform hover:-translate-y-1 ${card}`}
-                >
+                <article key={note.id} className={`rounded-[32px] p-5 transition-transform hover:-translate-y-1 ${card}`}>
                   <PDFThumbnail note={note} dark={dark} />
 
                   <div className="flex items-start justify-between gap-4">
@@ -680,7 +692,7 @@ export default function LectureNotesMarketplace({ dark }) {
                     </div>
 
                     <div className="rounded-2xl bg-indigo-500/10 px-3 py-2 text-right">
-                      <p className="text-xs uppercase tracking-[0.2em] opacity-60">Downloads</p>
+                      <p className="text-sm uppercase tracking-[0.2em] opacity-60">Downloads</p>
                       <p className="mt-1 text-lg font-black">{note.downloads || 0}</p>
                     </div>
                   </div>
@@ -694,7 +706,7 @@ export default function LectureNotesMarketplace({ dark }) {
                           className="transition-transform hover:scale-110"
                         >
                           <Star
-                            size={16}
+                            size={12}
                             className={note.rating >= star ? "fill-yellow-400" : ""}
                           />
                         </button>
@@ -807,7 +819,7 @@ export default function LectureNotesMarketplace({ dark }) {
                 <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-2xl font-black">Upload Lecture Note</h2>
-                    <p className="mt-1 text-sm opacity-60">PDF only. Cloudinary compresses the file before upload.</p>
+                    <p className="mt-1 text-sm opacity-60">PDF only. systeme compresses the file before upload.</p>
                   </div>
                   <button
                     onClick={() => setShowUpload(false)}
@@ -850,7 +862,6 @@ export default function LectureNotesMarketplace({ dark }) {
                 >
                   <Upload size={40} className="mb-4 opacity-70" />
                   <h3 className="text-lg font-semibold">Choose a PDF to upload</h3>
-                  <p className="mt-2 text-sm opacity-60">This file will be compressed before it reaches Cloudinary.</p>
                   <input
                     type="file"
                     hidden
