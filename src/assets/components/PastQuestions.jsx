@@ -86,8 +86,9 @@ const SkeletonCard = ({ dark }) => (
 );
 
 const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) => {
-  const [mode, setMode] = useState("direct"); // "direct" | "gdocs"
+  const [mode, setMode] = useState("gdocs"); // "direct" | "gdocs"
   const [frameKey, setFrameKey] = useState(0);
+  const previewUrl = getCloudinaryPreviewUrl(file.url);
 
   // Close on Escape key
   useEffect(() => {
@@ -101,11 +102,7 @@ const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) =
     setFrameKey((k) => k + 1);
   };
 
-  const fileUrl = file.url;
-  const src =
-    mode === "gdocs"
-      ? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`
-      : fileUrl;
+  const src = mode === "gdocs" ? previewUrl : file.url;
 
   const dividerColor = dark ? "#1f2937" : "#e5e7eb";
   const btnMuted = {
@@ -306,7 +303,7 @@ const Questions = ({ dark }) => {
       return;
     }
 
-      const downloadUrl = getCloudinaryAttachmentUrl(
+    const downloadUrl = file?.url || getCloudinaryAttachmentUrl(
       file?.url,
       file?.name || file?.original_filename || "document.pdf"
     );

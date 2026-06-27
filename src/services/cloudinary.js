@@ -220,9 +220,7 @@ export const uploadPDF = async (file, onProgress) => {
   const optimizedFile = await optimizePdfFile(file);
 
   return uploadToCloudinary(optimizedFile, {
-    // PDF files need to be delivered as image resources so Cloudinary can
-    // generate thumbnails and allow inline PDF delivery reliably.
-    resourceType: "image",
+    resourceType: "raw",
     validationKind: "pdf",
     onProgress,
   });
@@ -252,23 +250,22 @@ export const getCloudinaryPreviewUrl = (url) => {
   if (!url) return "";
   if (!url.includes("/upload/")) return url;
 
-  if (url.includes("/raw/upload/")) {
+  if (/\.(pdf)(\?.*)?$/i.test(url)) {
     return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
       url
     )}`;
   }
 
-  const transformed = url.replace(
-    "/upload/",
-    "/upload/c_fit,w_900,f_auto,pg_1/"
-  );
-
-  return transformed.replace(/\.pdf(\?.*)?$/i, ".jpg$1");
+  return url;
 };
 
 export const getCloudinaryAttachmentUrl = (url, fileName) => {
   if (!url) return "";
   if (!url.includes("/upload/")) return url;
+
+  if (/\.(pdf)(\?.*)?$/i.test(url)) {
+    return url;
+  }
 
   const attachmentName = sanitizeAttachmentName(
     fileName || extractFileNameFromUrl(url)

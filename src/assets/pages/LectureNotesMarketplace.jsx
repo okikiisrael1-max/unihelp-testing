@@ -99,8 +99,10 @@ const PDFThumbnail = ({ note, dark }) => {
 };
 
 const ViewerModal = ({ note, dark, canDownload, onClose, onDownload }) => {
-  const [mode, setMode] = useState("direct");
+  const [mode, setMode] = useState("gdocs");
   const [frameKey, setFrameKey] = useState(0);
+  const previewUrl = getCloudinaryPreviewUrl(note.previewUrl || note.fileUrl);
+  const viewerUrl = mode === "gdocs" ? previewUrl : note.fileUrl;
 
   useEffect(() => {
     const handleEscape = (event) => {
@@ -110,13 +112,6 @@ const ViewerModal = ({ note, dark, canDownload, onClose, onDownload }) => {
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
-
-  const viewerUrl =
-    mode === "gdocs"
-      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-          note.fileUrl
-        )}`
-      : note.fileUrl;
 
   const buttonStyle = {
     background: dark ? "#1e293b" : "#f1f5f9",
@@ -451,6 +446,7 @@ export default function LectureNotesMarketplace({ dark }) {
     }
 
     const downloadLink =
+      note.fileUrl ||
       note.downloadUrl ||
       getCloudinaryAttachmentUrl(note.fileUrl, note.fileName || note.title);
 
