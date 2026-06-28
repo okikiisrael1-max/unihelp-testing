@@ -20,6 +20,7 @@ import {
   Lock,
   Pencil,
   MoreVertical,
+  Share2,
 } from "lucide-react";
 
 import {
@@ -41,6 +42,7 @@ import {
 
 import { uploadImage } from "../../services/cloudinary";
 import { useNavigate } from "react-router-dom";
+import { buildShareUrl, shareContent } from "../utils/share";
 
 export default function StudentMarketplace({
   dark,
@@ -654,6 +656,27 @@ export default function StudentMarketplace({
     );
   };
 
+  const shareProduct = async (item) => {
+    const shareUrl = buildShareUrl("/studentmarketplace", {
+      product: item.id,
+    });
+
+    try {
+      await shareContent({
+        title: item.title,
+        text: `Check out this product on UniHelp: ${item.title}`,
+        url: shareUrl,
+      });
+
+      if (!navigator.share) {
+        toast.success("Product link copied to clipboard.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to share this product right now.");
+    }
+  };
+
   /* =====================================================
      STYLES
   ===================================================== */
@@ -927,37 +950,40 @@ export default function StudentMarketplace({
                     ₦{item.price}
                   </p>
 
-                  {view ===
-                  "market" ? (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() =>
-                        openWhatsApp(
-                          item.phone,
-                          item.title
-                        )
-                      }
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium"
+                      onClick={() => shareProduct(item)}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-500/10 py-3 text-sm font-medium text-indigo-500"
                     >
-                      <Phone
-                        size={15}
-                        className="inline mr-2"
-                      />
-                      Chat on WhatsApp
+                      <Share2 size={15} />
+                      Share
                     </button>
-                  ) : (
-                    <p
-                      className={`text-xs inline-flex px-3 py-1 rounded-full ${
-                        item.status ===
-                        "approved"
-                          ? "bg-green-500/20 text-green-500"
-                          : "bg-yellow-500/20 text-yellow-500"
-                      }`}
-                    >
-                      {
-                        item.status
-                      }
-                    </p>
-                  )}
+
+                    {view === "market" ? (
+                      <button
+                        onClick={() =>
+                          openWhatsApp(
+                            item.phone,
+                            item.title
+                          )
+                        }
+                        className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-medium text-white hover:bg-emerald-600"
+                      >
+                        <Phone size={15} />
+                        Chat on WhatsApp
+                      </button>
+                    ) : (
+                      <p
+                        className={`inline-flex flex-[1.2] items-center justify-center rounded-xl px-3 py-3 text-xs ${
+                          item.status === "approved"
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-yellow-500/20 text-yellow-500"
+                        }`}
+                      >
+                        {item.status}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

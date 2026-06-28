@@ -9,16 +9,20 @@ import {
   FileText, Download, BookOpen, School,
   Calendar, User, HardDrive, Search,
   Star, Crown, Lock, Eye, X, RefreshCw,
+  Share2,
 } from "lucide-react";
 import {
   getCloudinaryAttachmentUrl,
   getCloudinaryPreviewUrl,
+  isPreviewImageUrl,
 } from "../../services/cloudinary";
+import ViewerModal from "./ViewerModal";
+import { buildShareUrl, shareContent } from "../utils/share";
 
 const PDFThumbnail = ({ url, dark }) => {
   const previewUrl = getCloudinaryPreviewUrl(url);
   const [failed, setFailed] = useState(false);
-  const useFramePreview = previewUrl.includes("docs.google.com/gview");
+  const useFramePreview = previewUrl && !isPreviewImageUrl(previewUrl);
 
   useEffect(() => {
     setFailed(false);
@@ -85,120 +89,6 @@ const SkeletonCard = ({ dark }) => (
   </div>
 );
 
-const ViewerModal = ({ file, question, onClose, dark, isPremium, onDownload }) => {
-  const [mode, setMode] = useState("gdocs"); // "direct" | "gdocs"
-  const [frameKey, setFrameKey] = useState(0);
-  const previewUrl = getCloudinaryPreviewUrl(file.url);
-
-  // Close on Escape key
-  useEffect(() => {
-    const fn = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
-  }, [onClose]);
-
-  const toggleMode = () => {
-    setMode((m) => (m === "direct" ? "gdocs" : "direct"));
-    setFrameKey((k) => k + 1);
-  };
-
-  const src = mode === "gdocs" ? previewUrl : file.url;
-
-  const dividerColor = dark ? "#1f2937" : "#e5e7eb";
-  const btnMuted = {
-    background: dark ? "#1f2937" : "#f3f4f6",
-    color: dark ? "#9ca3af" : "#6b7280",
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-504 flex items-center justify-center p-3 md:p-5 overflow-y-auto"
-      style={{ background: "rgba(0,0,0,0.82)", backdropFilter: "blur(5px)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="relative flex flex-col w-full max-w-5xl max-h-[calc(100vh-2rem)] rounded-2xl overflow-hidden shadow-2xl"
-        style={{
-          background: dark ? "#0b0f1a" : "#fff",
-          border: `1px solid ${dividerColor}`,
-        }}
-      >
-        {/* ── Header ── */}
-        <div className="flex max-md:flex-col justify-between items-center gap-3 px-4 py-3 shrink-0" style={{
-            borderBottom: `1px solid ${dividerColor}`,
-            background: dark ? "#0d1117" : "#f9fafb",
-          }}>
-            <div className="flex gap-5">
-              <div className="p-2 rounded-lg shrink-0"
-            style={{ background: "rgba(99,102,241,0.15)" }}>
-            <FileText size={16} className="text-indigo-400" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">{file.name}</p>
-            <p className="text-xs mt-0.5 opacity-40">
-              {question.courseCode} · {question.school} · {question.year} · {(file.size / 1024).toFixed(1)} KB
-            </p>
-          </div>
-            </div>
-          
-
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Toggle viewer mode */}
-            <button
-              onClick={toggleMode}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
-              style={btnMuted}
-              title={mode === "direct" ? "Switch to Google Docs viewer if PDF doesn't load" : "Switch back to direct embed"}
-            >
-              <RefreshCw size={12} />
-              {mode === "direct" ? "Google Docs" : "Direct View"}
-            </button>
-
-            {/* Download (premium) or locked badge */}
-            {isPremium ? (
-              <button
-                onClick={() => onDownload(file)}
-                className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition-colors"
-              >
-                <Download size={13} /> Download
-              </button>
-            ) : (
-              <div
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                style={{ background: "rgba(234,179,8,0.12)", color: "#ca8a04" }}
-              >
-                <Lock size={11} /> Premium only
-              </div>
-            )}
-
-            {/* Close */}
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg transition-colors"
-              style={btnMuted}
-              aria-label="Close viewer"
-            >
-              <X size={17} />
-            </button>
-          </div>
-        </div>
-
-        {/* ── PDF iframe ── */}
-        <div className="flex-1 relative min-h-[60vh]" style={{ background: "#18181b" }}>
-          <iframe
-            key={frameKey}
-            src={src}
-            className="absolute inset-0 w-full h-full"
-            style={{ border: "none" }}
-            title={file.name}
-            allow="fullscreen"
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ─────────────────────────────────────────────────────────────
 // MAIN COMPONENT
@@ -324,6 +214,28 @@ const Questions = ({ dark }) => {
 
     document.body.removeChild(anchor);
   }, [isPremium]);
+
+  const handleShare = useCallback(async (file, question) => {
+    const shareUrl = buildShareUrl("/questions", {
+      question: question?.id,
+      file: file?.name,
+    });
+
+    try {
+      await shareContent({
+        title: question?.title || file?.name || "Past Question",
+        text: `Check out this past question on UniHelp: ${question?.title || file?.name || "Past Question"}`,
+        url: shareUrl,
+      });
+
+      if (!navigator.share) {
+        toast.success("Past question link copied to clipboard.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to share this past question right now.");
+    }
+  }, []);
 
   const openViewer  = (file, question) => setViewer({ file, question });
   const closeViewer = useCallback(() => setViewer(null), []);
@@ -513,6 +425,15 @@ const Questions = ({ dark }) => {
                       </button>
 
                       {/* Download — premium only */}
+                      <button
+                        onClick={() => handleShare(file, q)}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors"
+                        style={{ background: "rgba(16,185,129,0.16)", color: "#34d399" }}
+                        title="Share question"
+                      >
+                        <Share2 size={13} /> Share
+                      </button>
+
                       <button
                         onClick={() => handleDownload(file)}
                         className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors"

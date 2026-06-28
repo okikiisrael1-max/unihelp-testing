@@ -38,6 +38,7 @@ import {
   Sparkles,
   Star,
   Crown,
+  Share2,
   Upload,
   X,
 } from "lucide-react";
@@ -46,15 +47,18 @@ import { db } from "../../firebase/config";
 import {
   getCloudinaryAttachmentUrl,
   getCloudinaryPreviewUrl,
+  isPreviewImageUrl,
   uploadPDF,
 } from "../../services/cloudinary";
+import ViewerModal from "../components/ViewerModal";
+import { buildShareUrl, shareContent } from "../utils/share";
 
 const PDFThumbnail = ({ note, dark }) => {
   const [failed, setFailed] = useState(false);
   const previewUrl = getCloudinaryPreviewUrl(
-    note.previewUrl || note.fileUrl
+    note.fileUrl || note.previewUrl
   );
-  const useFramePreview = previewUrl.includes("docs.google.com/gview");
+  const useFramePreview = previewUrl && !isPreviewImageUrl(previewUrl);
 
   useEffect(() => {
     setFailed(false);
@@ -94,107 +98,6 @@ const PDFThumbnail = ({ note, dark }) => {
       <span className="absolute top-3 right-3 rounded-full bg-indigo-600/90 px-2 py-1 text-[10px] font-bold tracking-[0.2em] text-white">
         PDF
       </span>
-    </div>
-  );
-};
-
-const ViewerModal = ({ note, dark, canDownload, onClose, onDownload }) => {
-  const [mode, setMode] = useState("gdocs");
-  const [frameKey, setFrameKey] = useState(0);
-  const previewUrl = getCloudinaryPreviewUrl(note.previewUrl || note.fileUrl);
-  const viewerUrl = mode === "gdocs" ? previewUrl : note.fileUrl;
-
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
-
-  const buttonStyle = {
-    background: dark ? "#1e293b" : "#f1f5f9",
-    color: dark ? "#cbd5e1" : "#475569",
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto p-3 md:p-5"
-      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}
-      onClick={(event) => event.target === event.currentTarget && onClose()}
-    >
-      <div
-        className="flex w-full max-w-5xl max-h-[calc(100vh-2rem)] min-h-[60vh] flex-col overflow-hidden rounded-[28px] shadow-2xl"
-        style={{
-          background: dark ? "#020617" : "#ffffff",
-          border: `1px solid ${dark ? "#1e293b" : "#e5e7eb"}`,
-        }}
-      >
-        <div
-          className="flex flex-wrap items-center gap-3 border-b px-4 py-3"
-          style={{ borderColor: dark ? "#1e293b" : "#e5e7eb" }}
-        >
-          <div className="rounded-xl bg-indigo-500/15 p-2 text-indigo-400">
-            <FileText size={16} />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold">{note.title}</p>
-            <p className="mt-0.5 truncate text-xs opacity-50">
-              {note.course} · {note.dept} · {note.school}
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              setMode((current) => (current === "direct" ? "gdocs" : "direct"));
-              setFrameKey((current) => current + 1);
-            }}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold"
-            style={buttonStyle}
-            title="Switch viewer"
-          >
-            <RefreshCw size={12} />
-            {mode === "direct" ? "Google Docs" : "Direct"}
-          </button>
-
-          {canDownload ? (
-            <button
-              onClick={() => onDownload(note)}
-              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-            >
-              <Download size={13} />
-              Download
-            </button>
-          ) : (
-            <div className="flex items-center gap-1.5 rounded-xl bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-500">
-              <Lock size={11} />
-              Premium only
-            </div>
-          )}
-
-          <button
-            onClick={onClose}
-            className="rounded-xl p-2"
-            style={buttonStyle}
-            aria-label="Close viewer"
-          >
-            <X size={17} />
-          </button>
-        </div>
-
-        <div className="relative flex-1 min-h-[55vh]" style={{ background: "#111827" }}>
-          <iframe
-            key={frameKey}
-            src={viewerUrl}
-            title={note.title}
-            className="absolute inset-0 h-full w-full"
-            style={{ border: "none" }}
-            allow="fullscreen"
-          />
-        </div>
-      </div>
     </div>
   );
 };
@@ -471,6 +374,27 @@ export default function LectureNotesMarketplace({ dark }) {
     }
   };
 
+  const handleShare = async (note) => {
+    const shareUrl = buildShareUrl("/lecturenotesmarketplace", {
+      note: note.id,
+    });
+
+    try {
+      await shareContent({
+        title: note.title,
+        text: `Check out this lecture note on UniHelp: ${note.title}`,
+        url: shareUrl,
+      });
+
+      if (!navigator.share) {
+        toast.success("Lecture note link copied to clipboard.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to share this lecture note right now.");
+    }
+  };
+
   const rateNote = async (noteId, value) => {
     try {
       await updateDoc(doc(db, "notes", noteId), { rating: value });
@@ -510,7 +434,7 @@ export default function LectureNotesMarketplace({ dark }) {
         <div className={`${card} rounded-[32px] p-5 sm:p-6 shadow-2xl`}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl">
+              <div className="flex h-16 w-16 items-center shrink-0 justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl">
                 <FileText size={30} className="text-white" />
               </div>
 
@@ -545,7 +469,7 @@ export default function LectureNotesMarketplace({ dark }) {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-2 grid-cols-2 xl:grid-cols-4">
             {stats.map((item) => {
               const Icon = item.icon;
               return (
@@ -710,6 +634,15 @@ export default function LectureNotesMarketplace({ dark }) {
                     </div>
 
                     <div className="flex gap-2">
+                      <button
+                        onClick={() => handleShare(note)}
+                        className={`inline-flex h-11 items-center gap-2 rounded-2xl px-4 font-semibold ${
+                          dark ? "bg-white/5" : "bg-slate-100"
+                        }`}
+                      >
+                        <Share2 size={16} />
+                        Share
+                      </button>
                       <button
                         onClick={() => openViewer(note)}
                         className={`inline-flex h-11 items-center gap-2 rounded-2xl px-4 font-semibold ${
@@ -924,7 +857,7 @@ export default function LectureNotesMarketplace({ dark }) {
         <ViewerModal
           note={viewer}
           dark={dark}
-          canDownload={canDownload(viewer)}
+          isPremium={canDownload(viewer)}
           onClose={closeViewer}
           onDownload={handleDownload}
         />

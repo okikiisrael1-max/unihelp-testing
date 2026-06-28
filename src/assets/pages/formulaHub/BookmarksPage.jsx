@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Bookmark,
 } from "lucide-react";
 
@@ -9,10 +10,12 @@ import FormulaCard from "../../components/FormulaCard";
 import EmptyState from "../../components/EmptyState";
 
 import { formulas } from "../../data/sampleFormulas";
+import { useNavigate } from "react-router-dom";
 
 const BookmarksPage = ({ dark = true }) => {
 
   const [bookmarked, setBookmarked] = useState([]);
+  const navigate = useNavigate();
 
   // LOAD BOOKMARKS
   useEffect(() => {
@@ -35,11 +38,16 @@ const BookmarksPage = ({ dark = true }) => {
   // EMPTY STATE
   if (!bookmarked.length) {
     return (
+      <>
+      <button onClick={()=> navigate(-1)} className="flex gap-1.5 p-5 cursor-pointer"> <ArrowLeft size={22}/> Back</button>
+
       <EmptyState
         dark={dark}
         title="No Saved Formulas"
         description="Your bookmarked formulas will appear here."
       />
+      </>
+      
     );
   }
 

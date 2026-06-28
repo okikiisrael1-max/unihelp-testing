@@ -1,11 +1,11 @@
 import React from "react";
 
 import {
-  HomeIcon,
+  LayoutDashboardIcon,
+  FileQuestion,
+  NotebookPenIcon,
   MessageCircle,
-  Video,
-  WandSparklesIcon,
-  CheckSquare,
+  Sparkles,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -14,8 +14,20 @@ const BottomBar = ({ dark }) => {
   const navItems = [
     {
       name: "Home",
-      icon: HomeIcon,
+      icon: LayoutDashboardIcon,
       path: "/",
+    },
+
+    {
+      name: "Questions",
+      icon: FileQuestion,
+      path: "/questions",
+    },
+
+    {
+      name: "Notes",
+      icon: NotebookPenIcon,
+      path: "/lecturenotesmarketplace",
     },
 
     {
@@ -25,20 +37,8 @@ const BottomBar = ({ dark }) => {
     },
 
     {
-      name: "Tutorials",
-      icon: Video,
-      path: "/tutorialmarketplace",
-    },
-
-    {
-      name: "Tasks",
-      icon: CheckSquare,
-      path: "/tasks",
-    },
-
-    {
       name: "AI Help",
-      icon: WandSparklesIcon,
+      icon: Sparkles,
       path: "/ai",
     },
   ];

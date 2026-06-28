@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import imageCompression from "browser-image-compression";
+import { toast } from "react-toastify";
 
 import {
   Home,
@@ -19,6 +20,7 @@ import {
   Lock,
   Pencil,
   MoreVertical,
+  Share2,
 } from "lucide-react";
 
 import {
@@ -40,6 +42,7 @@ import {
 
 import { uploadImage } from "../../services/cloudinary";
 import {Link} from 'react-router-dom'
+import { buildShareUrl, shareContent } from "../utils/share";
 
 export default function HostelMarketplace({
   dark,
@@ -658,6 +661,27 @@ export default function HostelMarketplace({
     );
   };
 
+  const shareHostel = async (hostel) => {
+    const shareUrl = buildShareUrl("/hostelmarketplace", {
+      hostel: hostel.id,
+    });
+
+    try {
+      await shareContent({
+        title: hostel.title,
+        text: `Check out this hostel on UniHelp: ${hostel.title}`,
+        url: shareUrl,
+      });
+
+      if (!navigator.share) {
+        toast.success("Hostel link copied to clipboard.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to share this hostel right now.");
+    }
+  };
+
   /* ======================================================
      STYLES
   ====================================================== */
@@ -927,35 +951,40 @@ export default function HostelMarketplace({
                     ₦{h.price}
                   </p>
 
-                  {view ===
-                  "market" ? (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() =>
-                        openWhatsApp(
-                          h.phone,
-                          h.title
-                        )
-                      }
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium"
+                      onClick={() => shareHostel(h)}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-500/10 py-3 text-sm font-medium text-indigo-500"
                     >
-                      <Phone
-                        size={14}
-                        className="inline mr-1"
-                      />
-                      Chat on WhatsApp
+                      <Share2 size={14} />
+                      Share
                     </button>
-                  ) : (
-                    <p
-                      className={`text-xs inline-flex px-3 py-1 rounded-full ${
-                        h.status ===
-                        "approved"
-                          ? "bg-green-500/20 text-green-500"
-                          : "bg-yellow-500/20 text-yellow-500"
-                      }`}
-                    >
-                      {h.status}
-                    </p>
-                  )}
+
+                    {view === "market" ? (
+                      <button
+                        onClick={() =>
+                          openWhatsApp(
+                            h.phone,
+                            h.title
+                          )
+                        }
+                        className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-medium text-white hover:bg-emerald-600"
+                      >
+                        <Phone size={14} />
+                        Chat on WhatsApp
+                      </button>
+                    ) : (
+                      <p
+                        className={`inline-flex flex-[1.2] items-center justify-center rounded-xl px-3 py-3 text-xs ${
+                          h.status === "approved"
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-yellow-500/20 text-yellow-500"
+                        }`}
+                      >
+                        {h.status}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

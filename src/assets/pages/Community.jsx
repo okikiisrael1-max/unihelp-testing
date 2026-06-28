@@ -190,9 +190,9 @@ const MessageBubble = memo(function MessageBubble({
           </div>
 
           <div
-            className={`relative overflow-hidden rounded-[28px] border px-4 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.14)] md:px-5 ${
+            className={`relative overflow-hidden rounded-[28px] border px-4 py-2 shadow-[0_20px_50px_rgba(0,0,0,0.14)] md:px-5 ${
               isMe
-                ? "rounded-br-md border-transparent bg-gradient-to-br from-indigo-600 via-blue-600 to-emerald-500 text-white"
+                ? "rounded-br-md border-transparent bg-gradient-to-br from-indigo-800  to-blue-300 text-white"
                 : `${theme.bubble} ${theme.border} rounded-bl-md`
             }`}
           >
@@ -624,7 +624,7 @@ export default function Community({ dark = true }) {
   ];
 
   return (
-    <div className={`min-h-screen overflow-hidden ${theme.bg} ${theme.text}`}>
+    <div className={`min-h-screen md:mt-20 overflow-hidden ${theme.bg} ${theme.text}`}>
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute left-[-120px] top-[-120px] h-[320px] w-[320px] rounded-full bg-indigo-600/20 blur-[120px]" />
         <div className="absolute bottom-[-120px] right-[-120px] h-[320px] w-[320px] rounded-full bg-emerald-500/15 blur-[120px]" />
@@ -664,11 +664,6 @@ export default function Community({ dark = true }) {
               </div>
             </div>
 
-            <div className="grid w-full gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[420px]">
-              {roomStats.map((stat) => (
-                <StatCard key={stat.label} dark={dark} {...stat} />
-              ))}
-            </div>
           </div>
         </div>
 

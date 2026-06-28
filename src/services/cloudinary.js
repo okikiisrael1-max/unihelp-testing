@@ -37,6 +37,12 @@ const isPdfFile = (file) =>
   file?.type === PDF_MIME_TYPE ||
   file?.name?.toLowerCase().endsWith(".pdf");
 
+export const isPreviewImageUrl = (url = "") =>
+  typeof url === "string" &&
+  (url.startsWith("data:image/") ||
+    url.startsWith("blob:") ||
+    /\.(avif|gif|jpe?g|png|webp|svg)(\?.*)?$/i.test(url));
+
 const sanitizeAttachmentName = (value = "download.pdf") => {
   const fileName = value.split(/[\\/]/).pop() || "download.pdf";
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]+/g, "_");
@@ -251,10 +257,27 @@ export const getCloudinaryPreviewUrl = (url) => {
   if (!url.includes("/upload/")) return url;
 
   if (/\.(pdf)(\?.*)?$/i.test(url)) {
-    return url.replace(/\.pdf(\?.*)?$/i, ".jpg$1");
+    return getCloudinaryPdfPageUrl(url, 1, 1200);
   }
 
   return url;
+};
+
+export const getCloudinaryPdfPageUrl = (url, page = 1, width = 1200) => {
+  if (!url) return "";
+  if (!/\.(pdf)(\?.*)?$/i.test(url) || !url.includes("/upload/")) {
+    return url;
+  }
+
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeWidth = Math.max(320, Number(width) || 1200);
+
+  return url
+    .replace(
+      "/upload/",
+      `/upload/f_auto,q_auto,pg_${safePage},w_${safeWidth}/`
+    )
+    .replace(/\.pdf(\?.*)?$/i, ".jpg$1");
 };
 
 export const getCloudinaryAttachmentUrl = (url, fileName) => {

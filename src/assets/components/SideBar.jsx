@@ -182,34 +182,6 @@ useEffect(() => {
       },
 
       {
-        title: "Formula Hub",
-
-        icon: <Library size={19} />,
-
-        links: [
-          {
-            to: "/formula-hub",
-
-            label: "Formula Hub",
-
-            icon: (
-              <HomeIcon size={18} />
-            ),
-          },
-
-          {
-            to: "/formula-hub/bookmarks",
-
-            label: "Bookmarks",
-
-            icon: (
-              <Bookmark size={18} />
-            ),
-          },
-        ],
-      },
-
-      {
         title: "Academic",
 
         icon: (
@@ -403,6 +375,61 @@ useEffect(() => {
         ],
       },
 
+      {
+        title: "Formula Hub",
+
+        icon: <Library size={19} />,
+
+        links: [
+          {
+            to: "/formula-hub",
+
+            label: "Formula Hub",
+
+            icon: (
+              <HomeIcon size={18} />
+            ),
+          },
+
+          {
+            to: "/formula-hub/bookmarks",
+
+            label: "Bookmarks",
+
+            icon: (
+              <Bookmark size={18} />
+            ),
+          },
+        ],
+      },
+
+      {
+        title: "Support",
+        icon: <PhoneCall size={19} />,
+        links: [
+          {
+            to: "/faq",
+            label: "FAQ",
+            icon: <HelpCircle size={18} />,
+          },
+          {
+            to: "/about",
+            label: "About UniHelp",
+            icon: <Info size={18} />,
+          },
+          {
+            to: "/report",
+            label: "Report",
+            icon: <FileWarning size={18} />,
+          },
+          {
+            to: "/contact",
+            label: "Contact Us",
+            icon: <PhoneCall size={18} />,
+          },
+        ],
+      },
+
       ...(isAdmin
         ? [
             {
@@ -426,33 +453,6 @@ useEffect(() => {
             },
           ]
         : []),
-
-      {
-  title: "Support",
-  icon: <PhoneCall size={19} />,
-  links: [
-    {
-      to: "/faq",
-      label: "FAQ",
-      icon: <HelpCircle size={18} />,
-    },
-    {
-      to: "/about",
-      label: "About UniHelp",
-      icon: <Info size={18} />,
-    },
-    {
-      to: "/report",
-      label: "Report",
-      icon: <FileWarning size={18} />,
-    },
-    {
-      to: "/contact",
-      label: "Contact Us",
-      icon: <PhoneCall size={18} />,
-    },
-  ],
-}
     ],
     [isAdmin]
   );

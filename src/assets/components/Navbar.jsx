@@ -21,8 +21,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
     >
       <div className="flex items-center justify-between px-5 md:px-10">
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="flex items-center cursor-pointer">
           <img
             src={Images.logo}
             alt="unihelp.ng"
@@ -31,14 +30,8 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
         </Link>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2.5 mr-11 md:gap-4">
+        <div className="flex items-center gap-2.5 mr-15 md:gap-4">
            <ThemeToggle onClick={toggleTheme} dark={dark} setDark={setDark}/>
-           <Link
-              to="/faq"
-              className="flex items-center gap-3 px-2 py-3 rounded-xltransition-all">
-            <HelpCircle size={20} />
-            <span>FAQ</span>
-          </Link>
         </div>
       </div>
     </header>

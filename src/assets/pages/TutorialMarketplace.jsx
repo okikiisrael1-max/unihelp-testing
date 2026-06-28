@@ -221,7 +221,6 @@ export default function TutorialMarketplace({ dark }) {
     };
 
     try {
-      // Mobile native share
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
@@ -258,7 +257,6 @@ export default function TutorialMarketplace({ dark }) {
     return {
       whatsapp: `https://wa.me/?text=${text}%20${url}`,
       twitter: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
-      telegram: `https://t.me/share/url?url=${url}&text=${text}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
     };
   };
@@ -495,16 +493,7 @@ export default function TutorialMarketplace({ dark }) {
                       >
                         <MessageCircle size={18} />
                       </a>
-
-                      <a
-                        href={socials.telegram}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-12 h-12 rounded-xl bg-sky-500 text-white flex items-center justify-center hover:scale-110 transition"
-                      >
-                        <Send size={18} />
-                      </a>
-
+                      
                       <a
                         href={socials.twitter}
                         target="_blank"

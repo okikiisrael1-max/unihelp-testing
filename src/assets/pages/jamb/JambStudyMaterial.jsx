@@ -997,11 +997,13 @@ const JambStudyMaterials = ({
                       <div className="flex flex-wrap gap-3">
                         {/* PREVIEW */}
 
-                        <button
+                      <button
                           onClick={() =>
                             window.open(
-                              material.previewUrl ||
-                                material.fileUrl,
+                              getCloudinaryPreviewUrl(
+                                material.fileUrl ||
+                                  material.previewUrl
+                              ),
                               "_blank",
                             )
                           }

@@ -12,7 +12,7 @@ import {
 import { db, auth } from "../../firebase/config";
 import {
   getCloudinaryAttachmentUrl,
-  getCloudinaryPreviewUrl,
+  getCloudinaryPdfPageUrl,
 } from "../../services/cloudinary";
 
 import {
@@ -38,6 +38,8 @@ export default function ProtectedPdfViewer({
     useState(true);
 
   const [hasAccess, setHasAccess] =
+    useState(false);
+  const [previewFailed, setPreviewFailed] =
     useState(false);
 
   // ============================
@@ -105,6 +107,10 @@ export default function ProtectedPdfViewer({
     return () => unsub();
   }, [tutorialId]);
 
+  useEffect(() => {
+    setPreviewFailed(false);
+  }, [tutorial?.pdfUrl]);
+
   if (loading) {
     return (
       <div
@@ -153,7 +159,11 @@ export default function ProtectedPdfViewer({
     );
   }
 
-  const previewUrl = getCloudinaryPreviewUrl(tutorial.pdfUrl);
+  const previewUrl = getCloudinaryPdfPageUrl(
+    tutorial.pdfUrl,
+    1,
+    1400
+  );
 
   // ============================
   // BLOCK ACCESS
@@ -263,12 +273,26 @@ export default function ProtectedPdfViewer({
               </div>
             </div>
 
-            {/* IFRAME */}
-            <iframe
-              src={previewUrl}
-              title="PDF Viewer"
-              className="w-full h-[85vh]"
-            />
+            {/* PREVIEW */}
+            {previewFailed ? (
+              <div className="flex h-[85vh] items-center justify-center p-6 text-center">
+                <div>
+                  <p className="text-lg font-semibold">
+                    Preview unavailable
+                  </p>
+                  <p className="mt-2 text-sm opacity-70">
+                    Cloudinary could not render this PDF page preview.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={previewUrl}
+                alt={`${tutorial.title} preview`}
+                className="w-full h-[85vh] object-contain bg-black/5"
+                onError={() => setPreviewFailed(true)}
+              />
+            )}
           </div>
         </div>
       </div>
