@@ -423,9 +423,7 @@ const JambDashboard = () => {
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black leading-tight">
-              Welcome,
-              <br />
-
+              Welcome, {' '}
               <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
                 {username}
               </span>
@@ -434,50 +432,10 @@ const JambDashboard = () => {
             <p
               className={`mt-3 text-sm sm:text-base ${textFade}`}
             >
-              Track your CBT
-              performance and
-              study progress.
+              Track your CBT performance and study progress.
             </p>
           </div>
-
-          {/* USER */}
-
-          <div className="flex items-center gap-3">
-            <button
-              className={`relative w-12 h-12 rounded-xl flex items-center justify-center ${glass}`}
-            >
-              <Bell size={20} />
-
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />
-            </button>
-
-            <div
-              className={`flex items-center gap-3 px-3 py-2 rounded-2xl ${glass}`}
-            >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold">
-                {username.charAt(
-                  0,
-                )}
-              </div>
-
-              <div>
-                <h3 className="font-bold">
-                  {username}
-                </h3>
-
-                <p
-                  className={`text-xs ${textFade}`}
-                >
-                  JAMB Candidate
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
-
-        {/* ========================= */}
-        {/* HERO */}
-        {/* ========================= */}
 
         <div
           className={`relative overflow-hidden rounded-3xl p-6 sm:p-7 mb-7 ${glass}`}
@@ -511,7 +469,7 @@ const JambDashboard = () => {
             <div className="flex flex-wrap gap-3 mt-7">
               <Link
                 to="/subjects"
-                className="h-12 px-5 rounded-xl bg-indigo-500 hover:bg-indigo-600 transition-all text-white font-semibold flex items-center gap-2"
+                className="h-12 px-5 rounded-xl bg-indigo-500 hover:bg-indigo-600 transition-all text-[#fff] font-semibold flex items-center gap-2"
               >
                 Start Practice
                 <ArrowRight

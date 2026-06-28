@@ -35,7 +35,7 @@ import FormulaExample from "../../components/FormulaExample";
 import EmptyState from "../../components/EmptyState";
 
 const FormulaDetails = ({
-  dark = true,
+  dark = false,
 }) => {
   const { id } = useParams();
 

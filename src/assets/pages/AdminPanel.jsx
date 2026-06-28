@@ -199,8 +199,8 @@ export default function AdminPanel({ dark }) {
   return (
     <div className={`min-h-screen w-full md:pt-20 overflow-hidden ${bg}`}>
       {/* BACKGROUND GLOW */}
-      <div className="fixed -top-50 -left-25 h-100 w-100 bg-indigo-500/20 blur-3xl rounded-full" />
-      <div className="fixed -bottom-50 -right-25 h-100 w-100 bg-purple-500/20 blur-3xl rounded-full" />
+      <div className="fixed -top-24 -left-24 h-[22rem] w-[22rem] rounded-full bg-indigo-500/20 blur-3xl" />
+      <div className="fixed -bottom-24 -right-24 h-[22rem] w-[22rem] rounded-full bg-purple-500/20 blur-3xl" />
 
       {/* TOP NAV */}
       <div
@@ -229,7 +229,7 @@ export default function AdminPanel({ dark }) {
           </div>
 
           {/* DESKTOP NAV */}
-          <div className="hidden overflow-scroll p-2.5 lg:flex items-center gap-2">
+          <div className="hidden items-center gap-2 overflow-x-auto p-2.5 lg:flex">
             {tabs.map((item) => {
               const Icon = item.icon;
 

@@ -574,7 +574,7 @@ export default function AdminAnnouncements({
         ) : filtered.length ===
           0 ? (
           <div
-            className={`${card} rounded-4xl p-16 text-center`}
+            className={`${card} rounded-4xl p-8 text-center sm:p-10`}
           >
             <Megaphone
               size={60}
@@ -741,10 +741,10 @@ export default function AdminAnnouncements({
       ====================================================== */}
 
       {showModal && (
-        <div className="fixed inset-0 z-501 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[501] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
 
           <div
-            className={`w-full max-w-2xl rounded-4xl overflow-hidden shadow-2xl ${card}`}>
+            className={`w-full max-w-2xl overflow-hidden rounded-4xl shadow-2xl ${card}`}>
             {/* HEADER */}
 
             <div className="flex items-center justify-between p-6 border-b border-white/10">

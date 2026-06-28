@@ -87,7 +87,7 @@ const quickPrompts = [
    COMPONENT
 ===================================================== */
 
-export default function AIAssistant({ dark = true }) {
+export default function AIAssistant({ dark = false }) {
   /* =====================================================
      STATES
   ===================================================== */

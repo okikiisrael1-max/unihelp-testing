@@ -33,7 +33,7 @@ import { db } from "./../../../firebase/config";
 import { AuthContext } from "./../../context/AuthContext";
 
 export default function GoalsPage({
-  dark = true,
+  dark = false,
 }) {
   const { user } = useContext(AuthContext);
 

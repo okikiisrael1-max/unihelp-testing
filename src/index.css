@@ -1,9 +1,62 @@
 
 @import "tailwindcss";
-*{
-    font-family: "Inter", sans-serif;
-    transition: all .5s;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+p,
+li,
+span {
+  overflow-wrap: anywhere;
+}
+
 .input-premium {
   @apply w-full mt-1 px-4 py-3 rounded-xl text-base
   outline-none transition border 
@@ -21,7 +74,7 @@
     scrollbar-width: none;
 }
 .result{
-    transition: all 1s;
+    transition: box-shadow .25s ease, transform .25s ease;
     box-shadow: 0 1 12px rgb(132, 132, 132);
 }
 .NavLink.active{
@@ -48,7 +101,7 @@ body,
 }
 
 body {
-  margin: 0;
+  width: 100%;
 }
 
 /* =========================================================
@@ -125,4 +178,58 @@ body {
 
 .animate-spin-slow {
   animation: spinSlow 6s linear infinite;
+}
+
+@media (max-width: 1024px) {
+  .text-4xl {
+    font-size: 2rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .text-5xl {
+    font-size: 2.25rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .text-6xl {
+    font-size: 2.5rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .text-7xl {
+    font-size: 2.75rem !important;
+    line-height: 1 !important;
+  }
+
+  .text-8xl {
+    font-size: 3rem !important;
+    line-height: 1 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .text-4xl {
+    font-size: 1.875rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .text-5xl {
+    font-size: 2.125rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .text-6xl {
+    font-size: 2.375rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .text-7xl {
+    font-size: 2.625rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .text-8xl {
+    font-size: 2.875rem !important;
+    line-height: 1 !important;
+  }
 }

@@ -113,7 +113,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
   ];
 
   return (
-    <div className="h-dvh w-full flex overflow-hidden">
+    <div className="flex h-dvh w-full overflow-hidden">
 
       <Navbar dark={dark} setMenuOpen={setMenuOpen} menuOpen={menuOpen} setDark={setDark}/>
 
@@ -124,12 +124,12 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
 
       <main
         onClick={() => setMenuOpen(false)}
-        className={`flex-1 h-full overflow-y-auto pb-22.5 md:pb-0 pt-10 md:pt-0 ${
+        className={`flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pb-28 md:pb-0 pt-16 md:pt-0 ${
           dark ? "bg-[#0b0f1a] text-white" : "bg-gray-100 text-gray-900"
         }`}
       >
         <Outlet />
-        <Footer/>
+        <Footer dark={dark}/>
         <DraggableCalculatorButton dark={dark} onClick={() => navigate("/calculator")} />
       </main>
     </div>

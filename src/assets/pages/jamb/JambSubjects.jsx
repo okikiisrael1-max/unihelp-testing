@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const JambSubjects = ({ dark = true }) => {
+const JambSubjects = ({ dark = false }) => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 

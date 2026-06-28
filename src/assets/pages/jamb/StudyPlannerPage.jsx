@@ -38,7 +38,7 @@ import { db } from "../../../firebase/config";
 import { AuthContext } from "../../context/AuthContext";
 
 export default function StudyPlannerPage({
-  dark = true,
+  dark = false,
 }) {
   const { user } = useContext(AuthContext);
 

@@ -15,7 +15,7 @@ const SubjectCard = ({ icon: Icon, title, count, dark }) => {
       whileTap={{ scale: 0.98 }}
       onClick={handleClick}
       className={`
-        rounded-3xl p-5 cursor-pointer
+        group min-w-0 rounded-3xl p-4 cursor-pointer sm:p-5
         border transition-all duration-300
         select-none
         ${
@@ -25,8 +25,8 @@ const SubjectCard = ({ icon: Icon, title, count, dark }) => {
         }
       `}
     >
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
           {/* ICON */}
           <div
             className={`
@@ -51,7 +51,7 @@ const SubjectCard = ({ icon: Icon, title, count, dark }) => {
 
           {/* TITLE */}
           <h3
-            className={`font-semibold text-lg ${
+            className={`line-clamp-2 text-base font-semibold sm:text-lg ${
               dark ? "text-white" : "text-black"
             }`}
           >
@@ -60,7 +60,7 @@ const SubjectCard = ({ icon: Icon, title, count, dark }) => {
 
           {/* COUNT */}
           <p
-            className={`text-sm mt-1 ${
+            className={`mt-1 text-sm ${
               dark
                 ? "text-zinc-400"
                 : "text-zinc-500"
@@ -72,7 +72,7 @@ const SubjectCard = ({ icon: Icon, title, count, dark }) => {
 
         {/* ARROW */}
         <ChevronRight
-          className={`w-5 h-5 transition-transform duration-300 group-hover:translate-x-1 ${
+          className={`h-5 w-5 shrink-0 transition-transform duration-300 group-hover:translate-x-1 ${
             dark
               ? "text-zinc-500"
               : "text-zinc-400"

@@ -273,7 +273,7 @@ function LoaderIcon() {
   );
 }
 
-export default function Community({ dark = true }) {
+export default function Community({ dark = false }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [members, setMembers] = useState([]);

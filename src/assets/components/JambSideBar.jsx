@@ -12,7 +12,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
 import { AuthContext } from "../context/AuthContext";
 
-const JambSidebar = ({ dark = true, sidebarOpen, setSidebarOpen }) => {
+const JambSidebar = ({ dark = false, sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -131,8 +131,8 @@ const JambSidebar = ({ dark = true, sidebarOpen, setSidebarOpen }) => {
       <aside
         className={`
           fixed lg:sticky top-0 left-0 z-50
-          h-screen flex flex-col
-          w-[85vw] sm:w-[320px] lg:w-[300px]
+          h-[100dvh] flex flex-col
+          w-[85vw] max-w-[320px] sm:w-[320px] lg:w-[300px]
           border-r transition-transform duration-300
           ${theme.sidebar}
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}

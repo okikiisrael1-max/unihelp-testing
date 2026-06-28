@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 
 const Achievements = ({
-  dark = true,
+  dark = false,
 }) => {
   const [selectedTab, setSelectedTab] =
     useState("all");

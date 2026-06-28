@@ -233,9 +233,9 @@ export default function CreateTutorial({ dark }) {
     >
       {/* BACKGROUND */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-30 -left-25 w-87.5 h-87.5 bg-blue-600/20 blur-[120px] rounded-full" />
+        <div className="absolute -top-24 -left-24 h-[22rem] w-[22rem] rounded-full bg-blue-600/20 blur-[120px]" />
 
-        <div className="absolute -bottom-30 -right-25 w-87.5 h-87.5 bg-purple-600/20 blur-[120px] rounded-full" />
+        <div className="absolute -bottom-24 -right-24 h-[22rem] w-[22rem] rounded-full bg-purple-600/20 blur-[120px]" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-10">
@@ -248,7 +248,7 @@ export default function CreateTutorial({ dark }) {
                 Creator Studio
               </div>
 
-              <h1 className="text-5xl font-black leading-tight">
+              <h1 className="text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Publish Premium Tutorials Like a Pro.
               </h1>
 
@@ -320,7 +320,7 @@ export default function CreateTutorial({ dark }) {
 
           {/* RIGHT */}
           <div
-            className={`rounded-4xl border p-7 md:p-8 shadow-2xl ${card}`}
+              className={`rounded-4xl border p-6 shadow-2xl sm:p-7 md:p-8 ${card}`}
           >
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -398,7 +398,7 @@ export default function CreateTutorial({ dark }) {
 
               {/* DESCRIPTION */}
               <textarea
-                className={`${input} min-h-37.5 resize-none`}
+                className={`${input} min-h-[9.375rem] resize-none`}
                 placeholder="Describe your tutorial in a professional and engaging way..."
                 value={description}
                 onChange={(e) =>

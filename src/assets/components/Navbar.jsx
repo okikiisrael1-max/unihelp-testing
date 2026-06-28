@@ -13,24 +13,24 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 md:z-500 transition-all duration-300 border-b ${
+      className={`fixed top-0 left-0 z-50 w-full border-b shadow-sm backdrop-blur-xl transition-colors duration-300 ${
         dark
-          ? "bg-slate-800 text-white border-slate-800"
-          : "bg-white text-slate-900 border-slate-200"
+          ? "bg-slate-950/90 text-white border-slate-800"
+          : "bg-white/90 text-slate-900 border-slate-200"
       }`}
     >
-      <div className="flex items-center justify-between px-5 md:px-10">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         <Link to="/" className="flex items-center cursor-pointer">
           <img
             src={Images.logo}
             alt="unihelp.ng"
-            className="w-28 md:w-36 transition-all"
+            className="h-9 w-auto sm:h-10 md:h-11 transition-none"
           />
         </Link>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2.5 mr-15 md:gap-4">
+        <div className="flex min-w-0 items-center gap-2 mr-15 sm:gap-3 md:gap-4">
            <ThemeToggle onClick={toggleTheme} dark={dark} setDark={setDark}/>
         </div>
       </div>

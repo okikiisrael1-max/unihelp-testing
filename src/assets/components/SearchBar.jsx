@@ -4,9 +4,8 @@ const SearchBar = ({ value, onChange, dark }) => {
   return (
     <div
       className={`
-        flex items-center gap-3
-        px-4 py-3 rounded-2xl
-        border transition-all duration-300
+        flex w-full min-w-0 items-center gap-3
+        rounded-2xl border px-4 py-3 transition-colors duration-300
         ${
           dark
             ? "bg-zinc-900 border-zinc-800"
@@ -15,7 +14,7 @@ const SearchBar = ({ value, onChange, dark }) => {
       `}
     >
       <Search
-        className={`w-5 h-5 ${
+        className={`h-5 w-5 shrink-0 ${
           dark ? "text-zinc-400" : "text-zinc-500"
         }`}
       />
@@ -26,7 +25,7 @@ const SearchBar = ({ value, onChange, dark }) => {
         value={value}
         onChange={onChange}
         className={`
-          bg-transparent outline-none w-full
+          w-full min-w-0 bg-transparent text-sm outline-none sm:text-base
           ${dark ? "text-white" : "text-black"}
         `}
       />

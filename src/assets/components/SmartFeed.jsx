@@ -449,7 +449,7 @@ export default function SmartFeed({ dark }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 min-w-62.5">
+            <div className="grid w-full grid-cols-2 gap-4 sm:w-auto sm:min-w-[17rem]">
               <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4">
                 <p className="text-3xl font-black">
                   {posts.length}
@@ -820,7 +820,7 @@ export default function SmartFeed({ dark }) {
         ===================================================== */}
 
         {selectedPost && (
-          <div className="fixed inset-0 z-501 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[501] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
 
             <div
               className={`w-full max-w-4xl rounded-4xl overflow-hidden ${

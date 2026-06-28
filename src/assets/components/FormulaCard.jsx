@@ -12,7 +12,7 @@ import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { motion } from "framer-motion";
 
-const FormulaCard = ({ formula, dark = true }) => {
+const FormulaCard = ({ formula, dark = false }) => {
   const navigate = useNavigate();
 
   const [saved, setSaved] = useState(false);

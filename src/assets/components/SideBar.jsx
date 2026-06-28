@@ -465,7 +465,7 @@ useEffect(() => {
           setMobileOpen(!mobileOpen)
         }
         className={`
-          md:hidden fixed top-2 z-51 right-5
+          md:hidden fixed top-2 z-[51] right-5
           p-3 rounded-2xl
           ${dark
               ? "bg-zinc-900 text-white"
@@ -492,9 +492,11 @@ useEffect(() => {
 
       {/* SIDEBAR */}
       <aside
-        className={`
+      className={`
           fixed md:sticky top-0 left-0 z-50
-          h-screen md:w-72 p-5 w-[75%]
+          h-[100dvh] md:h-screen
+          w-[82vw] max-w-[20rem] md:w-72
+          px-4 py-5 sm:px-5
           overflow-y-auto no-scrollbar
           transition-all duration-300
           ${
@@ -511,7 +513,7 @@ useEffect(() => {
       >
 
         {/* MENU */}
-        <div className="flex flex-col gap-3 md:mt-16 mb-5">
+        <div className="mb-5 flex min-w-0 flex-col gap-3 md:mt-16">
 
           {menuCategories.map((category) => {
 
@@ -558,7 +560,7 @@ useEffect(() => {
                   `}
                 >
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
 
                     {category.icon}
 
@@ -646,13 +648,13 @@ useEffect(() => {
         {/* PROFILE */}
         <div className="mt-6">
 
-          <div className={`rounded-2xl p-4 ${dark ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200"}`}>
+            <div className={`rounded-2xl p-4 ${dark ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200"}`}>
 
-            <div className="flex items-center relative">
+            <div className="relative flex items-center">
 
-              <div onClick={(e)=> navigate('/profile')} className="cursor-pointer flex flex-col gap-2">
+              <div onClick={(e)=> navigate('/profile')} className="flex min-w-0 cursor-pointer flex-col gap-2">
                 <p className="font-medium">Profile</p>
-                <div className="text-sm font-medium flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2 text-sm font-medium">
                   <ProfilePhoto user={user} /> {user?.displayName ||
                     "Student"}
                 </div>
@@ -682,7 +684,7 @@ useEffect(() => {
             {/* LOGOUT */}
             <button
               onClick={handleLogout}
-              className="mb-20 
+              className="mb-6 
                 mt-5 w-full cursor-pointer
                 flex items-center justify-center gap-2
                 bg-red-500 hover:bg-red-600

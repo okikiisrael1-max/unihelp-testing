@@ -1,4 +1,3 @@
-import { react } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -14,27 +13,32 @@ const ProfilePhoto = ({ profile, user }) => {
 
   const photo = profile?.photo || user?.photoURL;
   const navigate = useNavigate();
-  const handleClick = ({dark})=> {
-    navigate('/profile')
-  }
+  const handleClick = () => {
+    navigate('/profile');
+  };
 
   return (
-    <> { user && <div className="flex cursor-pointer items-center gap-2" onClick={handleClick}>
-      {photo ? (
-
-        <img
-          src={photo}
-          alt="profile"
-          className="w-10 h-10 rounded-full object-cover"
-        />
-      ) : (
-
-        <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
-          {firstLetter}
-        </div>
+    <>
+      {user && (
+        <button
+          type="button"
+          className="flex cursor-pointer items-center gap-2"
+          onClick={handleClick}
+          aria-label="View profile"
+        >
+          {photo ? (
+            <img
+              src={photo}
+              alt="profile"
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 font-bold text-white">
+              {firstLetter}
+            </div>
+          )}
+        </button>
       )}
-
-    </div>}
     </>
     
   );

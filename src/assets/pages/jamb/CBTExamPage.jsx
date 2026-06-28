@@ -29,6 +29,8 @@ import {
   BookOpen,
 } from "lucide-react";
 
+import { evaluate } from "mathjs";
+
 import {
   doc,
   getDoc,
@@ -42,6 +44,7 @@ import { auth, db } from "../../../firebase/config";
 import { questionBank } from "../../data/questionBank";
 
 const STORAGE_PREFIX = "unihelp-cbt-v4";
+const QUESTION_MAP_LIMIT = 40;
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -82,7 +85,7 @@ const StatCard = ({
           {label}
         </p>
 
-        <h2 className={`text-xl font-bold mt-2 ${color}`}>
+        <h2 className={`text-md font-bold mt-2 ${color}`}>
           {value}
         </h2>
       </div>
@@ -149,6 +152,7 @@ const CBTExamPage = ({ dark }) => {
   const storageKey = `${STORAGE_PREFIX}-${normalizedSubject}-${normalizedTopic}`;
 
   const timerRef = useRef(null);
+  const submitRef = useRef(null);
 
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState({});
@@ -171,6 +175,12 @@ const CBTExamPage = ({ dark }) => {
   );
 
   const currentQuestion = questions[current];
+  const mapQuestions = useMemo(
+    () => questions.slice(0, QUESTION_MAP_LIMIT),
+    [questions],
+  );
+  const mapLimitReached = questions.length > QUESTION_MAP_LIMIT;
+  const isLastQuestion = current >= questions.length - 1;
 
   const answeredCount = Object.keys(selected).length;
 
@@ -336,7 +346,7 @@ const CBTExamPage = ({ dark }) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
 
-          handleSubmit();
+          submitRef.current?.();
 
           return 0;
         }
@@ -379,6 +389,9 @@ const CBTExamPage = ({ dark }) => {
     setBookmarked([]);
     setSubmitted(false);
     setShowResult(false);
+    setShowSubmitModal(false);
+    setCalculatorOpen(false);
+    setCalculatorValue("");
     setPaused(false);
     setTimeLeft(
       Math.max(questions.length * 60, 300),
@@ -390,6 +403,7 @@ const CBTExamPage = ({ dark }) => {
 
     try {
       setSubmitted(true);
+      setShowSubmitModal(false);
       setShowResult(true);
 
       clearInterval(timerRef.current);
@@ -452,6 +466,10 @@ const CBTExamPage = ({ dark }) => {
     storageKey,
   ]);
 
+  useEffect(() => {
+    submitRef.current = handleSubmit;
+  }, [handleSubmit]);
+
   /* =========================================================
      CALCULATOR
   ========================================================= */
@@ -459,8 +477,7 @@ const CBTExamPage = ({ dark }) => {
   const handleCalculator = (value) => {
     if (value === "=") {
       try {
-        // eslint-disable-next-line
-        const result = eval(calculatorValue);
+        const result = evaluate(calculatorValue || "0");
 
         setCalculatorValue(String(result));
       } catch {
@@ -475,7 +492,7 @@ const CBTExamPage = ({ dark }) => {
       return;
     }
 
-    if (value === "⌫") {
+    if (value === "DEL") {
       setCalculatorValue((prev) =>
         prev.slice(0, -1),
       );
@@ -552,16 +569,16 @@ const CBTExamPage = ({ dark }) => {
 
   return (
     <div
-      className={`min-h-screen overflow-hidden ${theme.bg} ${theme.text}`}
+      className={`min-h-screen overflow-x-hidden ${theme.bg} ${theme.text}`}
     >
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-5 py-4">
+      <div className="max-w-[1500px] mx-auto px-3 sm:px-5 lg:px-6 py-4 sm:py-5">
         {/* HEADER */}
 
         <div
           className={`rounded-3xl border p-5 mb-5 ${theme.card} ${theme.border}`}
         >
-          <div className="flex flex-col xl:flex-row gap-5 justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex items-center gap-4 min-w-0">
               <button
                 onClick={() => navigate(-1)}
                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${theme.soft} ${theme.hover}`}
@@ -590,51 +607,69 @@ const CBTExamPage = ({ dark }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCard
-                icon={Target}
-                label="Progress"
-                value={`${progress}%`}
-                color="text-indigo-400"
-                theme={theme}
-              />
+            <div className="flex flex-col gap-3 w-full xl:max-w-[820px]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard
+                  icon={Target}
+                  label="Progress"
+                  value={`${progress}%`}
+                  color="text-indigo-400"
+                  theme={theme}
+                />
 
-              <StatCard
-                icon={CheckCircle2}
-                label="Answered"
-                value={`${answeredCount}/${questions.length}`}
-                color="text-green-400"
-                theme={theme}
-              />
+                <StatCard
+                  icon={CheckCircle2}
+                  label="Answered"
+                  value={`${answeredCount}/${questions.length}`}
+                  color="text-green-400"
+                  theme={theme}
+                />
 
-              <StatCard
-                icon={Clock3}
-                label="Time"
-                value={formatTime(timeLeft)}
-                color="text-red-400"
-                theme={theme}
-              />
+                <StatCard
+                  icon={Clock3}
+                  label="Time"
+                  value={formatTime(timeLeft)}
+                  color="text-red-400"
+                  theme={theme}
+                />
 
-              <button
-                onClick={() =>
-                  setCalculatorOpen(true)
-                }
-                className="rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all flex items-center justify-center text-white"
-              >
-                <Calculator />
-              </button>
+                <button
+                  onClick={() =>
+                    setCalculatorOpen(true)
+                  }
+                  className={`rounded-2xl border p-4 flex items-center justify-between text-left transition-all ${theme.card} ${theme.border} ${theme.hover}`}
+                >
+                  <div>
+                    <p
+                      className={`text-[11px] uppercase tracking-wide ${theme.muted}`}
+                    >
+                      Tools
+                    </p>
+
+                    <h2
+                      className={`text-lg font-bold mt-2 ${theme.text}`}
+                    >
+                      Calculator
+                    </h2>
+                  </div>
+
+                  <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center bg-indigo-500 text-white">
+                    <Calculator size={22} />
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* MAIN */}
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_390px] gap-5 items-start">
           {/* QUESTION */}
 
-          <div className="xl:col-span-8 space-y-5">
+          <div className="min-w-0 space-y-5">
             <div
-              className={`rounded-3xl border overflow-hidden ${theme.card} ${theme.border}`}
+              className={`min-w-0 rounded-3xl border overflow-hidden ${theme.card} ${theme.border}`}
             >
               <div className="h-1.5 bg-black/10">
                 <div
@@ -648,8 +683,8 @@ const CBTExamPage = ({ dark }) => {
               <div className="p-5 sm:p-7">
                 {/* TOP */}
 
-                <div className="flex items-start justify-between gap-4 mb-8">
-                  <div>
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap gap-3 mb-4">
                       <div className="px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-semibold">
                         Question {current + 1}
@@ -767,12 +802,12 @@ const CBTExamPage = ({ dark }) => {
                       )
                     }
                     className={`h-12 px-5 rounded-xl disabled:opacity-40 flex items-center justify-center gap-2 font-semibold transition-all ${theme.soft} ${theme.hover}`}
-                  >
+                    >
                     <ChevronLeft size={18} />
                     Previous
                   </button>
 
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button
                       onClick={restartExam}
                       className="h-12 px-5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold flex items-center justify-center gap-2"
@@ -781,30 +816,30 @@ const CBTExamPage = ({ dark }) => {
                       Restart
                     </button>
 
-                    {current <
-                    questions.length - 1 ? (
-                      <button
-                        onClick={() =>
-                          setCurrent(
-                            (prev) => prev + 1,
-                          )
-                        }
-                        className="h-12 px-5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold flex items-center justify-center gap-2"
-                      >
-                        Next
-                        <ChevronRight size={18} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() =>
-                          setShowSubmitModal(true)
-                        }
-                        className="h-12 px-5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center justify-center gap-2"
-                      >
-                        <Flag size={18} />
-                        Submit
-                      </button>
-                    )}
+                    <button
+                      disabled={isLastQuestion}
+                      onClick={() =>
+                        !isLastQuestion &&
+                        setCurrent(
+                          (prev) => prev + 1,
+                        )
+                      }
+                      className="h-12 px-5 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-semibold flex items-center justify-center gap-2"
+                    >
+                      Next
+                      <ChevronRight size={18} />
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        setShowSubmitModal(true)
+                      }
+                      disabled={submitted}
+                      className="h-12 px-5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Flag size={18} />
+                      {submitted ? "Submitted" : "Submit Exam"}
+                    </button>
                   </div>
                 </div>
 
@@ -885,9 +920,9 @@ const CBTExamPage = ({ dark }) => {
 
           {/* QUESTION MAP */}
 
-          <div className="xl:col-span-4">
+          <div className="min-w-0 xl:sticky xl:top-5 self-start">
             <div
-              className={`rounded-3xl border p-5 ${theme.card} ${theme.border}`}
+              className={`rounded-3xl border p-5 ${theme.card} ${theme.border} xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto`}
             >
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -905,8 +940,8 @@ const CBTExamPage = ({ dark }) => {
                 <Grid2X2 className="text-indigo-400" />
               </div>
 
-              <div className="grid grid-cols-5 gap-3">
-                {questions.map((_, index) => {
+              <div className="grid grid-cols-7 gap-2 sm:gap-3">
+                {mapQuestions.map((_, index) => {
                   const answered =
                     selected[index] !== undefined;
 
@@ -919,7 +954,7 @@ const CBTExamPage = ({ dark }) => {
                       onClick={() =>
                         setCurrent(index)
                       }
-                      className={`h-12 rounded-xl font-bold transition-all text-sm ${
+                      className={`h-11 sm:h-12 shrink-0 rounded-xl font-bold transition-all text-sm ${
                         current === index
                           ? "bg-indigo-500 text-white"
                           : marked
@@ -934,6 +969,40 @@ const CBTExamPage = ({ dark }) => {
                   );
                 })}
               </div>
+
+              <div className="flex flex-wrap gap-3 mt-5 text-[11px] sm:text-xs">
+                <span className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block" />
+                  Current
+                </span>
+
+                <span className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
+                  Answered
+                </span>
+
+                <span className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-yellow-500 inline-block" />
+                  Bookmarked
+                </span>
+              </div>
+
+              {mapLimitReached && (
+                <p className={`mt-4 text-xs leading-relaxed ${theme.muted}`}>
+                  Showing the first 40 questions in the map for faster navigation.
+                </p>
+              )}
+
+              <button
+                onClick={() =>
+                  setShowSubmitModal(true)
+                }
+                disabled={submitted}
+                className="w-full h-12 mt-5 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+              >
+                <Flag size={16} />
+                {submitted ? "Submitted" : "Submit Exam"}
+              </button>
             </div>
           </div>
         </div>
@@ -1066,7 +1135,7 @@ const CBTExamPage = ({ dark }) => {
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <button
                   onClick={() =>
-                    handleCalculator("⌫")
+                    handleCalculator("DEL")
                   }
                   className="h-12 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-semibold"
                 >

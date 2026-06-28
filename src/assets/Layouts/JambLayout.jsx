@@ -53,17 +53,17 @@ const JambLayout = ({
 
   return (
     <div
-      className={`min-h-screen w-full absolute overflow-y-auto transition-all duration-300 ${
+      className={`relative min-h-screen w-full overflow-x-hidden transition-colors duration-300 ${
         dark ? "bg-[#020617] text-white" : "bg-[#f4f7fb] text-slate-900"
       }`}
     >
       {/* BACKGROUND GLOW */}
 
-      <div className="fixed top-0 left-0 w-87.5 h-87.5 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none" />
+      <div className="fixed top-0 left-0 h-[22rem] w-[22rem] rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
 
-      <div className="fixed bottom-0 right-0 w-87.5 h-87.5 bg-purple-500/20 blur-3xl rounded-full pointer-events-none" />
+      <div className="fixed bottom-0 right-0 h-[22rem] w-[22rem] rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
 
-      <div className="relative overflow-y-scroll flex">
+      <div className="relative flex min-h-screen w-full">
         {/* SIDEBAR */}
         <JambSidebar
           dark={dark}
@@ -76,11 +76,11 @@ const JambLayout = ({
 
         <div
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`lg:hidden fixed right-3 top-3 w-12 h-12 z-511 rounded-2xl flex items-center justify-center shadow-2xl ${glass}`}>
+          className={`lg:hidden fixed right-3 top-3 z-[511] flex h-12 w-12 items-center justify-center rounded-2xl shadow-2xl ${glass}`}>
           <Menu size={24} />
         </div>
 
-        <main className="overflow-y-scroll h-screen flex-1 p-2.5">
+        <main className="min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
           <Outlet
             context={{
               dark,
@@ -91,7 +91,7 @@ const JambLayout = ({
               setSidebarOpen,
             }}
           />
-          <Footer/>
+          <Footer dark={dark}/>
         </main>
       </div>
     </div>

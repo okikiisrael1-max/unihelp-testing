@@ -1008,9 +1008,9 @@ export default function StudentMarketplace({
         {/* MODAL */}
 
         {showUpload && (
-          <div className="fixed inset-0 bg-black/70 z-501 flex items-center justify-center px-4">
+          <div className="fixed inset-0 z-[501] flex items-center justify-center bg-black/70 px-4">
             <div
-              className={`${card} w-full md:w-125 p-5 rounded-3xl max-h-[90vh] overflow-y-auto`}
+              className={`${card} w-full max-w-2xl rounded-3xl p-5 max-h-[90vh] overflow-y-auto sm:p-6`}
             >
               {/* TOP */}
 

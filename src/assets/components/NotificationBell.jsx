@@ -90,7 +90,7 @@ export default function NotificationBell({ dark }) {
       {/* DROPDOWN */}
       {open && (
         <div
-          className={`absolute right-0 mt-3 w-80 rounded-2xl shadow-lg overflow-hidden z-50 ${
+          className={`absolute right-0 z-50 mt-3 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl shadow-lg sm:w-80 ${
             dark ? "bg-[#1e293b]" : "bg-white"
           }`}
         >
@@ -98,7 +98,7 @@ export default function NotificationBell({ dark }) {
             Notifications
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[min(24rem,calc(100vh-7rem))] overflow-y-auto">
             {notifications.length === 0 && (
               <p className="p-4 text-sm opacity-60">
                 No notifications

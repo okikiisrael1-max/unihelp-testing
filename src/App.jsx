@@ -102,7 +102,11 @@ const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [dark, setDark] = useState(() => {
-    return localStorage.getItem("theme") === "true";
+    const savedTheme =
+      localStorage.getItem("theme") ||
+      localStorage.getItem("unihelp-theme");
+
+    return savedTheme === "dark" || savedTheme === "true";
   });
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,13 +119,16 @@ const App = () => {
   /* ================= THEME ================= */
 
   useEffect(() => {
-    localStorage.setItem("theme", dark);
+    const themeValue = dark ? "dark" : "light";
+
+    localStorage.setItem("theme", themeValue);
+    localStorage.setItem("unihelp-theme", themeValue);
   }, [dark]);
 
   /* ================= ROUTE SCROLL RESET ================= */
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname]);
 
   /* ================= AUTH LISTENER ================= */

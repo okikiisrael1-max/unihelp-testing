@@ -402,17 +402,8 @@ const Questions = ({ dark }) => {
                   {q.files?.map((file, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 p-3 rounded-lg"
-                      style={{ background: fileBg }}
-                    >
-                      {/* Name + size */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{file.name}</p>
-                        <p className="text-xs opacity-45 flex items-center gap-1 mt-0.5">
-                          <HardDrive size={10} />
-                          {(file.size / 1024).toFixed(1)} KB
-                        </p>
-                      </div>
+                      className="flex justify-between items-center gap-2 p-3 rounded-lg"
+                      style={{ background: fileBg }}>
 
                       {/* View — everyone */}
                       <button
@@ -427,7 +418,7 @@ const Questions = ({ dark }) => {
                       {/* Download — premium only */}
                       <button
                         onClick={() => handleShare(file, q)}
-                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors"
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lgshrink-0 transition-colors"
                         style={{ background: "rgba(16,185,129,0.16)", color: "#34d399" }}
                         title="Share question"
                       >

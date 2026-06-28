@@ -77,8 +77,8 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-        <div className="relative bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 p-7 text-white">
+        <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+        <div className="relative bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 p-5 text-white sm:p-7">
           <button
             onClick={() => setShow(false)}
             className="absolute right-4 top-4 rounded-full bg-white/20 p-2 hover:bg-white/30"
@@ -97,7 +97,7 @@ export default function InstallPrompt() {
                 Recommended
               </span>
 
-              <h2 className="mt-3 text-3xl font-black">Install UniHelp</h2>
+              <h2 className="mt-3 text-2xl font-black sm:text-3xl">Install UniHelp</h2>
 
               <p className="mt-2 text-sm text-indigo-100">
                 Install the app for faster access, offline support, and a more
@@ -107,7 +107,7 @@ export default function InstallPrompt() {
           </div>
         </div>
 
-        <div className="space-y-5 p-7">
+        <div className="space-y-5 p-5 sm:p-7">
           <p className="text-sm text-slate-600">
             UniHelp works best as an installed app. You will keep seeing this
             prompt on reload until the app is installed.

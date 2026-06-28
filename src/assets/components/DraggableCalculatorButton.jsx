@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { FaCalculator, FaGraduationCap } from "react-icons/fa";
 
 
-export default function DraggableCalculatorButton({ onClick, dark = true }) {
+export default function DraggableCalculatorButton({ onClick, dark = false }) {
   return (
     <motion.div
       drag
@@ -23,7 +23,7 @@ export default function DraggableCalculatorButton({ onClick, dark = true }) {
       }}
       className="
         fixed
-        z-9999
+        z-[9999]
         bottom-24
         right-4
         sm:bottom-28
@@ -76,7 +76,7 @@ export default function DraggableCalculatorButton({ onClick, dark = true }) {
           transition-all
           duration-300
 
-          max-w-55
+          max-w-[13.75rem]
 
           ${
             dark
@@ -130,7 +130,7 @@ export default function DraggableCalculatorButton({ onClick, dark = true }) {
 
         {/* TEXT */}
         <div className="relative flex max-md:hidden flex-col leading-tight">
-          <span className="text-[11px]sm:text-xs font-black whitespace-nowrap">
+          <span className="text-[11px] sm:text-xs font-black whitespace-nowrap">
             Calculator
           </span>
 

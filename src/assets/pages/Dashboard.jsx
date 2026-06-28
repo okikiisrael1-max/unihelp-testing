@@ -144,10 +144,6 @@ const Dashboard = ({ dark }) => {
       : "0.00",
   };
 
-  /* ------------------------------------------------ */
-  /* THEME */
-  /* ------------------------------------------------ */
-
   const theme = {
     bg: dark
       ? "bg-[#070b14] text-white"
@@ -166,10 +162,6 @@ const Dashboard = ({ dark }) => {
       : "text-gray-500",
   };
 
-  /* ------------------------------------------------ */
-  /* QUICK ACTIONS */
-  /* ------------------------------------------------ */
-
   const quickLinks = [
     {
       title: "GPA Calculator",
@@ -179,7 +171,6 @@ const Dashboard = ({ dark }) => {
         "from-indigo-500 to-violet-600",
       link: "/GPA",
     },
-
     {
       title: "CGPA Tracker",
       desc: "Track academic performance",
@@ -300,8 +291,7 @@ const Dashboard = ({ dark }) => {
               <div className="flex flex-wrap gap-3 mt-6">
                 <Link
                   to="/questions"
-                  className="px-5 py-3 rounded-2xl bg-white text-black font-semibold hover:scale-105 transition"
-                >
+                  className="px-5 py-3 rounded-2xl bg-indigo-500 text-slate-900 font-semibold hover:scale-105 transition">
                   Start Practicing
                 </Link>
 

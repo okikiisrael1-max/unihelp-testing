@@ -40,7 +40,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "../../firebase/config";
 
-export default function Tasks({ dark = true }) {
+export default function Tasks({ dark = false }) {
   /* ======================================================
      STATES
   ====================================================== */

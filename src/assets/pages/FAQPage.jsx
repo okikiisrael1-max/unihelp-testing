@@ -100,9 +100,16 @@ export default function FAQPage({ dark = false }) {
 
   return (
     <div className={`min-h-screen ${bg}`}>
-      <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
 
-      <span onClick={()=> navigate(-1)} className="bg-indigo-400/20 p-2.5 rounded-lg w-30 text-2xl cursor-pointer flex items-center gap-1 font-medium"><ArrowLeft size={22}/> Back</span>
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="mb-8 inline-flex w-fit items-center gap-2 rounded-2xl bg-indigo-400/20 px-4 py-2.5 text-sm font-semibold transition hover:bg-indigo-400/30"
+      >
+        <ArrowLeft size={18} />
+        Back
+      </button>
 
 
         <div className="text-center mb-12">
@@ -114,7 +121,7 @@ export default function FAQPage({ dark = false }) {
             Frequently Asked Questions
           </h1>
 
-          <p className="text-lg opacity-70 max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-base opacity-70 sm:text-lg">
             Everything you need to know about UniHelp and its student-focused
             services.
           </p>
@@ -155,7 +162,7 @@ export default function FAQPage({ dark = false }) {
 
                 {open && (
                   <div className="px-6 pb-6">
-                    <div className="pl-16 text-sm leading-7 opacity-80">
+                    <div className="text-sm leading-7 opacity-80 sm:pl-16">
                       {faq.answer}
                     </div>
                   </div>

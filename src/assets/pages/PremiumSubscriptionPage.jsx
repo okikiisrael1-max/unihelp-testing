@@ -41,7 +41,7 @@ import {
 // ======================================================
 
 export default function PremiumSubscriptionPage({
-  dark = true,
+  dark = false,
 }) {
   // ======================================================
   // STATES
@@ -563,13 +563,13 @@ export default function PremiumSubscriptionPage({
     >
       {/* BACKGROUND */}
 
-      <div className="absolute -top-50 -left-25 h-100 w-100 bg-indigo-500/20 blur-3xl rounded-full" />
+      <div className="absolute -top-24 -left-24 h-[22rem] w-[22rem] rounded-full bg-indigo-500/20 blur-3xl" />
 
-      <div className="absolute -bottom-50 -right-25 h-100 w-100 bg-purple-500/20 blur-3xl rounded-full" />
+      <div className="absolute -bottom-24 -right-24 h-[22rem] w-[22rem] rounded-full bg-purple-500/20 blur-3xl" />
 
       {/* CONTENT */}
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-20">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 py-12 sm:py-16 md:px-8 md:py-20">
         {/* HERO */}
 
         <div className="text-center max-w-4xl mx-auto">
@@ -581,7 +581,7 @@ export default function PremiumSubscriptionPage({
             Student Premium
           </div>
 
-          <h1 className="text-4xl md:text-7xl font-black mt-8 leading-tight">
+          <h1 className="mt-8 text-3xl font-black leading-tight sm:text-4xl md:text-5xl lg:text-6xl">
             Unlock The
             <span className="bg-linear-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
               {" "}
@@ -590,7 +590,7 @@ export default function PremiumSubscriptionPage({
             Experience 🚀
           </h1>
 
-          <p className="opacity-70 text-lg md:text-xl mt-6 max-w-3xl mx-auto">
+          <p className="mx-auto mt-6 max-w-3xl text-base opacity-70 sm:text-lg">
             Get unlimited
             downloads,
             premium academic
@@ -725,7 +725,7 @@ export default function PremiumSubscriptionPage({
 
               {/* TITLE */}
 
-              <h2 className="text-4xl font-black mt-8">
+              <h2 className="mt-8 text-3xl font-black sm:text-4xl">
                 {
                   studentPlan.name
                 }

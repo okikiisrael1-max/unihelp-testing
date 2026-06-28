@@ -63,7 +63,7 @@ import {
 } from "../context/AuthContext";
 
 const Profile = ({
-  dark = true,
+  dark = false,
 }) => {
   const navigate =
     useNavigate();
@@ -151,7 +151,7 @@ const Profile = ({
     jamb: {
       label: "JAMB",
       gradient:
-        "from-purple-500 via-pink-500 to-rose-500",
+        "from-purple-500 to-indigo-500",
 
       icon: (
         <BrainCircuit size={22} />
@@ -594,38 +594,22 @@ const Profile = ({
                   </span>
                 </div>
 
-                <div className="flex flex-wrap justify-center lg:justify-start gap-3 mt-6">
-                  <div
-                    className={`${card} px-4 py-3 rounded-2xl flex items-center gap-2`}
-                  >
+                <div className="flex justify-center lg:justify-start gap-3 mt-6">
+                  <div className={`${card} px-4 py-3 rounded-2xl flex items-center gap-1`}>
                     <ShieldCheck className="text-green-500" />
-
                     <span className="font-medium">
                       Secure Account
                     </span>
                   </div>
-
-                  <div
-                    className={`${card} px-4 py-3 rounded-2xl flex items-center gap-2`}
-                  >
-                    <Sparkles className="text-yellow-400" />
-
-                    <span className="font-medium">
-                      Smart Learning
-                    </span>
-                  </div>
-                </div>
-
-                {/* ROLE */}
-
+                
                 <div
-                  className={`mt-7 inline-flex items-center gap-3 px-5 py-4 rounded-2xl bg-gradient-to-r ${activeRole.gradient} text-white shadow-xl`}
+                  className={`flex items-center gap-3 px-5 py-4 rounded-2xl bg-gradient-to-r ${activeRole.gradient} text-white shadow-xl`}
                 >
                   {activeRole.icon}
 
                   <div className="text-left">
                     <p className="text-xs opacity-80">
-                      Active Dashboard
+                      Active Role
                     </p>
 
                     <h3 className="font-black">
@@ -635,89 +619,10 @@ const Profile = ({
                     </h3>
                   </div>
                 </div>
+                </div>
+
+                
               </div>
-            </div>
-
-            {/* RIGHT */}
-
-            <div className="grid grid-cols-2 gap-4 w-full xl:w-[350px]">
-              {[
-                {
-                  title:
-                    "Uploads",
-                  value: "0",
-                  icon: (
-                    <BookOpen />
-                  ),
-                  gradient:
-                    "from-indigo-500 to-purple-600",
-                },
-
-                {
-                  title:
-                    "Achievements",
-                  value: "12",
-                  icon: (
-                    <Trophy />
-                  ),
-                  gradient:
-                    "from-yellow-500 to-orange-500",
-                },
-
-                {
-                  title:
-                    "Rank",
-                  value: "#24",
-                  icon: (
-                    <Medal />
-                  ),
-                  gradient:
-                    "from-pink-500 to-rose-500",
-                },
-
-                {
-                  title:
-                    "Streak",
-                  value: "18d",
-                  icon: (
-                    <Flame />
-                  ),
-                  gradient:
-                    "from-cyan-500 to-blue-500",
-                },
-              ].map(
-                (
-                  item,
-                  index
-                ) => (
-                  <div
-                    key={index}
-                    className={`${card} rounded-3xl p-5`}
-                  >
-                    <div
-                      className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white mb-5`}
-                    >
-                      {
-                        item.icon
-                      }
-                    </div>
-
-                    <p
-                      className={`text-sm ${muted}`}
-                    >
-                      {
-                        item.title
-                      }
-                    </p>
-
-                    <h3 className="text-3xl font-black mt-2">
-                      {
-                        item.value
-                      }
-                    </h3>
-                  </div>
-                )
-              )}
             </div>
           </div>
         </div>
@@ -868,35 +773,17 @@ const Profile = ({
                     bg: "bg-purple-500/10",
                   },
                 ].map(
-                  (
-                    item,
-                    index
-                  ) => (
+                  (item, index) => (
                     <div
                       key={index}
-                      className={`${card} rounded-3xl p-5`}
-                    >
-                      <div
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center ${item.bg} ${item.color}`}
-                      >
-                        {
-                          item.icon
-                        }
+                      className={`${card} flex gap-2.5 items-center rounded-3xl p-5`}>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${item.bg} ${item.color}`}>{item.icon}</div>
+                      <div>
+                        <p className={` text-sm ${muted}`}>{item.title}</p>
+
+                      <h3 className="font-black text-xl mt-2 break-words">{item.value}</h3>
                       </div>
-
-                      <p
-                        className={`mt-5 text-sm ${muted}`}
-                      >
-                        {
-                          item.title
-                        }
-                      </p>
-
-                      <h3 className="font-black text-xl mt-2 break-words">
-                        {
-                          item.value
-                        }
-                      </h3>
+                      
                     </div>
                   )
                 )}

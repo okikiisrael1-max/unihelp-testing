@@ -81,7 +81,7 @@ const isValid = (time) =>
 /* ---------------- COMPONENT ---------------- */
 
 export default function TutorialSearchPage({
-  dark = true,
+  dark = false,
 }) {
   const [query, setQuery] =
     useState(DEFAULT_QUERY);

@@ -87,7 +87,7 @@ const calculateStreak = (items) => {
 };
 
 export default function AnalyticsPage({
-  dark = true,
+  dark = false,
 }) {
   const { user } = useContext(AuthContext);
 

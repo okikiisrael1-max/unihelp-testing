@@ -30,7 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../../../firebase/config";
 
 const JambLeaderboard = ({
-  dark = true,
+  dark = false,
 }) => {
   const navigate =
     useNavigate();

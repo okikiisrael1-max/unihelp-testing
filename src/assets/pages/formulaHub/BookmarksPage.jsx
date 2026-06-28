@@ -12,7 +12,7 @@ import EmptyState from "../../components/EmptyState";
 import { formulas } from "../../data/sampleFormulas";
 import { useNavigate } from "react-router-dom";
 
-const BookmarksPage = ({ dark = true }) => {
+const BookmarksPage = ({ dark = false }) => {
 
   const [bookmarked, setBookmarked] = useState([]);
   const navigate = useNavigate();

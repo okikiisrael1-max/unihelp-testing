@@ -26,7 +26,7 @@ import {
 
 import { questionBank } from "../../data/questionBank";
 
-const SubjectDetailPage = ({ dark = true }) => {
+const SubjectDetailPage = ({ dark = false }) => {
   const navigate = useNavigate();
 
   const { subjectId } = useParams();

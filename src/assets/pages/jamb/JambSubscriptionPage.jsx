@@ -44,7 +44,7 @@ import { AuthContext } from "../../context/AuthContext";
 // ======================================================
 
 export default function JambSubscriptionPage({
-  dark = true,
+  dark = false,
 }) {
   const navigate = useNavigate();
 

@@ -181,7 +181,7 @@ const buildPageRange = (current, total) => {
    MAIN COMPONENT
 ───────────────────────────────────────────────────────── */
 
-export default function PastQuestionViewer({ dark = true }) {
+export default function PastQuestionViewer({ dark = false }) {
   const navigate = useNavigate();
   const { subject: urlSubject } = useParams();
   const viewerRef = useRef(null);

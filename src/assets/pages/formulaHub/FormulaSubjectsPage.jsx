@@ -21,7 +21,7 @@ import {
 import { formulas } from "../../data/sampleFormulas";
 
 const FormulaSubjectsPage = ({
-  dark = true,
+  dark = false,
 }) => {
   const navigate =
     useNavigate();

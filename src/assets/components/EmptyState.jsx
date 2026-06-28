@@ -4,15 +4,14 @@ const EmptyState = ({ title, description, dark }) => {
   return (
     <div
       className={`
-        min-h-screen flex items-center justify-center px-4
+        min-h-screen flex items-center justify-center px-4 py-12
         ${dark ? "bg-black" : "bg-zinc-50"}
       `}
     >
-      <div className="text-center max-w-sm">
+      <div className="w-full max-w-sm text-center sm:max-w-md">
         <div
           className={`
-            w-20 h-20 rounded-full mx-auto
-            flex items-center justify-center
+            mx-auto flex h-16 w-16 items-center justify-center rounded-full sm:h-20 sm:w-20
             ${dark ? "bg-zinc-900" : "bg-white"}
           `}
         >
@@ -25,7 +24,7 @@ const EmptyState = ({ title, description, dark }) => {
 
         <h2
           className={`
-            mt-6 text-2xl font-bold
+            mt-5 text-xl font-bold sm:text-2xl
             ${dark ? "text-white" : "text-black"}
           `}
         >
@@ -34,7 +33,7 @@ const EmptyState = ({ title, description, dark }) => {
 
         <p
           className={`
-            mt-3 leading-7
+            mt-3 text-sm leading-6 sm:text-base sm:leading-7
             ${dark ? "text-zinc-400" : "text-zinc-600"}
           `}
         >

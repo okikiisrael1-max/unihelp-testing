@@ -55,7 +55,7 @@ const BottomBar = ({ dark }) => {
          MOBILE BOTTOM NAV
       ========================================================= */}
 
-      <div className="md:hidden fixed bottom-0 left-0 w-full z-50 px-3 pb-3">
+      <div className="md:hidden fixed bottom-0 left-0 z-50 w-full px-3 pb-3">
         <div
           className={`
             relative overflow-hidden
@@ -166,8 +166,8 @@ const BottomBar = ({ dark }) => {
                         className={`
                           relative z-10
                           mt-1.5
-                          text-[10px]
-                          font-bold
+                          text-[10px] sm:text-[11px]
+                          font-semibold
                           tracking-wide
                           transition-all duration-300
 

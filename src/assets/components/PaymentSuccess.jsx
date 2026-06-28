@@ -55,8 +55,18 @@ export default function PaymentSuccess({ dark }) {
   }, []);
 
   return (
-    <div className={`${dark ? "bg-[#0f172a] text-white" : "bg-white"} h-screen flex items-center justify-center`}>
-      <h1 className="text-2xl font-bold flex"><CheckCheckIcon/> Payment Successful</h1>
+    <div className={`min-h-screen flex items-center justify-center px-4 py-8 ${dark ? "bg-[#0f172a] text-white" : "bg-white text-slate-900"}`}>
+      <div className={`w-full max-w-md rounded-3xl border px-6 py-8 text-center shadow-xl ${dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50"}`}>
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+          <CheckCheckIcon size={28} />
+        </div>
+
+        <h1 className="text-2xl font-bold sm:text-3xl">Payment Successful</h1>
+
+        <p className="mt-3 text-sm leading-6 opacity-75 sm:text-base">
+          Your payment has been verified. You can now continue using your premium access.
+        </p>
+      </div>
     </div>
   );
 }

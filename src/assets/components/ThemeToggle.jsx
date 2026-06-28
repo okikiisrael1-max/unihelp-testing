@@ -23,18 +23,17 @@ export default function ThemeToggle({
 
     setDark(nextTheme);
 
-    localStorage.setItem(
-      "unihelp-theme",
-      nextTheme
-        ? "dark"
-        : "light"
-    );
+    const themeValue = nextTheme ? "dark" : "light";
+
+    localStorage.setItem("theme", themeValue);
+    localStorage.setItem("unihelp-theme", themeValue);
   };
 
   return (
     <button
       onClick={toggleTheme}
-      className={`group relative flex items-center w-13 h-6 rounded-full transition-all duration-500 overflow-hidden shadow-xl ${
+      aria-label="Toggle theme"
+      className={`group relative flex h-8 w-16 items-center overflow-hidden rounded-full shadow-xl transition-all duration-500 ${
         dark
           ? "bg-linear-to-r from-indigo-600 via-purple-600 to-slate-900"
           : "bg-linear-to-r from-yellow-300 via-orange-300 to-pink-300"
@@ -65,7 +64,7 @@ export default function ThemeToggle({
       {/* SLIDER */}
 
       <div
-        className={`relative z-10 h-6 w-6 rounded-full flex items-center justify-center transform transition-all duration-500 shadow-lg ${
+        className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-lg transform transition-all duration-500 ${
           dark
             ? "translate-x-8 bg-slate-950 text-yellow-300 rotate-180"
             : " bg-white text-orange-500 rotate-0"
@@ -73,12 +72,12 @@ export default function ThemeToggle({
       >
         {dark ? (
           <Moon
-            size={18}
+            size={16}
             className="animate-pulse"
           />
         ) : (
           <Sun
-            size={18}
+            size={16}
             className="animate-spin-slow"
           />
         )}
@@ -87,10 +86,10 @@ export default function ThemeToggle({
       {/* LABEL */}
 
       <span
-        className={`absolute text-[8px] font-bold tracking-wide transition-all duration-500 ${
+        className={`absolute text-[9px] font-bold tracking-wide transition-all duration-500 ${
           dark
-            ? "left-3 text-white/80"
-            : "right-3 text-orange-700"
+            ? "left-2 text-white/80"
+            : "right-2 text-orange-700"
         }`}
       >
         {dark
