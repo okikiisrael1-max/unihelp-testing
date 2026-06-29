@@ -197,6 +197,13 @@ const uploadToCloudinary = (
   });
 };
 
+export const toCloudinaryAsset = (result, fallback = {}) => ({
+  url: result?.secure_url || result?.url || fallback.url || "",
+  publicId: result?.public_id || result?.publicId || fallback.publicId || "",
+  resourceType:
+    result?.resource_type || result?.resourceType || fallback.resourceType || "image",
+});
+
 const optimizeFileForUpload = async (file) => {
   if (isPdfFile(file)) {
     return optimizePdfFile(file);

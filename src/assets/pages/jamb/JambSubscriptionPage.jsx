@@ -35,7 +35,7 @@ import {
   db,
 } from "../../../firebase/config";
 
-import { uploadImage } from "../../../services/cloudinary";
+import { toCloudinaryAsset, uploadImage } from "../../../services/cloudinary";
 
 import { AuthContext } from "../../context/AuthContext";
 
@@ -339,6 +339,8 @@ export default function JambSubscriptionPage({
 
           paymentProof:
             imageUrl,
+          paymentProofAsset:
+            toCloudinaryAsset(result),
 
           paymentMethod:
             "bank_transfer",
@@ -377,6 +379,8 @@ export default function JambSubscriptionPage({
 
         paymentProof:
           imageUrl,
+        paymentProofAsset:
+          toCloudinaryAsset(result),
 
         expiresAt:
           Timestamp.fromDate(

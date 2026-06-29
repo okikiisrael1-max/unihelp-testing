@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 import { db, auth } from "../../../firebase/config";
-import { uploadVideo, uploadImage, uploadPDF } from "../../../services/cloudinary";
+import { toCloudinaryAsset, uploadVideo, uploadImage, uploadPDF } from "../../../services/cloudinary";
 import { useNavigate } from "react-router-dom";
 
 import { FFmpeg } from "@ffmpeg/ffmpeg";
@@ -142,6 +142,7 @@ export default function CreateTutorial({ dark }) {
           }))
       );
       const videoUrl = videoResult.secure_url;
+      const media = [toCloudinaryAsset(videoResult)];
 
       /* THUMB */
       let thumbnailUrl = "";
@@ -156,6 +157,7 @@ export default function CreateTutorial({ dark }) {
             }))
         );
         thumbnailUrl = thumbnailResult.secure_url;
+        media.push(toCloudinaryAsset(thumbnailResult));
       }
 
       /* PDF */
@@ -171,6 +173,7 @@ export default function CreateTutorial({ dark }) {
             }))
         );
         pdfUrl = pdfResult.secure_url;
+        media.push(toCloudinaryAsset(pdfResult));
       }
 
       /* SAVE */
@@ -183,6 +186,8 @@ export default function CreateTutorial({ dark }) {
         videoUrl,
         thumbnailUrl,
         pdfUrl,
+        media,
+        videoAsset: toCloudinaryAsset(videoResult),
 
         tutorId: auth.currentUser.uid,
         tutorName:

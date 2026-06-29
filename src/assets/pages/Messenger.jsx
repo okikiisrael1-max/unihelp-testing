@@ -182,6 +182,8 @@ export default function Messenger({ dark = false }) {
         attachments.push({
           type: kindFor(file),
           url: uploaded.secure_url,
+          publicId: uploaded.public_id,
+          resourceType: uploaded.resource_type,
           name: uploaded.original_filename || file.name,
           bytes: uploaded.bytes || file.size,
         });

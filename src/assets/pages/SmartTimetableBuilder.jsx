@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   AlertCircle,
   CalendarDays,
@@ -22,19 +23,17 @@ const COLORS = [
   "bg-violet-600",
 ];
 
-const DEFAULT_COURSES = [
-  {
-    id: "",
-    code: "",
-    title: "",
-    lectures: 0,
-    duration: 0,
-    preferredDay: "",
-    avoidDay: "",
-    location: "",
-    color: COLORS[0],
-  },
-];
+const createEmptyCourse = (index = 0) => ({
+  id: makeId(),
+  code: "",
+  title: "",
+  lectures: "",
+  duration: "",
+  preferredDay: "",
+  avoidDay: "",
+  location: "",
+  color: COLORS[index % COLORS.length],
+});
 
 const STORAGE_KEY = "unihelp-smart-timetable";
 
@@ -81,9 +80,9 @@ const generateTimetable = (courses, settings) => {
     const duration = Math.max(1, Number(course.duration) || 1);
 
     for (let index = 0; index < sessions; index += 1) {
-      const preferred = course.preferredDay !== "Any" ? [course.preferredDay] : [];
+      const preferred = course.preferredDay && course.preferredDay !== "Any" ? [course.preferredDay] : [];
       const remainingDays = DAYS
-        .filter((day) => day !== course.avoidDay && !preferred.includes(day))
+        .filter((day) => course.avoidDay !== day && !preferred.includes(day))
         .sort((a, b) => dayLoad[a] - dayLoad[b]);
       const candidateDays = [...preferred, ...remainingDays];
       let placed = false;
@@ -122,6 +121,29 @@ const generateTimetable = (courses, settings) => {
   });
 
   return { grid, warnings };
+};
+
+const getDefaultCourses = () => [createEmptyCourse()];
+
+const getDefaultSettings = () => ({
+  startHour: 8,
+  endHour: 18,
+  useBreak: true,
+  breakStart: 12,
+  breakEnd: 13,
+});
+
+const downloadBlob = (blob, fileName) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const drawText = (page, text, options) => {
+  page.drawText(String(text || ""), options);
 };
 
 function StatCard({ dark, label, value, tone }) {
@@ -163,13 +185,15 @@ function CourseEditor({ dark, course, onChange, onRemove }) {
         <label className="space-y-2">
           <span className={`text-xs font-bold uppercase ${t.muted}`}>Preferred day</span>
           <select className={t.input} value={course.preferredDay} onChange={(e) => onChange({ preferredDay: e.target.value })}>
-            {["Any", ...DAYS].map((day) => <option key={day}>{day}</option>)}
+            <option value="">No preference</option>
+            {DAYS.map((day) => <option key={day}>{day}</option>)}
           </select>
         </label>
         <label className="space-y-2">
           <span className={`text-xs font-bold uppercase ${t.muted}`}>Avoid day</span>
           <select className={t.input} value={course.avoidDay} onChange={(e) => onChange({ avoidDay: e.target.value })}>
-            {["Any", ...DAYS].map((day) => <option key={day}>{day}</option>)}
+            <option value="">No restriction</option>
+            {DAYS.map((day) => <option key={day}>{day}</option>)}
           </select>
         </label>
         <input className={t.input} value={course.location} onChange={(e) => onChange({ location: e.target.value })} placeholder="Venue or room" />
@@ -229,21 +253,9 @@ function TimetableGrid({ dark, grid, settings }) {
 
 export default function SmartTimetableBuilder({ dark = false }) {
   const t = themeClasses(dark);
-  const [courses, setCourses] = useState(DEFAULT_COURSES);
-  const [settings, setSettings] = useState({
-    startHour: 8,
-    endHour: 18,
-    useBreak: true,
-    breakStart: 12,
-    breakEnd: 13,
-  });
-  const [generated, setGenerated] = useState(() => generateTimetable(DEFAULT_COURSES, {
-    startHour: 8,
-    endHour: 18,
-    useBreak: true,
-    breakStart: 12,
-    breakEnd: 13,
-  }));
+  const [courses, setCourses] = useState(getDefaultCourses);
+  const [settings, setSettings] = useState(getDefaultSettings);
+  const [generated, setGenerated] = useState(() => generateTimetable(getDefaultCourses(), getDefaultSettings()));
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -278,15 +290,7 @@ export default function SmartTimetableBuilder({ dark = false }) {
     setCourses((items) => [
       ...items,
       {
-        id: makeId(),
-        code: "",
-        title: "",
-        lectures: 1,
-        duration: 1,
-        preferredDay: "Any",
-        avoidDay: "Any",
-        location: "",
-        color: COLORS[items.length % COLORS.length],
+        ...createEmptyCourse(items.length),
       },
     ]);
   };
@@ -302,10 +306,11 @@ export default function SmartTimetableBuilder({ dark = false }) {
   };
 
   const resetPlan = () => {
-    setCourses(DEFAULT_COURSES);
-    const nextSettings = { startHour: 8, endHour: 18, useBreak: true, breakStart: 12, breakEnd: 13 };
+    const nextCourses = getDefaultCourses();
+    const nextSettings = getDefaultSettings();
+    setCourses(nextCourses);
     setSettings(nextSettings);
-    setGenerated(generateTimetable(DEFAULT_COURSES, nextSettings));
+    setGenerated(generateTimetable(nextCourses, nextSettings));
     localStorage.removeItem(STORAGE_KEY);
     setNotice("Timetable reset.");
   };
@@ -319,12 +324,100 @@ export default function SmartTimetableBuilder({ dark = false }) {
     });
 
     const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "unihelp-timetable.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, "unihelp-timetable.csv");
+  };
+
+  const exportPdf = async () => {
+    const pdfDoc = await PDFDocument.create();
+    const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const sessions = DAYS.flatMap((day) => generated.grid[day].map((item) => ({ ...item, day })));
+    let page = pdfDoc.addPage([842, 595]);
+    let y = 545;
+
+    drawText(page, "UniHelp Smart Timetable", {
+      x: 40,
+      y,
+      size: 22,
+      font: bold,
+      color: rgb(0.12, 0.16, 0.28),
+    });
+    y -= 28;
+    drawText(page, `School day: ${formatHour(settings.startHour)} - ${formatHour(settings.endHour)}`, {
+      x: 40,
+      y,
+      size: 11,
+      font: regular,
+      color: rgb(0.32, 0.37, 0.46),
+    });
+    y -= 28;
+    drawText(page, `Courses: ${stats.totalCourses}   Needed hours: ${stats.totalHours}   Scheduled hours: ${stats.scheduledHours}`, {
+      x: 40,
+      y,
+      size: 11,
+      font: bold,
+      color: rgb(0.12, 0.16, 0.28),
+    });
+    y -= 34;
+
+    const headers = ["Day", "Time", "Course", "Title", "Venue"];
+    const widths = [110, 120, 90, 320, 130];
+    const xStart = 40;
+    const rowHeight = 24;
+
+    const drawHeader = () => {
+      let x = xStart;
+      headers.forEach((header, index) => {
+        page.drawRectangle({
+          x,
+          y: y - 6,
+          width: widths[index],
+          height: rowHeight,
+          color: rgb(0.93, 0.95, 0.99),
+        });
+        drawText(page, header, { x: x + 8, y: y + 2, size: 10, font: bold, color: rgb(0.12, 0.16, 0.28) });
+        x += widths[index];
+      });
+      y -= rowHeight;
+    };
+
+    drawHeader();
+
+    if (sessions.length === 0) {
+      drawText(page, "No scheduled sessions yet. Add courses and generate a timetable first.", {
+        x: xStart,
+        y: y - 4,
+        size: 11,
+        font: regular,
+        color: rgb(0.42, 0.47, 0.56),
+      });
+    } else {
+      sessions.forEach((item) => {
+        if (y < 50) {
+          page = pdfDoc.addPage([842, 595]);
+          y = 545;
+          drawHeader();
+        }
+
+        const row = [
+          item.day,
+          `${formatHour(item.start)} - ${formatHour(item.end)}`,
+          item.code,
+          item.title,
+          item.location,
+        ];
+        let x = xStart;
+        row.forEach((value, index) => {
+          const text = String(value || "").slice(0, index === 3 ? 54 : 22);
+          drawText(page, text, { x: x + 8, y: y + 2, size: 9, font: regular, color: rgb(0.18, 0.23, 0.33) });
+          x += widths[index];
+        });
+        y -= rowHeight;
+      });
+    }
+
+    const bytes = await pdfDoc.save();
+    downloadBlob(new Blob([bytes], { type: "application/pdf" }), "unihelp-timetable.pdf");
   };
 
   return (
@@ -350,6 +443,9 @@ export default function SmartTimetableBuilder({ dark = false }) {
               </button>
               <button onClick={exportPlan} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
                 <Download size={18} /> CSV
+              </button>
+              <button onClick={exportPdf} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
+                <Download size={18} /> PDF
               </button>
             </div>
           </div>

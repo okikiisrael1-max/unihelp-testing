@@ -17,7 +17,7 @@ import {
   auth,
 } from "../../firebase/config";
 
-import { uploadImage } from "../../services/cloudinary";
+import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
 import { getCloudinaryAttachmentUrl } from "../../services/cloudinary";
 
 import { useParams } from "react-router-dom";
@@ -218,6 +218,8 @@ export default function TutorialDetails({
             tutorialPrice: tutorialAmount,
 
             proofUrl,
+            proofAsset:
+              toCloudinaryAsset(result),
 
             status: "pending",
 

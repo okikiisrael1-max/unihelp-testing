@@ -8,8 +8,6 @@ import {
   startAfter,
   where,
   onSnapshot,
-  deleteDoc,
-  doc,
 } from "firebase/firestore";
 
 import { db, auth } from "../../firebase/config";
@@ -34,6 +32,7 @@ import {
 
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { deleteMediaDocument } from "../../services/mediaCleanup";
 
 const PAGE_SIZE = 12;
 
@@ -197,7 +196,7 @@ export default function TutorialMarketplace({ dark }) {
     if (!ok) return;
 
     try {
-      await deleteDoc(doc(db, "tutorials", id));
+      await deleteMediaDocument("tutorials", id);
 
       setTutorials((prev) =>
         prev.filter((t) => t.id !== id)

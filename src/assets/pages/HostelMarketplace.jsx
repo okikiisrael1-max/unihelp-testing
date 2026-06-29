@@ -40,7 +40,8 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-import { uploadImage } from "../../services/cloudinary";
+import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
+import { deleteMediaDocument } from "../../services/mediaCleanup";
 import {Link} from 'react-router-dom'
 import { buildShareUrl, shareContent } from "../utils/share";
 
@@ -446,6 +447,9 @@ export default function HostelMarketplace({
         let imageUrls =
           editingHostel?.images ||
           [];
+        let imageAssets =
+          editingHostel?.imageAssets ||
+          [];
 
         /* UPLOAD NEW IMAGES TO CLOUDINARY */
 
@@ -453,6 +457,7 @@ export default function HostelMarketplace({
           images.length > 0
         ) {
           imageUrls = [];
+          imageAssets = [];
 
           for (let img of images) {
             try {
@@ -464,6 +469,9 @@ export default function HostelMarketplace({
 
               imageUrls.push(
                 result.secure_url
+              );
+              imageAssets.push(
+                toCloudinaryAsset(result)
               );
             } catch (err) {
               console.error("Upload failed:", img.name, err);
@@ -487,6 +495,7 @@ export default function HostelMarketplace({
               ...form,
               images:
                 imageUrls,
+              imageAssets,
             }
           );
 
@@ -506,6 +515,7 @@ export default function HostelMarketplace({
 
               images:
                 imageUrls,
+              imageAssets,
 
               userId:
                 auth
@@ -609,13 +619,7 @@ export default function HostelMarketplace({
         return;
 
       try {
-        await deleteDoc(
-          doc(
-            db,
-            "hostels",
-            id
-          )
-        );
+        await deleteMediaDocument("hostels", id);
 
         setHostels(
           (

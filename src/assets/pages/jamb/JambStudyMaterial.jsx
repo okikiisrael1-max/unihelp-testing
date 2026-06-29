@@ -49,8 +49,10 @@ import {
 import {
   getCloudinaryAttachmentUrl,
   getCloudinaryPreviewUrl,
+  toCloudinaryAsset,
   uploadFile,
 } from "../../../services/cloudinary";
+import { deleteMediaDocument } from "../../../services/mediaCleanup";
 
 import { useNavigate } from "react-router-dom";
 
@@ -298,6 +300,14 @@ const JambStudyMaterials = ({
             description:
               form.description,
             fileUrl,
+            fileAsset:
+              toCloudinaryAsset(
+                result,
+              ),
+            cloudinaryPublicId:
+              result.public_id,
+            cloudinaryResourceType:
+              result.resource_type,
             downloadUrl:
               getCloudinaryAttachmentUrl(
                 fileUrl,
@@ -363,12 +373,9 @@ const JambStudyMaterials = ({
       try {
         setDeletingId(id);
 
-        await deleteDoc(
-          doc(
-            db,
-            "study_materials",
-            id,
-          ),
+        await deleteMediaDocument(
+          "studyMaterials",
+          id,
         );
 
         setMaterials((prev) =>

@@ -48,6 +48,7 @@ import {
   getCloudinaryAttachmentUrl,
   getCloudinaryPreviewUrl,
   isPreviewImageUrl,
+  toCloudinaryAsset,
   uploadPDF,
 } from "../../services/cloudinary";
 import ViewerModal from "../components/ViewerModal";
@@ -313,6 +314,7 @@ export default function LectureNotesMarketplace({ dark }) {
         compressedSize: result.bytes,
         cloudinaryPublicId: result.public_id,
         cloudinaryResourceType: result.resource_type,
+        fileAsset: toCloudinaryAsset(result),
         uploadedBy: currentUser.uid,
         downloads: 0,
         rating: 0,

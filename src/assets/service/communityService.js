@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../../firebase/config";
+import { deleteGroupPostWithMedia } from "../../services/mediaCleanup";
 
 export const PAGE_SIZE = 20;
 export const MESSAGE_PAGE_SIZE = 25;
@@ -106,6 +107,8 @@ export const createGroup = async ({ form, user, profile, uploads }) => {
     rules: form.rules.trim(),
     coverUrl: uploads.coverUrl || "",
     avatarUrl: uploads.avatarUrl || "",
+    coverAsset: uploads.coverAsset || null,
+    avatarAsset: uploads.avatarAsset || null,
     ownerId: user.uid,
     adminIds: [user.uid],
     moderatorIds: [],
@@ -337,8 +340,7 @@ export const reactToPost = async (groupId, postId, emoji) => {
 };
 
 export const deleteOwnPost = async (groupId, postId) => {
-  await deleteDoc(doc(db, "groups", groupId, "posts", postId));
-  await updateDoc(doc(db, "groups", groupId), { postCount: increment(-1) });
+  await deleteGroupPostWithMedia(groupId, postId);
 };
 
 export const startConversation = async (currentUser, otherUser, profile) => {
@@ -427,6 +429,8 @@ export const updateGroupDetails = async (groupId, form) => {
 
   if (form.coverUrl !== undefined) payload.coverUrl = form.coverUrl;
   if (form.avatarUrl !== undefined) payload.avatarUrl = form.avatarUrl;
+  if (form.coverAsset !== undefined) payload.coverAsset = form.coverAsset;
+  if (form.avatarAsset !== undefined) payload.avatarAsset = form.avatarAsset;
 
   await updateDoc(doc(db, "groups", groupId), payload);
 };

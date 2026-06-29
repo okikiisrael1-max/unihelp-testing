@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 
 import { db } from "../../firebase/config";
-import { uploadFile, uploadImage } from "../../services/cloudinary";
+import { toCloudinaryAsset, uploadFile, uploadImage } from "../../services/cloudinary";
 import { AuthContext } from "../context/AuthContext";
 import {
   approveJoinRequest,
@@ -143,8 +143,16 @@ function CreateGroupModal({ dark, onClose, onCreated, user, profile }) {
     setError("");
     try {
       const uploads = {};
-      if (cover) uploads.coverUrl = (await uploadImage(cover)).secure_url;
-      if (avatar) uploads.avatarUrl = (await uploadImage(avatar)).secure_url;
+      if (cover) {
+        const result = await uploadImage(cover);
+        uploads.coverUrl = result.secure_url;
+        uploads.coverAsset = toCloudinaryAsset(result);
+      }
+      if (avatar) {
+        const result = await uploadImage(avatar);
+        uploads.avatarUrl = result.secure_url;
+        uploads.avatarAsset = toCloudinaryAsset(result);
+      }
       const id = await createGroup({ form, user, profile, uploads });
       onCreated(id);
     } catch (err) {
@@ -349,6 +357,8 @@ function Composer({ dark, placeholder, onSend, allowVideo = true }) {
         attachments.push({
           type: kind,
           url: uploaded.secure_url,
+          publicId: uploaded.public_id,
+          resourceType: uploaded.resource_type,
           name: uploaded.original_filename || file.name,
           bytes: uploaded.bytes || file.size,
         });

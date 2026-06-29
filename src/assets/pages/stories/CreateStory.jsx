@@ -26,7 +26,7 @@ import {
   auth,
 } from "../../../firebase/config";
 
-import { uploadImage } from "../../../services/cloudinary";
+import { toCloudinaryAsset, uploadImage } from "../../../services/cloudinary";
 
 export default function CreateStory({
   dark,
@@ -125,6 +125,8 @@ export default function CreateStory({
           status,
           mature,
           coverImage,
+          coverAsset:
+            toCloudinaryAsset(result),
 
           tags: tags
             .split(",")

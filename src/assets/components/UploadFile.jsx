@@ -264,6 +264,8 @@ export default function UploadFile({ dark }) {
               resolve({
                 name: file.name,
                 url: result.secure_url,
+                publicId: result.public_id,
+                resourceType: result.resource_type,
                 size: file.size,
                 type: file.type,
               });

@@ -7,10 +7,10 @@ import {
   onSnapshot,
   doc,
   updateDoc,
-  deleteDoc,
 } from "firebase/firestore";
 
 import { db } from "../../firebase/config";
+import { deleteMediaDocument } from "../../services/mediaCleanup";
 
 import {
   ShieldCheck,
@@ -96,9 +96,7 @@ export default function AdminTutorialPayments({
 
       if (!confirmDelete) return;
 
-      await deleteDoc(
-        doc(db, "purchases", id)
-      );
+      await deleteMediaDocument("purchases", id);
     } catch (err) {
       console.error(err);
       alert("Failed");

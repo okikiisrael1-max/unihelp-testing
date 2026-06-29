@@ -3,12 +3,11 @@ import { db, auth } from './../../../firebase/config';
 import{
   collection,
   getDocs,
-  deleteDoc,
-  doc,
   query,
   where
 } from "firebase/firestore";
 import { GraduationCap } from "lucide-react";
+import { deleteMediaDocument } from "../../../services/mediaCleanup";
 
 export default function MyTutorials({ dark }) {
   const [tutorials, setTutorials] = useState([]);
@@ -31,7 +30,7 @@ export default function MyTutorials({ dark }) {
     const confirmDelete = confirm("Delete this tutorial?");
     if (!confirmDelete) return;
 
-    await deleteDoc(doc(db, "tutorials", id));
+    await deleteMediaDocument("tutorials", id);
     fetchTutorials();
   };
 

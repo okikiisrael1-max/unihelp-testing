@@ -22,7 +22,7 @@ import {
   where,
 } from "firebase/firestore";
 
-import { uploadImage } from "../../services/cloudinary";
+import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
 
 import {
   signOut,
@@ -351,6 +351,8 @@ const Profile = ({
           ),
           {
             photo: url,
+            photoAsset:
+              toCloudinaryAsset(result),
           },
           {
             merge: true,

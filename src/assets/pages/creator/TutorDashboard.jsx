@@ -14,6 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { db, auth } from "./../../../firebase/config";
 import { summarizeTutorFinances } from "../../utils/tutorialEarnings";
+import { deleteMediaDocument } from "../../../services/mediaCleanup";
 
 import { Link } from "react-router-dom";
 
@@ -200,9 +201,7 @@ export default function TutorDashboard({
 
       if (!confirmDelete) return;
 
-      await deleteDoc(
-        doc(db, "tutorials", id)
-      );
+      await deleteMediaDocument("tutorials", id);
 
       alert("Tutorial deleted");
     } catch (err) {

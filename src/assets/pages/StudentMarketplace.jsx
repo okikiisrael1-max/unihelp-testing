@@ -40,7 +40,8 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-import { uploadImage } from "../../services/cloudinary";
+import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
+import { deleteMediaDocument } from "../../services/mediaCleanup";
 import { useNavigate } from "react-router-dom";
 import { buildShareUrl, shareContent } from "../utils/share";
 
@@ -415,11 +416,15 @@ export default function StudentMarketplace({
         let imageUrls =
           editingItem?.images ||
           [];
+        let imageAssets =
+          editingItem?.imageAssets ||
+          [];
 
         if (
           images.length > 0
         ) {
           imageUrls = [];
+          imageAssets = [];
 
           for (let img of images) {
             try {
@@ -431,6 +436,9 @@ export default function StudentMarketplace({
 
               imageUrls.push(
                 result.secure_url
+              );
+              imageAssets.push(
+                toCloudinaryAsset(result)
               );
             } catch (err) {
               console.error("Upload failed for image:", img.name, err);
@@ -453,6 +461,7 @@ export default function StudentMarketplace({
               ...form,
               images:
                 imageUrls,
+              imageAssets,
             }
           );
 
@@ -472,6 +481,7 @@ export default function StudentMarketplace({
 
               images:
                 imageUrls,
+              imageAssets,
 
               userId:
                 auth
@@ -601,13 +611,7 @@ export default function StudentMarketplace({
         return;
 
       try {
-        await deleteDoc(
-          doc(
-            db,
-            "studentMarketplace",
-            id
-          )
-        );
+        await deleteMediaDocument("studentMarketplace", id);
 
         setItems(
           (
