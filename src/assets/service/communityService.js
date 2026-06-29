@@ -1,5 +1,7 @@
 import {
   addDoc,
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -410,4 +412,62 @@ export const markConversationRead = async (conversationId, uid) => {
     unread: { [uid]: 0 },
     readAt: { [uid]: serverTimestamp() },
   }, { merge: true });
+};
+
+export const updateGroupDetails = async (groupId, form) => {
+  const payload = {
+    name: form.name.trim(),
+    nameLower: normalizeSearch(form.name),
+    description: form.description.trim(),
+    category: form.category,
+    privacy: form.privacy,
+    rules: form.rules.trim(),
+    updatedAt: serverTimestamp(),
+  };
+
+  if (form.coverUrl !== undefined) payload.coverUrl = form.coverUrl;
+  if (form.avatarUrl !== undefined) payload.avatarUrl = form.avatarUrl;
+
+  await updateDoc(doc(db, "groups", groupId), payload);
+};
+
+export const updateGroupMemberRole = async (group, member, role) => {
+  if (!group?.id || !member?.id) return;
+  if (member.role === "owner") throw new Error("The owner role cannot be changed here.");
+
+  const batch = writeBatch(db);
+  const groupRef = doc(db, "groups", group.id);
+  const memberRef = doc(db, "groups", group.id, "members", member.id);
+  const userGroupRef = doc(db, "users", member.id, "groups", group.id);
+
+  batch.update(memberRef, { role });
+  batch.set(userGroupRef, { role, name: group.name, groupId: group.id }, { merge: true });
+
+  const groupUpdates = {
+    updatedAt: serverTimestamp(),
+    adminIds: role === "admin" ? arrayUnion(member.id) : arrayRemove(member.id),
+    moderatorIds: role === "moderator" ? arrayUnion(member.id) : arrayRemove(member.id),
+  };
+
+  batch.update(groupRef, groupUpdates);
+  await batch.commit();
+};
+
+export const removeGroupMember = async (group, member) => {
+  if (!group?.id || !member?.id) return;
+  if (member.role === "owner" || group.ownerId === member.id) {
+    throw new Error("Transfer ownership before removing the owner.");
+  }
+
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "groups", group.id, "members", member.id));
+  batch.delete(doc(db, "users", member.id, "groups", group.id));
+  batch.update(doc(db, "groups", group.id), {
+    memberCount: increment(-1),
+    adminIds: arrayRemove(member.id),
+    moderatorIds: arrayRemove(member.id),
+    updatedAt: serverTimestamp(),
+    lastActivityAt: serverTimestamp(),
+  });
+  await batch.commit();
 };

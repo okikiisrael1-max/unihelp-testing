@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   Sparkles,
   Rocket,
@@ -47,7 +48,8 @@ const ComingSoon = ({ dark }) => {
       title: "Smart Timetable Builder",
       desc: "Auto-generate perfect school timetable",
       icon: Clock,
-      status: "In Development",
+      status: "Available",
+      to: "/smart-timetable",
     },
   ];
 
@@ -70,11 +72,11 @@ const ComingSoon = ({ dark }) => {
         </div>
 
         <h1 className="text-3xl md:text-5xl font-black mb-3">
-          Big Things Are Coming 🚀
+          Big Things Are Coming
         </h1>
 
         <p className="opacity-70 text-sm md:text-base">
-          We’re building powerful AI tools, academic features,
+          We are building powerful AI tools, academic features,
           and campus innovations to make your student life
           smarter, easier, and faster.
         </p>
@@ -105,8 +107,9 @@ const ComingSoon = ({ dark }) => {
           const Icon = item.icon;
 
           return (
-            <div
+            <Link
               key={index}
+              to={item.to || "#"}
               className={`${card} rounded-3xl p-6 hover:scale-[1.03] transition`}
             >
               <div className="flex items-center justify-between mb-4">
@@ -115,7 +118,7 @@ const ComingSoon = ({ dark }) => {
                   <Icon className="text-indigo-500" />
                 </div>
 
-                <span className="text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-500 font-semibold">
+                <span className={`text-xs px-3 py-1 rounded-full font-semibold ${item.to ? "bg-emerald-500/20 text-emerald-500" : "bg-yellow-500/20 text-yellow-500"}`}>
                   {item.status}
                 </span>
               </div>
@@ -127,7 +130,7 @@ const ComingSoon = ({ dark }) => {
               <p className="text-sm opacity-70">
                 {item.desc}
               </p>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -164,7 +167,7 @@ const ComingSoon = ({ dark }) => {
 
       {/* FOOTER MESSAGE */}
       <div className="text-center mt-16 opacity-60 text-sm">
-        Built with ❤️ for students - UniHelp
+        Built for students - UniHelp
       </div>
     </div>
   );

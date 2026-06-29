@@ -433,18 +433,18 @@ export default function Announcements({
 
           <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
 
-            <div className="flex flex-col gap-5">
+            <div className="flex max-md:flex-col max-md:items-center max-md:justify-center gap-5">
 
-              <div className="h-18 w-18 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl text-white">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shrink-0 text-white">
                 <Megaphone size={34} />
               </div>
 
               <div>
-                <h1 className="text-4xl sm:text-5xl font-black leading-tight">
+                <h1 className="text-2xl sm:text-5xl font-black leading-tight max-md:text-center">
                   Announcements
                 </h1>
 
-                <p className="opacity-70 mt-3 max-w-2xl text-sm sm:text-base leading-7">
+                <p className="opacity-70 mt-3 max-w-2xl text-sm sm:text-base leading-7 max-md:text-center">
                   Stay updated with
                   campus notices,
                   school activities,
@@ -457,24 +457,19 @@ export default function Announcements({
 
             {/* stats */}
 
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
 
-              <div
-                className={`rounded-3xl p-5 min-w-[150px] border ${card}`}
-              >
+              <div className={`rounded-3xl flex flex-col p-5 sm:min-w-[150px] border ${card}`}>
                 <p className="text-sm opacity-60">
                   Total Posts
                 </p>
-
                 <h2 className="text-3xl sm:text-4xl font-black mt-2 text-indigo-500">
-                  {
-                    announcements.length
-                  }
+                  {announcements.length}
                 </h2>
               </div>
 
               <div
-                className={`rounded-3xl p-5 min-w-[150px] border ${card}`}
+                className={`rounded-3xl p-5 md:min-w-[150px] border ${card}`}
               >
                 <p className="text-sm opacity-60">
                   Unread

@@ -148,8 +148,6 @@ export default function LectureNotesMarketplace({ dark }) {
     );
 
     return [
-      { label: "Notes", value: notes.length, icon: FileText },
-      { label: "Downloads", value: totalDownloads, icon: Download },
       { label: "Requests", value: requests.length, icon: MessageSquareMore },
       { label: "Premium", value: isPremium ? "Yes" : "No", icon: Crown },
     ];
@@ -424,7 +422,7 @@ export default function LectureNotesMarketplace({ dark }) {
   };
 
   return (
-    <div className={`min-h-screen w-full overflow-hidden ${bg}`}>
+    <div className={`min-h-screen md:mt-20 w-full overflow-hidden ${bg}`}>
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-[140px]" />
         <div className="absolute bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-violet-600/10 blur-[120px]" />
@@ -432,9 +430,9 @@ export default function LectureNotesMarketplace({ dark }) {
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:py-8">
         <div className={`${card} rounded-[32px] p-5 sm:p-6 shadow-2xl`}>
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-5 lg:flex-row items-center lg:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center shrink-0 justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl">
+              <div className="flex h-14 w-14 items-center shrink-0 justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl">
                 <FileText size={30} className="text-white" />
               </div>
 
@@ -443,23 +441,23 @@ export default function LectureNotesMarketplace({ dark }) {
                   <Sparkles size={14} />
                   Lecture Notes Hub
                 </div>
-                <p className="mt-1 opacity-70">
+                <p className="mt-1 text-[14px] opacity-70">
                   Upload, preview, and download campus notes without storage bottlenecks.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowUpload(true)}
-                className="inline-flex h-12 items-center gap-2 rounded-2xl bg-indigo-600 px-5 font-semibold text-white hover:bg-indigo-700"
+                className="flex h-12 items-center gap-2 rounded-2xl bg-indigo-600 px-5 font-medium text-white hover:bg-indigo-700 text-[13px]"
               >
                 <Upload size={18} />
-                Upload PDF
+                Upload
               </button>
               <button
                 onClick={() => setTab("requests")}
-                className={`inline-flex h-12 items-center gap-2 rounded-2xl px-5 font-semibold ${
+                className={`flex h-12 items-center gap-2 rounded-2xl px-5 font-medium text-[13px] ${
                   dark ? "bg-white/5 text-white" : "bg-slate-100 text-slate-900"
                 }`}
               >
@@ -473,17 +471,19 @@ export default function LectureNotesMarketplace({ dark }) {
             {stats.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.label} className={`rounded-3xl w-full p-4 ${softCard}`}>
-                  <div className="flex items-center justify-between">
+                <div key={item.label} className={`rounded-xl w-full p-2 ${softCard}`}>
+                  <div className="flex items-center justify-center gap-2">
                     <div>
                       <p className="text-xs uppercase tracking-[0.25em] opacity-60">
                         {item.label}
                       </p>
-                      <p className="mt-2 text-2xl font-black">{item.value}</p>
-                    </div>
-                    <div className="rounded-2xl bg-indigo-500/10 p-3 text-indigo-400">
+                      <p className="mt-2 flex gap-2 text-xl text-center font-black">
+                        <div className="rounded-2xl bg-indigo-500/10 p-1.5 text-indigo-400">
                       <Icon size={18} />
+                    </div>{item.value}
+                      </p>
                     </div>
+                    
                   </div>
                 </div>
               );

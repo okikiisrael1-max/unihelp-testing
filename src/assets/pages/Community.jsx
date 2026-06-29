@@ -488,7 +488,7 @@ function GroupDetail({ dark, groupId }) {
   }
 
   return (
-    <div className={`min-h-screen ${t.page}`}>
+    <div className={`min-h-screen md:mt-20 ${t.page}`}>
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
         <button onClick={() => navigate("/community")} className={`mb-4 inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${t.soft}`}>
           <ChevronLeft size={17} /> Groups
@@ -530,7 +530,7 @@ function GroupDetail({ dark, groupId }) {
                     {pendingRequest ? "Request pending" : group.privacy === "private" ? "Request to join" : "Join group"}
                   </button>
                 )}
-                {canManage && <button className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}><Settings size={17} /> Manage</button>}
+                {canManage && <Link to={`/community/${groupId}/manage`} className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}><Settings size={17} /> Manage</Link>}
               </div>
             </div>
           </div>
@@ -672,7 +672,7 @@ function GroupDetail({ dark, groupId }) {
                 <Link to="/community-settings" className={`flex items-center justify-between rounded-3xl border p-5 font-bold ${t.panel}`}>
                   Messaging settings <Settings size={18} />
                 </Link>
-                {canManage && <div className={`rounded-3xl border p-5 ${t.panel}`}><ShieldCheck className="text-indigo-400" /><p className="mt-3 text-sm font-bold">You can manage members, requests, and moderation actions for this group.</p></div>}
+                {canManage && <Link to={`/community/${groupId}/manage`} className={`block rounded-3xl border p-5 ${t.panel}`}><ShieldCheck className="text-indigo-400" /><p className="mt-3 text-sm font-bold">Manage members, requests, and moderation actions for this group.</p></Link>}
               </aside>
             </div>
           </>

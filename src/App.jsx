@@ -31,9 +31,11 @@ import LectureNotesMarketplace from "./assets/pages/LectureNotesMarketplace";
 import HostelMarketplace from "./assets/pages/HostelMarketplace";
 import NewsFeed from "./assets/pages/NewsFeed";
 import Community from "./assets/pages/Community";
+import ManageGroup from "./assets/pages/ManageGroup";
 import Messenger from "./assets/pages/Messenger";
 import NotificationsCenter from "./assets/pages/NotificationsCenter";
 import CommunitySettings from "./assets/pages/CommunitySettings";
+import ComingSoon from "./assets/pages/ComingSoon";
 import TutorialPage from "./assets/pages/Tutorials";
 import MyHostels from "./assets/pages/MyUploadedHostel";
 import TutorialMarketplace from "./assets/pages/TutorialMarketplace";
@@ -49,6 +51,7 @@ import AdminWithdrawals from "./assets/pages/AdminWithdrawals";
 import AdminPanel from "./assets/pages/AdminPanel";
 import PremiumSubscriptionPage from "./assets/pages/PremiumSubscriptionPage";
 import Tasks from "./assets/pages/Tasks";
+import SmartTimetableBuilder from "./assets/pages/SmartTimetableBuilder";
 import Announcements from "./assets/pages/Announcements";
 import NotFound from "./assets/pages/NotFound";
 import SelectRole from "./assets/pages/SelectRole";
@@ -429,6 +432,14 @@ const App = () => {
               }
             />
             <Route
+              path="/community/:groupId/manage"
+              element={
+                <ProtectedRoute>
+                  <ManageGroup dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/messages"
               element={
                 <ProtectedRoute>
@@ -449,6 +460,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <CommunitySettings dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/coming-soon"
+              element={
+                <ProtectedRoute>
+                  <ComingSoon dark={dark} />
                 </ProtectedRoute>
               }
             />
@@ -477,6 +496,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Tasks dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/smart-timetable"
+              element={
+                <ProtectedRoute>
+                  <SmartTimetableBuilder dark={dark} />
                 </ProtectedRoute>
               }
             />

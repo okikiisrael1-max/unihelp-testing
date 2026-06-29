@@ -25,6 +25,22 @@ import {
   ArrowRight,
   Star,
   Divide,
+  CalendarDays,
+  MessageCircle,
+  Newspaper,
+  Bell,
+  Settings,
+  Rocket,
+  RadioTower,
+  Wallet,
+  Youtube,
+  BadgeDollarSign,
+  HelpCircle,
+  Info,
+  PhoneCall,
+  FileWarning,
+  Library,
+  Bookmark,
 } from "lucide-react";
 
 import {
@@ -162,84 +178,82 @@ const Dashboard = ({ dark }) => {
       : "text-gray-500",
   };
 
-  const quickLinks = [
+  const featureSections = [
     {
-      title: "GPA Calculator",
-      desc: "Calculate semester GPA instantly",
-      icon: Calculator,
-      color:
-        "from-indigo-500 to-violet-600",
-      link: "/GPA",
+      title: "Academic Tools",
+      desc: "Calculators, records, tasks, notes, and study planning.",
+      icon: GraduationCap,
+      items: [
+        { title: "GPA Calculator", desc: "Calculate semester GPA instantly", icon: Calculator, color: "from-indigo-500 to-violet-600", link: "/GPA" },
+        { title: "CGPA Tracker", desc: "Track academic performance", icon: Activity, color: "from-pink-500 to-rose-500", link: "/CGPA" },
+        { title: "Past Questions", desc: "Practice with exam materials", icon: File, color: "from-blue-500 to-cyan-500", link: "/questions" },
+        { title: "Lecture Notes", desc: "Upload and access notes", icon: UploadCloud, color: "from-yellow-500 to-orange-500", link: "/lecturenotesmarketplace" },
+        { title: "Task Management", desc: "Plan assignments and deadlines", icon: Clock3, color: "from-teal-500 to-emerald-600", link: "/tasks" },
+        { title: "Smart Timetable", desc: "Generate a balanced weekly schedule", icon: CalendarDays, color: "from-cyan-500 to-indigo-600", link: "/smart-timetable" },
+        { title: "Upload Questions", desc: "Contribute academic materials", icon: UploadCloud, color: "from-orange-500 to-red-500", link: "/uploadquestion" },
+      ],
     },
     {
-      title: "CGPA Tracker",
-      desc: "Track academic performance",
-      icon: Activity,
-      color:
-        "from-pink-500 to-rose-500",
-      link: "/CGPA",
+      title: "Learning",
+      desc: "Tutorials, videos, stories, purchases, and creator tools.",
+      icon: BookOpen,
+      items: [
+        { title: "Tutorial Marketplace", desc: "Learn from student creators", icon: Video, color: "from-green-500 to-emerald-600", link: "/tutorialmarketplace" },
+        { title: "YouTube Videos", desc: "Watch educational content", icon: Youtube, color: "from-red-500 to-rose-600", link: "/tutorials" },
+        { title: "My Purchases", desc: "Access bought tutorials and files", icon: Wallet, color: "from-slate-500 to-slate-700", link: "/my-purchases" },
+        { title: "Tutor Dashboard", desc: "Manage your creator activity", icon: GraduationCap, color: "from-violet-500 to-purple-700", link: "/tutor-dashboard" },
+        { title: "Upload Tutorial", desc: "Create and publish a tutorial", icon: BookOpen, color: "from-emerald-500 to-teal-600", link: "/create-tutorial" },
+        { title: "Stories", desc: "Read and create student stories", icon: PlayCircle, color: "from-fuchsia-500 to-pink-600", link: "/stories" },
+      ],
     },
-
     {
-      title: "Past Questions",
-      desc: "Practice with exam materials",
-      icon: File,
-      color:
-        "from-blue-500 to-cyan-500",
-      link: "/questions",
+      title: "Marketplace",
+      desc: "Student services, hostels, products, and saved listings.",
+      icon: ShoppingBag,
+      items: [
+        { title: "Hostel Marketplace", desc: "Find hostels around campus", icon: Home, color: "from-purple-500 to-indigo-600", link: "/hostelmarketplace" },
+        { title: "Student Marketplace", desc: "Buy and sell student items", icon: ShoppingBag, color: "from-emerald-500 to-green-600", link: "/studentmarketplace" },
+        { title: "My Hostels", desc: "Manage uploaded hostel listings", icon: Home, color: "from-sky-500 to-blue-700", link: "/myhostels" },
+        { title: "Tutorial Sales", desc: "Browse paid learning resources", icon: BadgeDollarSign, color: "from-amber-500 to-orange-600", link: "/tutorialmarketplace" },
+      ],
+    },
+    {
+      title: "Smart Features",
+      desc: "AI, community, alerts, and discovery tools.",
+      icon: Sparkles,
+      items: [
+        { title: "AI Assistance", desc: "Ask for guided academic help", icon: Sparkles, color: "from-indigo-500 to-purple-600", link: "/ai" },
+        { title: "SmartFeeds", desc: "Catch useful education updates", icon: Newspaper, color: "from-blue-500 to-sky-600", link: "/newsfeed" },
+        { title: "Groups", desc: "Join student communities", icon: MessageCircle, color: "from-emerald-500 to-teal-600", link: "/community" },
+        { title: "Messenger", desc: "Chat with classmates directly", icon: MessageCircle, color: "from-cyan-500 to-blue-600", link: "/messages" },
+        { title: "Notifications", desc: "See alerts and requests", icon: Bell, color: "from-amber-500 to-yellow-600", link: "/notifications" },
+        { title: "Privacy Settings", desc: "Control messaging preferences", icon: Settings, color: "from-slate-500 to-gray-700", link: "/community-settings" },
+        { title: "Coming Soon", desc: "Preview upcoming UniHelp tools", icon: Rocket, color: "from-violet-500 to-fuchsia-600", link: "/coming-soon" },
+        { title: "Announcements", desc: "Read campus and app updates", icon: RadioTower, color: "from-rose-500 to-red-600", link: "/announcements" },
+        { title: "Premium", desc: "Unlock premium student features", icon: Star, color: "from-yellow-500 to-amber-600", link: "/premium" },
+      ],
     },
     {
       title: "Formula Hub",
-      desc: "Find Formulas of a particular topic",
-      icon: Divide,
-      color:
-        "from-purple-500 to-cyan-500",
-      link: "/formula-hub",
+      desc: "Formulas, subjects, bookmarks, and quick references.",
+      icon: Library,
+      items: [
+        { title: "Formula Hub", desc: "Find formulas by topic", icon: Divide, color: "from-purple-500 to-cyan-500", link: "/formula-hub" },
+        { title: "Formula Subjects", desc: "Browse formulas by subject", icon: Library, color: "from-indigo-500 to-sky-600", link: "/formula-hub/subjects" },
+        { title: "Bookmarks", desc: "Open saved formulas quickly", icon: Bookmark, color: "from-emerald-500 to-green-700", link: "/formula-hub/bookmarks" },
+      ],
     },
-
     {
-      title: "Lecture Notes",
-      desc: "Upload & access notes",
-      icon: UploadCloud,
-      color:
-        "from-yellow-500 to-orange-500",
-      link: "/lecturenotesmarketplace",
-    },
-
-    {
-      title: "Tutorial Videos",
-      desc: "Learn from student creators",
-      icon: Video,
-      color:
-        "from-green-500 to-emerald-600",
-      link: "/tutorialmarketplace",
-    },
-
-    {
-      title: "Video Player",
-      desc: "Watch educational content",
-      icon: PlayCircle,
-      color:
-        "from-fuchsia-500 to-pink-600",
-      link: "/tutorials",
-    },
-
-    {
-      title: "Hostel Marketplace",
-      desc: "Find hostels around campus",
-      icon: Home,
-      color:
-        "from-purple-500 to-indigo-600",
-      link: "/hostelmarketplace",
-    },
-
-    {
-      title: "Student Marketplace",
-      desc: "Buy & sell student items",
-      icon: ShoppingBag,
-      color:
-        "from-emerald-500 to-green-600",
-      link: "/studentmarketplace",
+      title: "Support",
+      desc: "Help pages, policies, contact, and issue reports.",
+      icon: HelpCircle,
+      items: [
+        { title: "FAQ", desc: "Answers to common questions", icon: HelpCircle, color: "from-indigo-500 to-blue-600", link: "/faq" },
+        { title: "Help Center", desc: "Find guidance for UniHelp", icon: Info, color: "from-sky-500 to-cyan-600", link: "/help-center" },
+        { title: "Contact", desc: "Reach the UniHelp team", icon: PhoneCall, color: "from-emerald-500 to-teal-700", link: "/contact" },
+        { title: "Report", desc: "Report safety or platform issues", icon: FileWarning, color: "from-red-500 to-rose-700", link: "/report" },
+        { title: "About UniHelp", desc: "Learn what UniHelp offers", icon: Info, color: "from-violet-500 to-purple-700", link: "/about" },
+      ],
     },
   ];
 
@@ -350,60 +364,74 @@ const Dashboard = ({ dark }) => {
         </div>
 
         {/* ================================================= */}
-        {/* QUICK ACCESS */}
+        {/* FEATURE DIRECTORY */}
         {/* ================================================= */}
 
         <section className="mb-10">
-          <div className="flex items-center gap-3 mb-5">
-            <GraduationCap className="text-indigo-500" />
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
+                <Sparkles size={22} />
+              </div>
 
-            <div>
-              <h2 className="text-2xl font-black">
-                Quick Access
-              </h2>
+              <div>
+                <h2 className="text-2xl font-black">
+                  All UniHelp Features
+                </h2>
 
-              <p
-                className={`text-sm ${theme.textSoft}`}
-              >
-                Everything you need as a
-                student.
-              </p>
+                <p className={`text-sm ${theme.textSoft}`}>
+                  Organized tools for learning, campus life, community, and support.
+                </p>
+              </div>
             </div>
+
+            <Link
+              to="/coming-soon"
+              className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold ${theme.card}`}
+            >
+              <Rocket size={17} />
+              View Upcoming
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-
-            {quickLinks.map((item, index) => {
-              const Icon = item.icon;
+          <div className="space-y-7">
+            {featureSections.map((section) => {
+              const SectionIcon = section.icon;
 
               return (
-                <Link
-                  key={index}
-                  to={item.link}
-                  className={`${theme.card} group rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl`}
-                >
-                  <div
-                    className={`w-14 h-14 rounded-2xl bg-linear-to-r ${item.color} flex items-center justify-center text-white mb-5 shadow-lg`}
-                  >
-                    <Icon size={26} />
-                  </div>
+                <div key={section.title}>
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.card} text-indigo-500`}>
+                        <SectionIcon size={20} />
+                      </div>
 
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-bold text-lg leading-tight">
-                        {item.title}
-                      </h3>
+                      <div className="min-w-0">
+                        <h3 className="text-xl font-black">
+                          {section.title}
+                        </h3>
 
-                      <p
-                        className={`text-sm mt-2 ${theme.textSoft}`}
-                      >
-                        {item.desc}
-                      </p>
+                        <p className={`mt-1 text-sm ${theme.textSoft}`}>
+                          {section.desc}
+                        </p>
+                      </div>
                     </div>
 
-                    <ArrowRight className="opacity-0 group-hover:opacity-100 transition" />
+                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${theme.soft} ${theme.textSoft}`}>
+                      {section.items.length} tools
+                    </span>
                   </div>
-                </Link>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                    {section.items.map((item) => (
+                      <FeatureCard
+                        key={`${section.title}-${item.title}`}
+                        item={item}
+                        theme={theme}
+                      />
+                    ))}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -560,6 +588,36 @@ const Dashboard = ({ dark }) => {
         <div className="h-10" />
       </div>
     </div>
+  );
+};
+
+
+const FeatureCard = ({ item, theme }) => {
+  const Icon = item.icon;
+
+  return (
+    <Link
+      to={item.link}
+      className={`${theme.card} group flex min-h-40 flex-col justify-between rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r ${item.color} text-white shadow-lg`}>
+          <Icon size={24} />
+        </div>
+
+        <ArrowRight className="opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100" />
+      </div>
+
+      <div className="mt-5">
+        <h4 className="text-lg font-black leading-tight">
+          {item.title}
+        </h4>
+
+        <p className={`mt-2 text-sm leading-6 ${theme.textSoft}`}>
+          {item.desc}
+        </p>
+      </div>
+    </Link>
   );
 };
 

@@ -16,6 +16,7 @@ import { signOut } from "firebase/auth";
 import {
   Brain,
   CalculatorIcon,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   File,
@@ -47,6 +48,7 @@ import {
   Info,
   Bell,
   Settings,
+  Rocket,
 } from "lucide-react";
 
 import { auth, db } from "../../firebase/config";
@@ -240,6 +242,16 @@ useEffect(() => {
               <CheckSquare size={18} />
             ),
           },
+
+          {
+            to: "/smart-timetable",
+
+            label: "Smart Timetable",
+
+            icon: (
+              <CalendarDays size={18} />
+            ),
+          },
         ],
       },
 
@@ -398,6 +410,16 @@ useEffect(() => {
           },
 
           {
+            to: "/coming-soon",
+
+            label: "Coming Soon",
+
+            icon: (
+              <Rocket size={18} />
+            ),
+          },
+
+          {
             to: "/announcements",
 
             label: "Announcements",
@@ -512,7 +534,7 @@ useEffect(() => {
       {/* SIDEBAR */}
       <aside
       className={`
-          fixed md:sticky top-0 left-0 z-50 h-[100dvh] md:h-screen w-[82vw] max-w-[20rem] md:w-72 px-4 py-5 sm:px-5 overflow-y-auto no-scrollbar transition-all duration-300
+          fixed md:sticky top-0  max-md:pb-30 left-0 z-50 h-[100dvh] md:h-screen w-[82vw] max-w-[20rem] md:w-72 px-4 py-5 sm:px-5 overflow-y-auto no-scrollbar transition-all duration-300
           ${ mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           ${dark ? "bg-slate-950 text-white" : "bg-slate-100 text-black"}
         `}>
