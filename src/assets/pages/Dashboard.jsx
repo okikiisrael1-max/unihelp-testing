@@ -254,7 +254,7 @@ const Dashboard = ({ dark }) => {
         {/* ================================================= */}
 
         <div
-          className={`relative overflow-hidden rounded-4xl p-6 md:p-8 mb-8 border ${
+          className={`relative overflow-hidden rounded-4xl p-3 md:p-8 mb-8 border ${
             dark
               ? "bg-linear-to-br from-indigo-950 via-[#0f172a] to-black border-white/10"
               : "bg-linear-to-br from-indigo-600 via-violet-600 to-purple-700 border-indigo-400/20 text-white"
@@ -281,23 +281,23 @@ const Dashboard = ({ dark }) => {
                 </span>
               </h1>
 
-              <p className="mt-4 text-sm md:text-base text-white/80 leading-relaxed max-w-xl">
+              <p className="mt-4 text-[12px] md:text-base text-white/80 leading-relaxed max-w-xl">
                 Access all your academic tools,
                 learning resources, tutorials,
                 marketplace services, and CGPA
                 tracking in one organized platform.
               </p>
 
-              <div className="flex flex-wrap gap-3 mt-6">
+              <div className="flex flex-wrap gap-2 mt-6">
                 <Link
                   to="/questions"
-                  className="px-5 py-3 rounded-2xl bg-indigo-500 text-slate-900 font-semibold hover:scale-105 transition">
+                  className="px-4 py-3 text-[14px] rounded-2xl bg-white text-black font-semibold hover:scale-105 transition">
                   Start Practicing
                 </Link>
 
                 <Link
                   to="/tutorialmarketplace"
-                  className="px-5 py-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition"
+                  className="px-4 py-3 text-[14px] rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition"
                 >
                   Explore Tutorials
                 </Link>
@@ -305,7 +305,7 @@ const Dashboard = ({ dark }) => {
             </div>
 
             {/* RIGHT STATS */}
-            <div className="grid grid-cols-2 gap-4 w-full lg:w-[420px]">
+            <div className="grid grid-cols-2 gap-3 w-full lg:w-[420px]">
 
               <StatCard
                 dark={dark}
@@ -572,28 +572,18 @@ const StatCard = ({
   dark,
 }) => {
   return (
-    <div
-      className={`rounded-3xl p-5 backdrop-blur-xl border ${
-        dark
-          ? "bg-white/5 border-white/10"
-          : "bg-white/10 border-white/20"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-4">
-
-        <div
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-            dark
-              ? "bg-white/10"
-              : "bg-white/20"
-          }`}
-        >
+    <div className={`rounded-3xl p-2 flex items-center gap-2 backdrop-blur-xl border ${
+        dark ? "bg-white/5 border-white/10" : "bg-white/10 border-white/20"}`}>
+      <div className="flex items-center justify-between ">
+        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${ dark ? "bg-white/10" : "bg-white/20"}`}>
           <Icon size={20} />
         </div>
       </div>
-
-      <p className="text-sm text-white/70">{title}</p>
-      <h2 className={`text-3xl font-black mt-1 ${ valueColor || "text-white"}`}>{value}</h2>
+      <div>
+        <p className="text-[10px] text-white/70">{title}</p>
+      <h2 className={`text-xl font-black mt-1 ${ valueColor || "text-white"}`}>{value}</h2>
+      </div>
+      
     </div>
   );
 };

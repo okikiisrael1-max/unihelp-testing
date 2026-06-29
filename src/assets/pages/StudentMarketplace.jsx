@@ -94,7 +94,7 @@ export default function StudentMarketplace({
     useState(false);
 
   const [uploadLimit, setUploadLimit] =
-    useState(1);
+    useState(3);
 
   const [userUploads, setUserUploads] =
     useState(0);
@@ -152,7 +152,7 @@ export default function StudentMarketplace({
           );
 
           setUploadLimit(
-            premium ? 5 : 1
+            premium ? 10 : 3
           );
         }
 
@@ -394,7 +394,7 @@ export default function StudentMarketplace({
         toast.error(
           isPremium
             ? "Premium upload limit reached."
-            : "Free users can upload only 1 listing."
+            : "Free users can upload only 3 listing."
         );
         return;
       }
@@ -415,8 +415,6 @@ export default function StudentMarketplace({
         let imageUrls =
           editingItem?.images ||
           [];
-
-        /* UPLOAD NEW IMAGES TO CLOUDINARY */
 
         if (
           images.length > 0
@@ -441,7 +439,6 @@ export default function StudentMarketplace({
           }
         }
 
-        /* EDIT */
 
         if (
           editingItem
@@ -697,18 +694,17 @@ export default function StudentMarketplace({
 
         {/* HEADER */}
 
-        <div className="flex items-center justify-between">
+        <div className="flex gap-2.5 max-md:flex-col-reverse md:items-center md:justify-between">
 
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-indigo-600 text-white">
+            <div className="p-3 shrink-0 rounded-2xl bg-indigo-600 text-white">
               <ShoppingBag />
             </div>
 
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-xl font-bold">
                 Student Marketplace
               </h1>
-
               <p className="text-sm opacity-70">
                 Buy & Sell Easily
               </p>
@@ -718,7 +714,7 @@ export default function StudentMarketplace({
           {/* PLAN */}
 
           <div
-            className={`${card} px-4 py-3 rounded-2xl flex items-center gap-3`}
+            className={`${card} px-4 py-3 shrink-0 rounded-2xl flex max-w-35 items-center gap-3`}
           >
             {isPremium ? (
               <>
@@ -730,7 +726,7 @@ export default function StudentMarketplace({
                   </p>
 
                   <p className="text-xs opacity-70">
-                    {userUploads}/5 uploads
+                    {userUploads}/10 uploads
                   </p>
                 </div>
               </>
@@ -744,7 +740,7 @@ export default function StudentMarketplace({
                   </p>
 
                   <p className="cursor-pointer text-xs opacity-70">
-                    {userUploads}/1 upload
+                    {userUploads}/3 upload
                   </p>
                 </div>
               </div>

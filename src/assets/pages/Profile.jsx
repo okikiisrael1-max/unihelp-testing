@@ -11,10 +11,15 @@ import {
 } from "../../firebase/config";
 
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
+  limit,
+  query,
   serverTimestamp,
   setDoc,
+  where,
 } from "firebase/firestore";
 
 import { uploadImage } from "../../services/cloudinary";
@@ -46,6 +51,7 @@ import {
   Mail,
   MapPin,
   Medal,
+  MessageCircle,
   Pencil,
   Save,
   School,
@@ -54,6 +60,7 @@ import {
   Star,
   Trophy,
   User2,
+  Users,
   WalletCards,
   X,
 } from "lucide-react";
@@ -95,6 +102,13 @@ const Profile = ({
 
   const [message, setMessage] =
     useState("");
+
+  const [communityStats, setCommunityStats] =
+    useState({
+      created: 0,
+      joined: 0,
+      mutual: 0,
+    });
 
   const [form, setForm] =
     useState({
@@ -203,6 +217,36 @@ const Profile = ({
               data.location || "",
           });
         }
+
+        const createdSnap = await getDocs(
+          query(
+            collection(db, "groups"),
+            where(
+              "ownerId",
+              "==",
+              auth.currentUser.uid
+            ),
+            limit(50)
+          )
+        );
+
+        const joinedSnap = await getDocs(
+          query(
+            collection(
+              db,
+              "users",
+              auth.currentUser.uid,
+              "groups"
+            ),
+            limit(50)
+          )
+        );
+
+        setCommunityStats({
+          created: createdSnap.size,
+          joined: joinedSnap.size,
+          mutual: joinedSnap.size,
+        });
       } catch (error) {
         console.log(error);
       } finally {
@@ -233,6 +277,10 @@ const Profile = ({
           ref,
           {
             ...form,
+            usernameLower:
+              form.username
+                .trim()
+                .toLowerCase(),
             updatedAt:
               serverTimestamp(),
           },
@@ -512,6 +560,11 @@ const Profile = ({
               onClick={() => setEditOpen(true)}
               className="h-12 px-5 rounded-2xl bg-indigo-500 hover:bg-indigo-600 transition-all text-white flex items-center gap-2 font-semibold">
               <Edit3 size={18} />Edit Profile</button>
+            <button
+              onClick={() => navigate("/messages")}
+              className={`${glass} h-12 px-5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all`}>
+              <MessageCircle size={18} /> Messages
+            </button>
           </div>
 
         </div>
@@ -636,6 +689,50 @@ const Profile = ({
             </div>
           </div>
         )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+          {[
+            {
+              title: "Groups Created",
+              value: communityStats.created,
+              icon: <ShieldCheck />,
+              color: "from-indigo-500 to-blue-600",
+            },
+            {
+              title: "Groups Joined",
+              value: communityStats.joined,
+              icon: <Users />,
+              color: "from-emerald-500 to-teal-600",
+            },
+            {
+              title: "Mutual Groups",
+              value: communityStats.mutual,
+              icon: <MessageCircle />,
+              color: "from-pink-500 to-rose-600",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className={`${glass} rounded-3xl p-5 flex items-center gap-4`}
+            >
+              <div
+                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white`}
+              >
+                {item.icon}
+              </div>
+
+              <div>
+                <p className={`text-sm ${muted}`}>
+                  {item.title}
+                </p>
+
+                <h3 className="text-3xl font-black">
+                  {item.value}
+                </h3>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* GRID */}
 

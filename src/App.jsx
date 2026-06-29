@@ -31,6 +31,9 @@ import LectureNotesMarketplace from "./assets/pages/LectureNotesMarketplace";
 import HostelMarketplace from "./assets/pages/HostelMarketplace";
 import NewsFeed from "./assets/pages/NewsFeed";
 import Community from "./assets/pages/Community";
+import Messenger from "./assets/pages/Messenger";
+import NotificationsCenter from "./assets/pages/NotificationsCenter";
+import CommunitySettings from "./assets/pages/CommunitySettings";
 import TutorialPage from "./assets/pages/Tutorials";
 import MyHostels from "./assets/pages/MyUploadedHostel";
 import TutorialMarketplace from "./assets/pages/TutorialMarketplace";
@@ -414,6 +417,38 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Community dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community/:groupId"
+              element={
+                <ProtectedRoute>
+                  <Community dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <Messenger dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsCenter dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community-settings"
+              element={
+                <ProtectedRoute>
+                  <CommunitySettings dark={dark} />
                 </ProtectedRoute>
               }
             />

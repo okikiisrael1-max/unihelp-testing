@@ -1,961 +1,688 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   addDoc,
   collection,
-  doc,
   getDocs,
-  increment,
   limit,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
-  startAfter,
   updateDoc,
+  doc,
+  where,
 } from "firebase/firestore";
-
 import {
-  getDatabase,
-  onDisconnect,
-  onValue,
-  ref,
-  remove,
-  set,
-} from "firebase/database";
-
-import { onAuthStateChanged } from "firebase/auth";
-
-import { db, auth } from "../../firebase/config";
-
-import {
-  AtSign,
-  CheckCheck,
-  Clock3,
-  Hash,
+  Bell,
+  Check,
+  ChevronLeft,
+  FileText,
+  Image,
   Loader2,
-  MessageSquareMore,
-  Mic2,
-  Reply,
+  Lock,
+  MessageCircle,
+  MoreHorizontal,
+  Plus,
   Search,
-  SendHorizontal,
+  Send,
+  Settings,
+  ShieldCheck,
   Smile,
-  Sparkles,
-  User2,
+  UploadCloud,
+  UserMinus,
   Users,
+  Video,
   X,
 } from "lucide-react";
 
-const ROOM_ID = "campus-global";
-const INITIAL_LIMIT = 24;
-const LOAD_MORE_LIMIT = 20;
-const EMOJIS = [
-  "\u{1F525}",
-  "\u{2764}\u{FE0F}",
-  "\u{1F602}",
-  "\u{1F44D}",
-  "\u{1F62D}",
-  "\u{1F389}",
-  "\u{1F60E}",
-  "\u{1F64F}",
-];
+import { db } from "../../firebase/config";
+import { uploadFile, uploadImage } from "../../services/cloudinary";
+import { AuthContext } from "../context/AuthContext";
+import {
+  approveJoinRequest,
+  createGroup,
+  createPost,
+  deleteOwnPost,
+  formatShortTime,
+  getCurrentUserProfile,
+  getGroup,
+  getMembership,
+  joinPublicGroup,
+  leaveGroup,
+  listGroups,
+  listenGroupMessages,
+  listenGroupPosts,
+  loadOlderGroupMessages,
+  reactToPost,
+  rejectJoinRequest,
+  requestJoinGroup,
+  sendGroupMessage,
+} from "../service/communityService";
 
-const formatTime = (value) => {
-  if (!value?.toDate) return "";
+const CATEGORIES = ["All", "Academics", "JAMB", "Campus Life", "Marketplace", "Tutorials", "Study Group"];
+const TABS = ["Feed", "Members", "Chat", "Media", "Files", "About"];
+const REACTIONS = ["👍", "❤️", "😂", "🔥", "👏"];
 
-  return value.toDate().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const baseInput = "w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-indigo-500/30";
 
-const initialTheme = (dark) => ({
-  bg: dark ? "bg-[#050816]" : "bg-[#f4f7fb]",
-  text: dark ? "text-white" : "text-slate-900",
-  sub: dark ? "text-white/65" : "text-slate-600",
-  border: dark ? "border-white/10" : "border-slate-200",
-  glass: dark ? "bg-white/[0.05]" : "bg-white/70",
-  bubble: dark ? "bg-[#0f172a]" : "bg-white",
+const themeClasses = (dark) => ({
+  page: dark ? "bg-[#050816] text-white" : "bg-[#f6f8fc] text-slate-950",
+  panel: dark ? "border-white/10 bg-white/[0.05]" : "border-slate-200 bg-white",
+  soft: dark ? "border-white/10 bg-white/[0.04]" : "border-slate-200 bg-slate-50",
+  input: dark ? `${baseInput} border-white/10 bg-white/5 text-white placeholder:text-white/40` : `${baseInput} border-slate-200 bg-white text-slate-900`,
+  muted: dark ? "text-slate-400" : "text-slate-500",
 });
 
-const StatCard = ({ dark, icon: Icon, label, value, accent }) => (
-  <div
-    className={`rounded-[26px] border p-4 sm:p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ${
-      dark ? "bg-white/[0.04] border-white/10" : "bg-white border-slate-200"
-    }`}
-  >
-    <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.24em] opacity-55">{label}</p>
-        <p className="mt-2 text-2xl font-black">{value}</p>
-      </div>
+const fileKind = (file) => {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("video/")) return "video";
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
+  return "document";
+};
 
-      <div className={`rounded-2xl p-3 ${accent}`}>
-        <Icon size={18} />
-      </div>
-    </div>
-  </div>
-);
-
-const MemberChip = ({ member, onClick }) => (
-  <button
-    onClick={onClick}
-    className="flex w-full items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-left transition hover:border-indigo-500/20 hover:bg-indigo-500/5"
-  >
-    <div className="relative">
-      {member.avatar ? (
-        <img
-          src={member.avatar}
-          alt=""
-          className="h-10 w-10 rounded-2xl object-cover"
-        />
-      ) : (
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
-          <User2 size={18} />
-        </div>
-      )}
-
-      <span
-        className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 ${
-          member.online ? "border-white bg-emerald-500" : "border-white bg-slate-400"
-        }`}
-      />
-    </div>
-
-    <div className="min-w-0 flex-1">
-      <p className="truncate text-sm font-semibold">{member.name}</p>
-      <p className="text-xs opacity-55">{member.role || "Student"}</p>
-    </div>
-  </button>
-);
-
-const ReactionBar = ({ reactions = {}, dark }) => {
-  const entries = Object.entries(reactions).filter(([, count]) => count > 0);
-
-  if (!entries.length) return null;
-
+const EmptyState = ({ icon: Icon, title, text, dark }) => {
+  const t = themeClasses(dark);
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      {entries.map(([emoji, count]) => (
-        <span
-          key={emoji}
-          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${
-            dark
-              ? "border-white/10 bg-white/10"
-              : "border-slate-200 bg-slate-50 text-slate-700"
-          }`}
-        >
-          <span>{emoji}</span>
-          <span className="opacity-70">{count}</span>
-        </span>
+    <div className={`rounded-3xl border p-8 text-center ${t.soft}`}>
+      <Icon className="mx-auto opacity-35" size={42} />
+      <h3 className="mt-4 text-lg font-black">{title}</h3>
+      <p className={`mt-2 text-sm ${t.muted}`}>{text}</p>
+    </div>
+  );
+};
+
+const SkeletonCards = ({ dark }) => {
+  const t = themeClasses(dark);
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className={`h-52 animate-pulse rounded-3xl border ${t.soft}`} />
       ))}
     </div>
   );
 };
 
-const MessageBubble = memo(function MessageBubble({
-  message,
-  isMe,
-  dark,
-  theme,
-  onReply,
-  onReact,
-}) {
-  const messageText = message.text || "";
+const AttachmentPreview = ({ attachment }) => {
+  if (!attachment?.url) return null;
+  if (attachment.type === "image") {
+    return <img src={attachment.url} alt={attachment.name || "Attachment"} className="mt-4 max-h-80 w-full rounded-2xl object-cover" />;
+  }
+  if (attachment.type === "video") {
+    return <video src={attachment.url} controls className="mt-4 max-h-80 w-full rounded-2xl bg-black" />;
+  }
+  return (
+    <a href={attachment.url} target="_blank" rel="noreferrer" className="mt-4 flex items-center gap-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-sm font-semibold text-indigo-400">
+      <FileText size={18} />
+      {attachment.name || "Open file"}
+    </a>
+  );
+};
+
+function CreateGroupModal({ dark, onClose, onCreated, user, profile }) {
+  const t = themeClasses(dark);
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    category: "Academics",
+    privacy: "public",
+    rules: "",
+  });
+  const [cover, setCover] = useState(null);
+  const [avatar, setAvatar] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!form.name.trim() || !form.description.trim()) {
+      setError("Group name and description are required.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      const uploads = {};
+      if (cover) uploads.coverUrl = (await uploadImage(cover)).secure_url;
+      if (avatar) uploads.avatarUrl = (await uploadImage(avatar)).secure_url;
+      const id = await createGroup({ form, user, profile, uploads });
+      onCreated(id);
+    } catch (err) {
+      setError(err?.errors?.[0] || err.message || "Could not create group.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`flex max-w-[96%] gap-3 sm:max-w-[88%] md:max-w-[76%] ${
-          isMe ? "flex-row-reverse" : ""
-        }`}
-      >
-        {message.avatar ? (
-          <img
-            src={message.avatar}
-            alt=""
-            className="h-11 w-11 shrink-0 rounded-2xl border border-white/10 object-cover"
-          />
-        ) : (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
-            <User2 size={18} />
+    <div className="fixed inset-0 z-80 flex items-center justify-center overflow-y-auto bg-black/60 py-10 top-0 px-4 backdrop-blur">
+      <form onSubmit={submit} className={`w-full md:w-[70%] rounded-3xl border p-5 shadow-2xl md:p-7 ${t.panel}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black">Create Group</h2>
+            <p className={`mt-1 text-sm ${t.muted}`}>Build a focused space for students.</p>
           </div>
-        )}
+          <button type="button" onClick={onClose} className="rounded-2xl p-3 hover:bg-red-500/10" aria-label="Close">
+            <X size={20} />
+          </button>
+        </div>
 
-        <div className="min-w-0 flex-1">
-          <div className={`mb-1 flex items-center gap-2 ${isMe ? "justify-end" : ""}`}>
-            <p className="truncate text-xs font-semibold opacity-85">{message.name}</p>
-            <span className="text-[10px] opacity-50">{formatTime(message.createdAt)}</span>
-          </div>
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <input className={t.input} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Group name" />
+          <select className={t.input} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+            {CATEGORIES.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}
+          </select>
+          <textarea className={`${t.input} md:col-span-2`} rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" />
+          <select className={t.input} value={form.privacy} onChange={(e) => setForm({ ...form, privacy: e.target.value })}>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+          <input className={t.input} value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} placeholder="Optional rules" />
+          <label className={`rounded-2xl border p-4 text-sm font-semibold ${t.soft}`}>
+            <span className="flex items-center gap-2"><Image size={17} /> Cover image</span>
+            <input type="file" accept="image/*" className="mt-3 text-xs" onChange={(e) => setCover(e.target.files?.[0] || null)} />
+          </label>
+          <label className={`rounded-2xl border p-4 text-sm font-semibold ${t.soft}`}>
+            <span className="flex items-center gap-2"><UploadCloud size={17} /> Group avatar</span>
+            <input type="file" accept="image/*" className="mt-3 text-xs" onChange={(e) => setAvatar(e.target.files?.[0] || null)} />
+          </label>
+        </div>
 
-          <div
-            className={`relative overflow-hidden rounded-[28px] border px-4 py-2 shadow-[0_20px_50px_rgba(0,0,0,0.14)] md:px-5 ${
-              isMe
-                ? "rounded-br-md border-transparent bg-gradient-to-br from-indigo-800  to-blue-300 text-white"
-                : `${theme.bubble} ${theme.border} rounded-bl-md`
-            }`}
-          >
-            {message.replyTo && (
-              <div
-                className={`mb-3 rounded-2xl border p-3 ${
-                  isMe
-                    ? "border-white/10 bg-black/15"
-                    : dark
-                      ? "border-white/10 bg-white/5"
-                      : "border-slate-200 bg-slate-50"
-                }`}
-              >
-                <p className="text-xs opacity-60">Replying to {message.replyTo.name}</p>
-                <p className="mt-1 truncate text-sm">{message.replyTo.text}</p>
+        {error && <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+
+        <button disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60">
+          {saving ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+          {saving ? "Creating..." : "Create group"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function GroupDiscovery({ dark }) {
+  const t = themeClasses(dark);
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState({});
+  const [groups, setGroups] = useState([]);
+  const [category, setCategory] = useState("All");
+  const [search, setSearch] = useState("");
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const load = useCallback(async ({ reset = false } = {}) => {
+    setLoading(true);
+    try {
+      const result = await listGroups({ search, category, cursor: reset ? null : cursor });
+      setGroups((current) => reset ? result.groups : [...current, ...result.groups]);
+      setCursor(result.cursor);
+      setHasMore(result.hasMore);
+    } finally {
+      setLoading(false);
+    }
+  }, [category, cursor, search]);
+
+  useEffect(() => {
+    getCurrentUserProfile(user).then((data) => setProfile(data || {}));
+  }, [user]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => load({ reset: true }), 250);
+    return () => clearTimeout(timer);
+  }, [category, search]);
+
+  return (
+    <div className={`min-h-screen md:mt-20 ${t.page}`}>
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
+        <div className={`rounded-3xl border p-5 md:p-8 ${t.panel}`}>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-400">
+                <Users size={14} /> Groups
               </div>
-            )}
-
-            <p className="whitespace-pre-wrap break-words text-sm leading-7 md:text-[15px]">
-              {messageText.split(/(\s+)/).map((part, index) =>
-                part.startsWith("@") ? (
-                  <span
-                    key={index}
-                    className={isMe ? "font-semibold text-cyan-200" : "font-semibold text-indigo-500"}
-                  >
-                    {part}
-                  </span>
-                ) : (
-                  <span key={index}>{part}</span>
-                )
-              )}
-            </p>
-
-            <ReactionBar reactions={message.reactions || {}} dark={dark} />
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => onReply(message)}
-                className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-semibold transition ${
-                  isMe
-                    ? "bg-white/15 hover:bg-white/25"
-                    : dark
-                      ? "bg-white/5 hover:bg-white/10"
-                      : "bg-slate-100 hover:bg-slate-200"
-                }`}
-              >
-                <Reply size={14} />
-                Reply
+              <h1 className="mt-4 text-3xl font-black md:text-5xl">Community Groups</h1>
+              <p className={`mt-3 max-w-2xl text-sm leading-7 md:text-base ${t.muted}`}>
+                Discover student communities, request access to private groups, and keep group chat scoped to the space you are actually using.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/messages" className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
+                <MessageCircle size={18} /> Messenger
+              </Link>
+              <Link to="/notifications" className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
+                <Bell size={18} /> Notifications
+              </Link>
+              <button onClick={() => setCreateOpen(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white">
+                <Plus size={18} /> Create
               </button>
+            </div>
+          </div>
 
-              {EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => onReact(message.id, emoji)}
-                  className="text-lg transition hover:scale-125"
-                  title={`React with ${emoji}`}
-                >
-                  {emoji}
+          <div className="mt-7 flex flex-col gap-3 lg:flex-row">
+            <div className={`flex flex-1 items-center gap-3 rounded-2xl border px-4 ${t.soft}`}>
+              <Search size={18} className="opacity-50" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search groups" className="h-12 w-full bg-transparent text-sm outline-none" />
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {CATEGORIES.map((item) => (
+                <button key={item} onClick={() => setCategory(item)} className={`h-12 shrink-0 rounded-2xl px-4 text-sm font-bold ${category === item ? "bg-indigo-600 text-white" : t.soft}`}>
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          {loading && groups.length === 0 ? (
+            <SkeletonCards dark={dark} />
+          ) : groups.length === 0 ? (
+            <EmptyState dark={dark} icon={Users} title="No groups found" text="Try another category or create the first group in this space." />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {groups.map((group) => (
+                <Link key={group.id} to={`/community/${group.id}`} className={`overflow-hidden rounded-3xl border transition hover:-translate-y-1 hover:shadow-xl ${t.panel}`}>
+                  <div className="h-28 bg-gradient-to-r from-indigo-600 via-sky-500 to-emerald-400">
+                    {group.coverUrl && <img src={group.coverUrl} alt="" className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="p-5">
+                    <div className="-mt-12 mb-4 flex items-end justify-between">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-3xl border-4 border-white bg-indigo-600 text-2xl font-black text-white">
+                        {group.avatarUrl ? <img src={group.avatarUrl} alt="" className="h-full w-full rounded-[20px] object-cover" /> : group.name?.charAt(0)}
+                      </div>
+                      {group.privacy === "private" && <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-500"><Lock size={13} /> Private</span>}
+                    </div>
+                    <h2 className="text-xl font-black">{group.name}</h2>
+                    <p className={`mt-2 line-clamp-2 text-sm leading-6 ${t.muted}`}>{group.description}</p>
+                    <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-bold">
+                      <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-400">{group.category}</span>
+                      <span className={t.muted}>{group.memberCount || 0} members</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button onClick={() => load()} disabled={loading} className={`rounded-2xl border px-5 py-3 text-sm font-bold ${t.soft}`}>
+                {loading ? "Loading..." : "Load more"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {createOpen && (
+        <CreateGroupModal
+          dark={dark}
+          user={user}
+          profile={profile}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(id) => navigate(`/community/${id}`)}
+        />
+      )}
+    </div>
+  );
+}
+
+function Composer({ dark, placeholder, onSend, allowVideo = true }) {
+  const t = themeClasses(dark);
+  const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!text.trim() && !file) return;
+    setSending(true);
+    setError("");
+    try {
+      const attachments = [];
+      if (file) {
+        const kind = fileKind(file);
+        if (kind === "video" && !allowVideo) throw new Error("Video uploads are available for premium users.");
+        const uploaded = await uploadFile(file);
+        attachments.push({
+          type: kind,
+          url: uploaded.secure_url,
+          name: uploaded.original_filename || file.name,
+          bytes: uploaded.bytes || file.size,
+        });
+      }
+      await onSend({ text: text.trim(), attachments });
+      setText("");
+      setFile(null);
+    } catch (err) {
+      setError(err?.errors?.[0] || err.message || "Could not send.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className={`rounded-3xl border p-3 ${t.panel}`}>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder={placeholder} className={`${t.input} resize-none border-0`} />
+      {file && <div className={`mt-3 flex items-center justify-between rounded-2xl border p-3 text-xs ${t.soft}`}><span>{file.name}</span><button onClick={() => setFile(null)}><X size={15} /></button></div>}
+      {error && <div className="mt-3 rounded-2xl bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${t.soft}`}>
+          <UploadCloud size={17} /> Attach
+          <input type="file" hidden onChange={(e) => setFile(e.target.files?.[0] || null)} />
+        </label>
+        <button onClick={submit} disabled={sending || (!text.trim() && !file)} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-5 font-bold text-white disabled:opacity-50">
+          {sending ? <Loader2 className="animate-spin" size={17} /> : <Send size={17} />} Send
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GroupDetail({ dark, groupId }) {
+  const t = themeClasses(dark);
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState({});
+  const [group, setGroup] = useState(null);
+  const [membership, setMembership] = useState(null);
+  const [pendingRequest, setPendingRequest] = useState(false);
+  const [tab, setTab] = useState("Feed");
+  const [posts, setPosts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [messageCursor, setMessageCursor] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const bottomRef = useRef(null);
+
+  const isMember = Boolean(membership);
+  const canManage = membership?.role === "owner" || membership?.role === "admin" || group?.ownerId === user?.uid;
+  const isPremium = profile?.plan === "premium" || profile?.premium === true;
+
+  const refresh = useCallback(async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    try {
+      const [groupData, profileData, membershipData] = await Promise.all([
+        getGroup(groupId),
+        getCurrentUserProfile(user),
+        getMembership(groupId, user.uid),
+      ]);
+      setGroup(groupData);
+      setProfile(profileData || {});
+      setMembership(membershipData);
+
+      if (!membershipData && groupData?.privacy === "private") {
+        const requestSnap = await getDocs(query(collection(db, "groups", groupId, "joinRequests"), where("uid", "==", user.uid), limit(1)));
+        setPendingRequest(!requestSnap.empty);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId, user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (!isMember || tab !== "Feed") return undefined;
+    return listenGroupPosts(groupId, (items) => setPosts(items));
+  }, [groupId, isMember, tab]);
+
+  useEffect(() => {
+    if (!isMember || tab !== "Chat") return undefined;
+    return listenGroupMessages(groupId, (items, cursor) => {
+      setMessages(items);
+      setMessageCursor(cursor);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
+    });
+  }, [groupId, isMember, tab]);
+
+  useEffect(() => {
+    if (!isMember || tab !== "Members") return undefined;
+    const q = query(collection(db, "groups", groupId, "members"), orderBy("joinedAt", "desc"), limit(50));
+    const run = async () => {
+      const snap = await getDocs(q);
+      setMembers(snap.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
+    };
+    run();
+    if (canManage) {
+      getDocs(query(collection(db, "groups", groupId, "joinRequests"), orderBy("requestedAt", "desc"), limit(30)))
+        .then((snap) => setRequests(snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }))));
+    }
+    return undefined;
+  }, [canManage, groupId, isMember, tab]);
+
+  const join = async () => {
+    setBusy(true);
+    try {
+      if (group.privacy === "private") {
+        await requestJoinGroup(group, user, profile);
+        setPendingRequest(true);
+      } else {
+        await joinPublicGroup(group, user, profile);
+        await refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendPost = async (payload) => createPost(groupId, user, profile, payload);
+  const sendChat = async (payload) => sendGroupMessage(groupId, user, profile, payload);
+
+  const mediaItems = posts.flatMap((post) => (post.attachments || []).filter((item) => item.type === "image" || item.type === "video").map((item) => ({ ...item, postId: post.id })));
+  const fileItems = posts.flatMap((post) => (post.attachments || []).filter((item) => item.type === "pdf" || item.type === "document").map((item) => ({ ...item, postId: post.id })));
+
+  if (loading) {
+    return <div className={`min-h-screen ${t.page}`}><div className="mx-auto max-w-7xl px-4 py-10"><SkeletonCards dark={dark} /></div></div>;
+  }
+
+  if (!group) {
+    return <div className={`min-h-screen ${t.page}`}><div className="mx-auto max-w-3xl px-4 py-10"><EmptyState dark={dark} icon={Users} title="Group not found" text="This group may have been deleted." /></div></div>;
+  }
+
+  return (
+    <div className={`min-h-screen ${t.page}`}>
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
+        <button onClick={() => navigate("/community")} className={`mb-4 inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${t.soft}`}>
+          <ChevronLeft size={17} /> Groups
+        </button>
+
+        <div className={`overflow-hidden rounded-3xl border ${t.panel}`}>
+          <div className="h-44 bg-gradient-to-r from-indigo-700 via-sky-500 to-emerald-400 md:h-64">
+            {group.coverUrl && <img src={group.coverUrl} alt="" className="h-full w-full object-cover" />}
+          </div>
+          <div className="p-5 md:p-7">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end">
+                <div className="-mt-20 flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border-4 border-white bg-indigo-600 text-4xl font-black text-white">
+                  {group.avatarUrl ? <img src={group.avatarUrl} alt="" className="h-full w-full rounded-[20px] object-cover" /> : group.name?.charAt(0)}
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl font-black md:text-5xl">{group.name}</h1>
+                    {group.privacy === "private" && <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-500"><Lock size={13} /> Private</span>}
+                  </div>
+                  <p className={`mt-3 max-w-3xl text-sm leading-7 ${t.muted}`}>{group.description}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+                    <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-400">{group.category}</span>
+                    <span className={`rounded-full px-3 py-1 ${t.soft}`}>{group.memberCount || 0} members</span>
+                    <span className={`rounded-full px-3 py-1 ${t.soft}`}>Created {formatShortTime(group.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {isMember ? (
+                  <>
+                    <button onClick={() => setTab("Chat")} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white"><MessageCircle size={17} /> Chat</button>
+                    {membership?.role !== "owner" && <button onClick={async () => { await leaveGroup(group, user.uid); await refresh(); }} className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}><UserMinus size={17} /> Leave</button>}
+                  </>
+                ) : (
+                  <button onClick={join} disabled={busy || pendingRequest} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white disabled:opacity-60">
+                    {busy ? <Loader2 className="animate-spin" size={17} /> : group.privacy === "private" ? <Lock size={17} /> : <Plus size={17} />}
+                    {pendingRequest ? "Request pending" : group.privacy === "private" ? "Request to join" : "Join group"}
+                  </button>
+                )}
+                {canManage && <button className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}><Settings size={17} /> Manage</button>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!isMember ? (
+          <div className="mt-6">
+            <EmptyState dark={dark} icon={Lock} title={group.privacy === "private" ? "Private group" : "Join to participate"} text="Membership is required before posts, chat, media, and files are loaded." />
+          </div>
+        ) : (
+          <>
+            <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
+              {TABS.map((item) => (
+                <button key={item} onClick={() => setTab(item)} className={`h-11 shrink-0 rounded-2xl px-4 text-sm font-bold ${tab === item ? "bg-indigo-600 text-white" : t.soft}`}>
+                  {item}
                 </button>
               ))}
             </div>
 
-            {isMe && (
-              <div className="mt-2 flex justify-end">
-                <CheckCheck size={14} className="opacity-75" />
-              </div>
-            )}
-          </div>
-        </div>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <section className="min-w-0">
+                {tab === "Feed" && (
+                  <div className="space-y-5">
+                    <Composer dark={dark} placeholder="Share an update, question, PDF, poll idea, image, or study resource..." onSend={sendPost} allowVideo={isPremium} />
+                    {posts.length === 0 ? <EmptyState dark={dark} icon={MessageCircle} title="No posts yet" text="Start the group feed with a helpful update." /> : posts.map((post) => (
+                      <article key={post.id} className={`rounded-3xl border p-5 ${t.panel}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">{post.authorAvatar && <img src={post.authorAvatar} alt="" className="h-full w-full object-cover" />}</div>
+                            <div className="min-w-0">
+                              <p className="truncate font-bold">{post.authorName}</p>
+                              <p className={`text-xs ${t.muted}`}>{formatShortTime(post.createdAt)}</p>
+                            </div>
+                          </div>
+                          {post.authorId === user.uid && <button onClick={() => deleteOwnPost(groupId, post.id)} className="rounded-xl p-2 text-red-400 hover:bg-red-500/10"><X size={17} /></button>}
+                        </div>
+                        {post.text && <p className="mt-4 whitespace-pre-wrap text-sm leading-7">{post.text}</p>}
+                        {(post.attachments || []).map((item, index) => <AttachmentPreview key={`${post.id}-${index}`} attachment={item} />)}
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          {REACTIONS.map((emoji) => <button key={emoji} onClick={() => reactToPost(groupId, post.id, emoji)} className={`rounded-full border px-3 py-1 text-sm ${t.soft}`}>{emoji} {post.reactions?.[emoji] || ""}</button>)}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+
+                {tab === "Chat" && (
+                  <div className={`overflow-hidden rounded-3xl border ${t.panel}`}>
+                    <div className="max-h-[58vh] overflow-y-auto p-4">
+                      {messageCursor && <button onClick={async () => {
+                        const older = await loadOlderGroupMessages(groupId, messageCursor);
+                        setMessages((current) => [...older.messages, ...current]);
+                        setMessageCursor(older.cursor || messageCursor);
+                      }} className={`mx-auto mb-4 block rounded-2xl border px-4 py-2 text-xs font-bold ${t.soft}`}>Load older</button>}
+                      <div className="space-y-3">
+                        {messages.map((message) => {
+                          const mine = message.senderId === user.uid;
+                          return (
+                            <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                              <div className={`max-w-[86%] rounded-3xl border p-3 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft}`}>
+                                <p className="text-xs font-bold opacity-80">{message.senderName} · {formatShortTime(message.createdAt)}</p>
+                                {message.text && <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.text}</p>}
+                                {(message.attachments || []).map((item, index) => <AttachmentPreview key={index} attachment={item} />)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div ref={bottomRef} />
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 p-3">
+                      <Composer dark={dark} placeholder="Message this group..." onSend={sendChat} allowVideo={isPremium} />
+                    </div>
+                  </div>
+                )}
+
+                {tab === "Members" && (
+                  <div className="space-y-4">
+                    {canManage && requests.length > 0 && (
+                      <div className={`rounded-3xl border p-5 ${t.panel}`}>
+                        <h2 className="font-black">Join requests</h2>
+                        <div className="mt-4 space-y-3">
+                          {requests.map((request) => (
+                            <div key={request.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 ${t.soft}`}>
+                              <span className="font-bold">{request.name}</span>
+                              <div className="flex gap-2">
+                                <button onClick={async () => { await approveJoinRequest(group, request); setRequests((items) => items.filter((item) => item.id !== request.id)); }} className="rounded-xl bg-emerald-600 px-3 py-2 text-white"><Check size={16} /></button>
+                                <button onClick={async () => { await rejectJoinRequest(group, request); setRequests((items) => items.filter((item) => item.id !== request.id)); }} className="rounded-xl bg-red-600 px-3 py-2 text-white"><X size={16} /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {members.map((member) => (
+                        <div key={member.id} className={`flex items-center gap-3 rounded-3xl border p-4 ${t.panel}`}>
+                          <div className="h-12 w-12 overflow-hidden rounded-2xl bg-indigo-500/10">{member.avatar && <img src={member.avatar} alt="" className="h-full w-full object-cover" />}</div>
+                          <div className="min-w-0">
+                            <p className="truncate font-bold">{member.name}</p>
+                            <p className={`text-xs capitalize ${t.muted}`}>{member.role}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tab === "Media" && (
+                  mediaItems.length ? <div className="grid gap-4 md:grid-cols-2">{mediaItems.map((item, index) => <AttachmentPreview key={index} attachment={item} />)}</div> : <EmptyState dark={dark} icon={Image} title="No media yet" text="Images and videos from posts will appear here." />
+                )}
+
+                {tab === "Files" && (
+                  fileItems.length ? <div className="space-y-3">{fileItems.map((item, index) => <AttachmentPreview key={index} attachment={item} />)}</div> : <EmptyState dark={dark} icon={FileText} title="No files yet" text="PDFs and documents from posts will appear here." />
+                )}
+
+                {tab === "About" && (
+                  <div className={`rounded-3xl border p-6 ${t.panel}`}>
+                    <h2 className="text-2xl font-black">About</h2>
+                    <p className={`mt-3 leading-7 ${t.muted}`}>{group.description}</p>
+                    <h3 className="mt-6 font-black">Rules</h3>
+                    <p className={`mt-2 leading-7 ${t.muted}`}>{group.rules || "No rules added yet."}</p>
+                  </div>
+                )}
+              </section>
+
+              <aside className="space-y-4">
+                <div className={`rounded-3xl border p-5 ${t.panel}`}>
+                  <h3 className="font-black">Group Health</h3>
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <div className={`rounded-2xl border p-3 ${t.soft}`}><p className="font-black">{group.memberCount || 0}</p><p className={`text-xs ${t.muted}`}>Members</p></div>
+                    <div className={`rounded-2xl border p-3 ${t.soft}`}><p className="font-black">{group.postCount || 0}</p><p className={`text-xs ${t.muted}`}>Posts</p></div>
+                    <div className={`rounded-2xl border p-3 ${t.soft}`}><p className="font-black">{group.fileCount || 0}</p><p className={`text-xs ${t.muted}`}>Files</p></div>
+                  </div>
+                </div>
+                <Link to="/messages" className={`flex items-center justify-between rounded-3xl border p-5 font-bold ${t.panel}`}>
+                  Direct messages <MessageCircle size={18} />
+                </Link>
+                <Link to="/community-settings" className={`flex items-center justify-between rounded-3xl border p-5 font-bold ${t.panel}`}>
+                  Messaging settings <Settings size={18} />
+                </Link>
+                {canManage && <div className={`rounded-3xl border p-5 ${t.panel}`}><ShieldCheck className="text-indigo-400" /><p className="mt-3 text-sm font-bold">You can manage members, requests, and moderation actions for this group.</p></div>}
+              </aside>
+            </div>
+          </>
+        )}
       </div>
     </div>
-  );
-});
-
-function LoaderIcon() {
-  return (
-    <Loader2 className="h-4 w-4 animate-spin" />
   );
 }
 
 export default function Community({ dark = false }) {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [presenceMap, setPresenceMap] = useState({});
-  const [typingUsers, setTypingUsers] = useState([]);
-  const [text, setText] = useState("");
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const [cursorDoc, setCursorDoc] = useState(null);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
-  const [sending, setSending] = useState(false);
-  const [inputHeight, setInputHeight] = useState("auto");
-
-  const inputRef = useRef(null);
-  const bottomRef = useRef(null);
-  const typingTimeout = useRef(null);
-  const skipNextAutoScroll = useRef(false);
-
-  const realtimeDb = getDatabase();
-  const messagesRef = useMemo(() => collection(db, "chats", ROOM_ID, "messages"), []);
-  const theme = useMemo(() => initialTheme(dark), [dark]);
-  const isSignedIn = Boolean(currentUser);
-
-  const membersWithPresence = useMemo(() => {
-    return members.map((member) => {
-      const presence = presenceMap[member.id] || {};
-      return {
-        ...member,
-        name: presence.name || member.name || "Anonymous",
-        avatar: presence.avatar || member.avatar || "",
-        online: Boolean(presence.online),
-      };
-    });
-  }, [members, presenceMap]);
-
-  const currentOnlineMembers = useMemo(() => {
-    return membersWithPresence.filter((member) => member.online);
-  }, [membersWithPresence]);
-
-  const filteredMentions = useMemo(() => {
-    const value = mentionQuery.trim().toLowerCase();
-
-    if (!value) {
-      return membersWithPresence.slice(0, 6);
-    }
-
-    return membersWithPresence
-      .filter((member) => member.name?.toLowerCase().includes(value))
-      .slice(0, 6);
-  }, [membersWithPresence, mentionQuery]);
-
-  const filteredMessages = useMemo(() => {
-    const value = search.trim().toLowerCase();
-
-    if (!value) return messages;
-
-    return messages.filter((message) =>
-      `${message.name || ""} ${message.text || ""}`.toLowerCase().includes(value)
-    );
-  }, [messages, search]);
-
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user || null);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!currentUser?.uid) return undefined;
-
-    const presenceRef = ref(realtimeDb, `presence/${ROOM_ID}/${currentUser.uid}`);
-    const roomPresenceRef = ref(realtimeDb, `presence/${ROOM_ID}`);
-
-    set(presenceRef, {
-      online: true,
-      name: currentUser.displayName || currentUser.email || "Anonymous",
-      avatar: currentUser.photoURL || "",
-    });
-
-    onDisconnect(presenceRef).remove();
-
-    const unsubscribe = onValue(roomPresenceRef, (snapshot) => {
-      setPresenceMap(snapshot.val() || {});
-    });
-
-    return () => unsubscribe();
-  }, [currentUser?.uid, realtimeDb]);
-
-  useEffect(() => {
-    if (!currentUser?.uid) return undefined;
-
-    const memberRef = doc(db, "rooms", ROOM_ID, "members", currentUser.uid);
-    setDoc(
-      memberRef,
-      {
-        name: currentUser.displayName || currentUser.email || "Anonymous",
-        avatar: currentUser.photoURL || "",
-        email: currentUser.email || "",
-        role: "Student",
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    ).catch(console.error);
-  }, [currentUser?.uid]);
-
-  useEffect(() => {
-    const typingRef = ref(realtimeDb, `typing/${ROOM_ID}`);
-    const unsubscribe = onValue(typingRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      setTypingUsers(Object.values(data).filter(Boolean));
-    });
-
-    return () => unsubscribe();
-  }, [realtimeDb]);
-
-  useEffect(() => {
-    const membersRef = collection(db, "rooms", ROOM_ID, "members");
-    const unsubscribe = onSnapshot(membersRef, (snapshot) => {
-      setMembers(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const q = query(messagesRef, orderBy("createdAt", "desc"), limit(INITIAL_LIMIT));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })).reverse();
-      setMessages(data);
-      setCursorDoc(snapshot.docs[snapshot.docs.length - 1] || null);
-      setLoading(false);
-      setHasMore(snapshot.docs.length === INITIAL_LIMIT);
-    });
-
-    return () => unsubscribe();
-  }, [messagesRef]);
-
-  useEffect(() => {
-    if (skipNextAutoScroll.current) {
-      skipNextAutoScroll.current = false;
-      return;
-    }
-
-    scrollToBottom();
-  }, [messages.length, scrollToBottom]);
-
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        setShowEmojiPicker(false);
-        setShowMentions(false);
-        setReplyingTo(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, []);
-
-  useEffect(() => {
-    return () => clearTimeout(typingTimeout.current);
-  }, []);
-
-  const sendTyping = useCallback(
-    (value) => {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const typingRef = ref(realtimeDb, `typing/${ROOM_ID}/${user.uid}`);
-      onDisconnect(typingRef).remove();
-
-      clearTimeout(typingTimeout.current);
-
-      if (!value.trim()) {
-        remove(typingRef);
-        return;
-      }
-
-      set(typingRef, {
-        name: user.displayName || "Someone",
-      });
-
-      typingTimeout.current = setTimeout(() => {
-        remove(typingRef);
-      }, 1400);
-    },
-    [realtimeDb]
-  );
-
-  const handleChange = useCallback(
-    (value) => {
-      setText(value);
-      sendTyping(value);
-
-      const parts = value.split(/\s+/);
-      const last = parts[parts.length - 1] || "";
-
-      if (last.startsWith("@")) {
-        setShowMentions(true);
-        setMentionQuery(last.slice(1));
-      } else {
-        setShowMentions(false);
-        setMentionQuery("");
-      }
-
-      if (inputRef.current) {
-        inputRef.current.style.height = "auto";
-        inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
-        setInputHeight(`${inputRef.current.scrollHeight}px`);
-      }
-    },
-    [sendTyping]
-  );
-
-  const selectMention = useCallback(
-    (name) => {
-      const parts = text.split(/\s+/);
-      parts[parts.length - 1] = `@${name}`;
-      const next = `${parts.join(" ")} `;
-
-      setText(next);
-      setShowMentions(false);
-      setMentionQuery("");
-      requestAnimationFrame(() => inputRef.current?.focus());
-      handleChange(next);
-    },
-    [handleChange, text]
-  );
-
-  const sendMessage = useCallback(async () => {
-    if (!text.trim() || !auth.currentUser || sending) return;
-
-    setSending(true);
-    try {
-      const mentions = text.match(/@\w+/g) || [];
-
-      await addDoc(messagesRef, {
-        text: text.trim(),
-        mentions,
-        userId: auth.currentUser.uid,
-        name: auth.currentUser.displayName || auth.currentUser.email || "Anonymous",
-        avatar: auth.currentUser.photoURL || "",
-        createdAt: serverTimestamp(),
-        reactions: {},
-        replyTo: replyingTo
-          ? {
-              id: replyingTo.id,
-              name: replyingTo.name,
-              text: replyingTo.text,
-            }
-          : null,
-      });
-
-      setText("");
-      setReplyingTo(null);
-      setShowEmojiPicker(false);
-      setShowMentions(false);
-      sendTyping("");
-
-      if (inputRef.current) {
-        inputRef.current.style.height = "auto";
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSending(false);
-    }
-  }, [messagesRef, replyingTo, sendTyping, sending, text]);
-
-  const addReaction = useCallback(async (messageId, emoji) => {
-    if (!auth.currentUser) return;
-
-    await updateDoc(doc(db, "chats", ROOM_ID, "messages", messageId), {
-      [`reactions.${emoji}`]: increment(1),
-    });
-  }, []);
-
-  const loadMore = useCallback(async () => {
-    if (!cursorDoc || !hasMore || loadingMore) return;
-
-    setLoadingMore(true);
-
-    try {
-      const q = query(
-        messagesRef,
-        orderBy("createdAt", "desc"),
-        startAfter(cursorDoc),
-        limit(LOAD_MORE_LIMIT)
-      );
-
-      const snapshot = await getDocs(q);
-      const older = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })).reverse();
-
-      if (older.length > 0) {
-        skipNextAutoScroll.current = true;
-        setMessages((current) => {
-          const byId = new Map(current.map((item) => [item.id, item]));
-          older.forEach((item) => byId.set(item.id, item));
-          return Array.from(byId.values()).sort((a, b) => {
-            const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
-            const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
-            return aTime - bTime;
-          });
-        });
-        setHasMore(snapshot.docs.length === LOAD_MORE_LIMIT);
-        setCursorDoc(snapshot.docs[snapshot.docs.length - 1] || cursorDoc);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [cursorDoc, hasMore, loadingMore, messagesRef]);
-
-  const roomStats = [
-    {
-      label: "Online now",
-      value: currentOnlineMembers.length.toString(),
-      icon: Users,
-      accent: "bg-emerald-500/10 text-emerald-500",
-    },
-    {
-      label: "Messages",
-      value: messages.length.toString(),
-      icon: MessageSquareMore,
-      accent: "bg-indigo-500/10 text-indigo-500",
-    },
-    {
-      label: "Members",
-      value: membersWithPresence.length.toString(),
-      icon: Hash,
-      accent: "bg-violet-500/10 text-violet-500",
-    },
-  ];
-
-  return (
-    <div className={`min-h-screen md:mt-20 overflow-hidden ${theme.bg} ${theme.text}`}>
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute left-[-120px] top-[-120px] h-[320px] w-[320px] rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute bottom-[-120px] right-[-120px] h-[320px] w-[320px] rounded-full bg-emerald-500/15 blur-[120px]" />
-        <div className="absolute left-1/2 top-[18%] h-[260px] w-[260px] -translate-x-1/2 rounded-full bg-sky-500/10 blur-[110px]" />
-      </div>
-
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 md:px-6 md:py-8">
-        <div
-          className={`rounded-[34px] border p-5 shadow-[0_30px_100px_rgba(15,23,42,0.16)] backdrop-blur-xl ${
-            dark ? "border-white/10 bg-white/[0.04]" : "border-slate-200 bg-white/85"
-          }`}
-        >
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-500">
-                <Sparkles size={14} />
-                Group
-              </div>
-
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl md:text-5xl">
-                Campus Global
-              </h1>
-
-              <p className={`mt-3 max-w-2xl text-sm leading-7 sm:text-base ${theme.sub}`}>
-                Student group chat.
-              </p>
-
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${theme.border} ${theme.glass}`}>
-                  <Mic2 size={14} />
-                  Live
-                </span>
-                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${theme.border} ${theme.glass}`}>
-                  <Users size={14} />
-                  {currentOnlineMembers.length} online
-                </span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.55fr)_360px]">
-          <div className="flex min-h-[72vh] flex-col overflow-hidden rounded-[34px] border shadow-[0_30px_100px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-            <div
-              className={`border-b px-4 py-4 sm:px-6 ${
-                dark ? "border-white/10 bg-white/[0.04]" : "border-slate-200 bg-white/85"
-              }`}
-            >
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                  <h2 className="text-xl font-black sm:text-2xl">Messages</h2>
-                  <p className={`mt-1 text-sm ${theme.sub}`}>
-                    {typingUsers.length > 0 ? "Typing..." : `${currentOnlineMembers.length} online`}
-                  </p>
-                </div>
-
-                <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${theme.border} ${theme.glass}`}>
-                  <Search size={16} className="opacity-55" />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search"
-                    className="w-full bg-transparent text-sm outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-              {loading ? (
-                <div className="flex min-h-[42vh] items-center justify-center">
-                  <div className="text-center">
-                    <div className="mx-auto h-14 w-14 animate-pulse rounded-2xl bg-indigo-500/15" />
-                    <p className={`mt-4 text-sm ${theme.sub}`}>Loading...</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {hasMore && (
-                    <div className="mb-5 flex justify-center">
-                      <button
-                        onClick={loadMore}
-                        disabled={loadingMore}
-                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                          dark
-                            ? "border-white/10 bg-white/5 hover:bg-white/10"
-                            : "border-slate-200 bg-white hover:bg-slate-50"
-                        }`}
-                      >
-                        {loadingMore ? (
-                          <>
-                            <LoaderIcon />
-                            Loading
-                          </>
-                        ) : (
-                          "Load more"
-                        )}
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="space-y-5">
-                    {filteredMessages.length === 0 ? (
-                      <div className={`rounded-[28px] border p-10 text-center ${theme.border} ${dark ? "bg-white/[0.03]" : "bg-white"}`}>
-                        <MessageSquareMore size={46} className="mx-auto opacity-30" />
-                        <h3 className="mt-4 text-xl font-bold">No messages yet</h3>
-                      </div>
-                    ) : (
-                      filteredMessages.map((message) => (
-                        <MessageBubble
-                          key={message.id}
-                          message={message}
-                          isMe={message.userId === currentUser?.uid}
-                          dark={dark}
-                          theme={theme}
-                          onReply={setReplyingTo}
-                          onReact={addReaction}
-                        />
-                      ))
-                    )}
-                  </div>
-
-                  <div ref={bottomRef} />
-                </>
-              )}
-            </div>
-
-            <div
-              className={`relative border-t px-4 py-4 sm:px-6 ${
-                dark ? "border-white/10 bg-white/[0.03]" : "border-slate-200 bg-white/90"
-              }`}
-            >
-              {replyingTo && (
-                <div className={`mb-4 rounded-[26px] border p-4 ${theme.border} ${dark ? "bg-white/[0.04]" : "bg-slate-50"}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs uppercase tracking-[0.2em] opacity-55">Replying to</p>
-                      <p className="mt-1 truncate text-sm font-semibold">{replyingTo.name}</p>
-                      <p className={`mt-1 line-clamp-2 text-sm ${theme.sub}`}>{replyingTo.text}</p>
-                    </div>
-
-                    <button
-                      onClick={() => setReplyingTo(null)}
-                      className={`rounded-full border p-2 ${theme.border} ${dark ? "bg-white/[0.04]" : "bg-white"}`}
-                      aria-label="Cancel reply"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {showMentions && (
-                <div className={`mb-4 grid gap-2 rounded-[26px] border p-3 shadow-xl backdrop-blur-xl ${theme.border} ${dark ? "bg-[#0b1220]" : "bg-white"}`}>
-                  <p className="px-2 text-xs uppercase tracking-[0.2em] opacity-55">Mention a member</p>
-                  {filteredMentions.length > 0 ? (
-                    filteredMentions.map((member) => (
-                      <MemberChip key={member.id} member={member} onClick={() => selectMention(member.name)} />
-                    ))
-                  ) : (
-                    <div className={`rounded-[22px] px-3 py-4 text-sm ${theme.sub}`}>
-                      No members match that mention.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div
-                className={`rounded-[30px] border p-3 shadow-[0_18px_50px_rgba(0,0,0,0.08)] ${
-                  dark ? "border-white/10 bg-[#0b1220]" : "border-slate-200 bg-white"
-                }`}
-              >
-                <div className="flex items-end gap-3">
-                  <button
-                    onClick={() => setShowEmojiPicker((current) => !current)}
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${
-                      dark ? "bg-white/5 hover:bg-white/10" : "bg-slate-100 hover:bg-slate-200"
-                    }`}
-                    aria-label="Toggle emoji picker"
-                  >
-                    <Smile size={18} />
-                  </button>
-
-                  <div className="min-w-0 flex-1">
-                    <textarea
-                      ref={inputRef}
-                      value={text}
-                      onChange={(event) => handleChange(event.target.value)}
-                      placeholder={
-                        isSignedIn
-                          ? "Message..."
-                          : "Sign in to chat..."
-                      }
-                      disabled={!isSignedIn}
-                      rows={1}
-                      style={{ minHeight: inputHeight }}
-                      className="max-h-40 w-full resize-none bg-transparent px-1 py-3 text-sm outline-none placeholder:opacity-50 disabled:cursor-not-allowed"
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
-                          event.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <button
-                    onClick={sendMessage}
-                    disabled={!isSignedIn || !text.trim() || sending}
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-indigo-600 via-blue-600 to-emerald-500 text-white transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Send message"
-                  >
-                    {sending ? <LoaderIcon /> : <SendHorizontal size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-2 text-xs opacity-60">
-                <div className="flex items-center gap-2">
-                  <Clock3 size={13} />
-                  Live
-                </div>
-                <div className="flex items-center gap-2">
-                  <AtSign size={13} />
-                  Mentions
-                </div>
-              </div>
-
-              {showEmojiPicker && (
-                <div
-                  className={`absolute bottom-full left-4 z-20 mb-3 w-[300px] rounded-[26px] border p-4 shadow-2xl backdrop-blur-xl ${
-                    dark ? "border-white/10 bg-[#0b1220]" : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <p className="mb-3 text-xs uppercase tracking-[0.2em] opacity-55">Quick reactions</p>
-                  <div className="flex flex-wrap gap-2">
-                    {EMOJIS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => setText((current) => `${current}${emoji}`)}
-                        className="rounded-2xl border border-transparent px-3 py-2 text-2xl transition hover:border-indigo-500/20 hover:bg-indigo-500/5 hover:scale-110"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <aside
-            className={`flex h-fit flex-col gap-6 rounded-[34px] border p-5 shadow-[0_30px_100px_rgba(15,23,42,0.16)] backdrop-blur-xl ${
-              dark ? "border-white/10 bg-white/[0.04]" : "border-slate-200 bg-white/85"
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] opacity-55">Room</p>
-                  <h2 className="mt-1 text-2xl font-black">Campus Global</h2>
-                </div>
-                <div className="rounded-2xl bg-indigo-500/10 p-3 text-indigo-500">
-                  <Hash size={18} />
-                </div>
-              </div>
-
-              <p className={`mt-3 text-sm leading-7 ${theme.sub}`}>Short posts. Fast replies.</p>
-            </div>
-
-            <div className={`rounded-[28px] border p-4 ${theme.border} ${dark ? "bg-white/[0.03]" : "bg-slate-50"}`}>
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-emerald-500/10 p-3 text-emerald-500">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] opacity-55">Online</p>
-                  <p className="text-xl font-black">{currentOnlineMembers.length}</p>
-                </div>
-              </div>
-              <p className={`mt-3 text-sm ${theme.sub}`}>
-                {typingUsers.length > 0 ? "Typing..." : "Quiet now."}
-              </p>
-            </div>
-
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-bold">Members</h3>
-                <span className="text-xs opacity-55">{membersWithPresence.length} total</span>
-              </div>
-
-              <div className="space-y-2">
-                {membersWithPresence.slice(0, 8).map((member) => (
-                  <MemberChip
-                    key={member.id}
-                    member={member}
-                    onClick={() => selectMention(member.name)}
-                  />
-                ))}
-
-                {membersWithPresence.length === 0 && (
-                  <div className={`rounded-[24px] border p-4 text-sm ${theme.border} ${theme.sub}`}>
-                    No members available yet.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={`rounded-[28px] border p-4 ${theme.border} ${dark ? "bg-white/[0.03]" : "bg-slate-50"}`}>
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-500">
-                  <Sparkles size={18} />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] opacity-55">Info</p>
-                  <h3 className="font-bold">Group chat</h3>
-                </div>
-              </div>
-
-              <p className={`mt-3 text-sm leading-6 ${theme.sub}`}>Quick updates. Questions. Replies.</p>
-            </div>
-
-            {!isSignedIn && (
-              <div className="rounded-[28px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200">
-                Sign in to chat.
-              </div>
-            )}
-          </aside>
-        </div>
-      </div>
-    </div>
-  );
+  const { groupId } = useParams();
+  return groupId ? <GroupDetail dark={dark} groupId={groupId} /> : <GroupDiscovery dark={dark} />;
 }

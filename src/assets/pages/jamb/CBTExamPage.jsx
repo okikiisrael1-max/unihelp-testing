@@ -647,7 +647,7 @@ const CBTExamPage = ({ dark }) => {
                     </p>
 
                     <h2
-                      className={`text-lg font-bold mt-2 ${theme.text}`}
+                      className={`text-[13px] font-medium mt-2 ${theme.text}`}
                     >
                       Calculator
                     </h2>

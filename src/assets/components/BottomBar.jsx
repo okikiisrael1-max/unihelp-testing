@@ -31,7 +31,7 @@ const BottomBar = ({ dark }) => {
     },
 
     {
-      name: "Community",
+      name: "Groups",
       icon: MessageCircle,
       path: "/community",
     },

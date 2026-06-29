@@ -45,6 +45,8 @@ import {
   X,
   HelpCircle,
   Info,
+  Bell,
+  Settings,
 } from "lucide-react";
 
 import { auth, db } from "../../firebase/config";
@@ -124,7 +126,9 @@ useEffect(() => {
 
     } else if (
       path.includes("ai") ||
-      path.includes("community")
+      path.includes("community") ||
+      path.includes("messages") ||
+      path.includes("notifications")
     ) {
       setOpenDropdowns(["Smart Features"]);
 
@@ -356,10 +360,40 @@ useEffect(() => {
           {
             to: "/community",
 
-            label: "Community",
+            label: "Groups",
 
             icon: (
               <MessageCircle size={18} />
+            ),
+          },
+
+          {
+            to: "/messages",
+
+            label: "Messenger",
+
+            icon: (
+              <MessageCircle size={18} />
+            ),
+          },
+
+          {
+            to: "/notifications",
+
+            label: "Notifications",
+
+            icon: (
+              <Bell size={18} />
+            ),
+          },
+
+          {
+            to: "/community-settings",
+
+            label: "Privacy Settings",
+
+            icon: (
+              <Settings size={18} />
             ),
           },
 
@@ -467,50 +501,21 @@ useEffect(() => {
         className={`
           md:hidden fixed top-2 z-[51] right-5
           p-3 rounded-2xl
-          ${dark
-              ? "bg-zinc-900 text-white"
-              : "bg-white text-black border border-zinc-200"
-          }
-        `}
-      >
-        {mobileOpen ? (
-          <X size={22} />
-        ) : (
-          <Menu size={22} />
-        )}
+          ${dark ? "bg-zinc-900 text-white" : "bg-white text-black border border-zinc-200"}`}>
+        {mobileOpen ? (<X size={22} /> ) : (<Menu size={22} />)}
       </button>
 
       {/* BACKDROP */}
       {mobileOpen && (
-        <div
-          onClick={() =>
-            setMobileOpen(false)
-          }
-          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-        />
-      )}
+        <div onClick={() =>setMobileOpen(false)} className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"/>)}
 
       {/* SIDEBAR */}
       <aside
       className={`
-          fixed md:sticky top-0 left-0 z-50
-          h-[100dvh] md:h-screen
-          w-[82vw] max-w-[20rem] md:w-72
-          px-4 py-5 sm:px-5
-          overflow-y-auto no-scrollbar
-          transition-all duration-300
-          ${
-            mobileOpen
-              ? "translate-x-0"
-              : "-translate-x-full md:translate-x-0"
-          }
-          ${
-            dark
-              ? "bg-slate-950 text-white"
-              : "bg-slate-100 text-black"
-          }
-        `}
-      >
+          fixed md:sticky top-0 left-0 z-50 h-[100dvh] md:h-screen w-[82vw] max-w-[20rem] md:w-72 px-4 py-5 sm:px-5 overflow-y-auto no-scrollbar transition-all duration-300
+          ${ mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${dark ? "bg-slate-950 text-white" : "bg-slate-100 text-black"}
+        `}>
 
         {/* MENU */}
         <div className="mb-5 flex min-w-0 flex-col gap-3 md:mt-16">

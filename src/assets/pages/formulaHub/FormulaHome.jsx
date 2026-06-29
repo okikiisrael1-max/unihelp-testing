@@ -39,16 +39,17 @@ const FormulaHome = ({ dark }) => {
 
 
 
-  const categories = [
-    "All",
-    "Algebra",
-    "Geometry",
-    "Mechanics",
-    "Electricity",
-    "Statistics",
-    "Calculus",
-    "Stoichiometry",
-  ];
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(
+      new Set(
+        formulas
+          .map((formula) => formula.category)
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+
+    return ["All", ...uniqueCategories];
+  }, []);
 
   // =========================
   // FILTERED FORMULAS
@@ -70,7 +71,8 @@ const FormulaHome = ({ dark }) => {
       const matchesCategory =
         activeCategory === "All"
           ? true
-          : item.category === activeCategory;
+          : item.category?.toLowerCase() ===
+            activeCategory.toLowerCase();
 
       return (
         matchesSearch && matchesCategory

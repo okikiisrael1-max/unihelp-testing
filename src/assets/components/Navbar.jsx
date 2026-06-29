@@ -13,13 +13,12 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
 
   return (
     <header
-      className={`fixed top-0 left-0 z-50 w-full border-b shadow-sm backdrop-blur-xl transition-colors duration-300 ${
+      className={`fixed top-0 left-0 z-50 md:z-100 w-full border-b shadow-sm backdrop-blur-xl transition-colors duration-300 ${
         dark
           ? "bg-slate-950/90 text-white border-slate-800"
           : "bg-white/90 text-slate-900 border-slate-200"
-      }`}
-    >
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      }`}>
+      <div className=" flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
 
         <Link to="/" className="flex items-center cursor-pointer">
           <img

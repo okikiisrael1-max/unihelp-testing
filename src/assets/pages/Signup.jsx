@@ -107,6 +107,7 @@ const Signup = ({ dark }) => {
         {
           uid: user.uid,
           username,
+          usernameLower: username.trim().toLowerCase(),
           email,
           role: "",
           photo: "",
@@ -181,6 +182,8 @@ const Signup = ({ dark }) => {
           uid: user.uid,
           username:
             user.displayName || "Student",
+          usernameLower:
+            (user.displayName || "Student").trim().toLowerCase(),
           email: user.email,
           role: "",
           photo: user.photoURL || "",

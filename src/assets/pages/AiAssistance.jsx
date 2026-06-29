@@ -49,9 +49,6 @@ const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash-lite",
 });
 
-/* =====================================================
-   CONFIG
-===================================================== */
 
 const FREE_DAILY_MESSAGES = 5;
 
@@ -493,7 +490,7 @@ RULES:
         {
           role: "ai",
 
-          text: "⚠️ AI failed to respond.",
+          text: "⚠️ UniHelp AI failed to respond.",
         },
       ]);
     }
@@ -510,7 +507,7 @@ RULES:
       {
         role: "ai",
 
-        text: "# ✨ Chat Cleared\n\nReady for a fresh conversation.",
+        text: "## ✨ Chat Cleared\n\nReady for a fresh conversation.",
       },
     ]);
 
@@ -545,19 +542,19 @@ RULES:
 
   const markdownComponents = {
     h1: ({ children }) => (
-      <h1 className="text-3xl font-black mb-5 mt-2">{children}</h1>
+      <h1 className="text-2xl font-black mb-5 mt-2">{children}</h1>
     ),
 
     h2: ({ children }) => (
-      <h2 className="text-2xl font-bold mb-4 mt-6">{children}</h2>
+      <h2 className="text-xl font-bold mb-4 mt-6">{children}</h2>
     ),
 
     h3: ({ children }) => (
-      <h3 className="text-xl font-bold mb-3 mt-5">{children}</h3>
+      <h3 className="text-[18] font-bold mb-3 mt-5">{children}</h3>
     ),
 
     p: ({ children }) => (
-      <p className="leading-8 mb-4 text-[15px]">{children}</p>
+      <p className="leading-8 mb-4 text-[13px]">{children}</p>
     ),
 
     strong: ({ children }) => (
@@ -593,70 +590,36 @@ RULES:
 
   return (
     <div
-      className={`
-      relative min-h-screen md:pt-20 overflow-hidden
-      flex flex-col
-      ${theme.bg}
-      ${theme.text}
-    `}
-    >
+      className={`relative min-h-screen md:pt-20 overflow-hidden flex flex-col ${theme.bg} ${theme.text}`}>
       {/* HEADER */}
-
-      <div
-        className={`
-        relative z-20
-        border-b
-        backdrop-blur-3xl
-        px-4 md:px-8
-        py-2
-        flex items-center justify-between
-        ${theme.border}
-        ${theme.card}
-      `}
-      >
-        <div
-          className={`hidden md:flex px-4 py-2 rounded-2xl border text-sm ${theme.border} ${theme.card2}`}
-        >
+      <div className={`relative z-20 border-b backdrop-blur-3xl px-4 md:px-8 py-2 flex items-center justify-between ${theme.border} ${theme.card}`}>
+        <div className={`flex px-4 py-2 rounded-2xl border text-sm ${theme.border} ${theme.card2}`}>
           {remainingMessages} / {dailyLimit} left
         </div>
       </div>
 
       {/* CHAT */}
 
-      <div
-        ref={chatRef}
-        className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-8 space-y-8"
-      >
+      <div ref={chatRef} className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-8 space-y-8">
 
         {/* MESSAGES */}
 
         {messages.map((msg, i) => (
-          <div id="chat"
-            key={i}
-            className={`flex gap-4 ${
-              msg.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
+          <div id="chat" key={i}
+            className={`flex flex-col relative ${msg.role === "user" ? "justify-end" : "justify-start ml-5"}`}>
+
             {msg.role === "ai" && (
-              <div className="h-12 w-12 text-white rounded-2xl bg-linear-to-br from-violet-600 via-fuchsia-500 to-cyan-500 flex items-center justify-center shadow-2xl shrink-0">
+              <div className="h-12 w-12 text-white rounded-2xl bg-linear-to-br from-violet-600 via-fuchsia-500 to-cyan-500 flex items-center justify-center shadow-2xl shrink-0 absolute z-10 -top-5 -left-5">
                 <Bot size={20} />
-              </div>
-            )}
+              </div>)}
 
             <div
-              className={`
-                max-w-[92%] md:max-w-[75%]
-                rounded-[30px]
-                px-6 py-5
-                border backdrop-blur-2xl
-                shadow-2xl overflow-hidden
-                ${
-                  msg.role === "user"
-                    ? "bg-linear-to-br from-blue-600 to-violet-600 border-transparent rounded-br-md text-white"
-                    : `${theme.aiBubble} ${theme.border} rounded-bl-md`
-                }
-              `}
-            >
+              className={`max-w-[92%] md:max-w-[75%] rounded-[30px] px-6 py-5 border backdrop-blur-2xl shadow-2xl overflow-hidden
+                ${msg.role === "user"
+                    ? "bg-indigo-500 border-transparent text-white"
+                    : `${theme.aiBubble} ${theme.border} `
+                }`}>
+
               {msg.role === "ai" ? (
                 <div className="prose prose-invert max-w-none">
                   <ReactMarkdown
@@ -672,7 +635,7 @@ RULES:
             </div>
 
             {msg.role === "user" && (
-              <div className="h-12 w-12 text-white rounded-2xl bg-blue-600 flex items-center justify-center shadow-xl shrink-0">
+              <div className="h-12 w-12 text-black rounded-2xl bg-white flex items-center justify-center shadow-xl shrink-0 absolute -top-5 right-0">
                 <User size={20} />
               </div>
             )}

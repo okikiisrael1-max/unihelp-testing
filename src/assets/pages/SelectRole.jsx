@@ -57,6 +57,7 @@ const SelectRole = ({ dark }) => {
           uid: user.uid,
           email: user.email,
           username: user.displayName || "",
+          usernameLower: (user.displayName || "").trim().toLowerCase(),
           photo: user.photoURL || "",
           createdAt: serverTimestamp(),
         });

@@ -100,7 +100,7 @@ export default function HostelMarketplace({
     useState(false);
 
   const [uploadLimit, setUploadLimit] =
-    useState(3);
+    useState(5);
 
   const [userUploads, setUserUploads] =
     useState(0);
@@ -152,7 +152,7 @@ export default function HostelMarketplace({
           );
 
           setUploadLimit(
-            premium ? 5 : 3
+            premium ? 10 : 5
           );
         }
 
@@ -695,20 +695,17 @@ export default function HostelMarketplace({
     : "bg-white border border-gray-200 shadow-sm";
 
   return (
-    <div
-      className={`min-h-screen w-full md:pt-20 px-4 py-6 ${bg}`}
-    >
+    <div className={`min-h-screen w-full md:pt-20 px-4 py-4 ${bg}`}>
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* HEADER */}
 
-        <div className="flex items-center justify-between">
+        <div className="flex max-md:flex-col-reverse gap-2.5 md:items-center md:justify-between">
 
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-indigo-600 text-white shadow-lg">
               <Home />
             </div>
-
             <div>
               <h1 className="text-2xl font-bold">
                 Hostel Marketplace
@@ -722,9 +719,7 @@ export default function HostelMarketplace({
 
           {/* PLAN */}
 
-          <div
-            className={`${card} px-4 py-3 rounded-2xl flex items-center gap-3`}
-          >
+          <div className={`${card} px-4 py-3 max-md:ml-auto rounded-2xl flex max-w-35 md:items-center gap-3`}>
             {isPremium ? (
               <>
                 <Crown className="text-yellow-500" />
@@ -735,7 +730,7 @@ export default function HostelMarketplace({
                   </p>
 
                   <p className="text-xs opacity-70">
-                    {userUploads}/5 uploads
+                    {userUploads}/10 uploads
                   </p>
                 </div>
               </>
@@ -749,7 +744,7 @@ export default function HostelMarketplace({
                   </p>
 
                   <p className="text-xs opacity-70">
-                    {userUploads}/3 uploads
+                    {userUploads}/5 uploads
                   </p>
                 </div>
               </Link>
