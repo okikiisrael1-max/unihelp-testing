@@ -53,6 +53,7 @@ import PremiumSubscriptionPage from "./assets/pages/PremiumSubscriptionPage";
 import Tasks from "./assets/pages/Tasks";
 import SmartTimetableBuilder from "./assets/pages/SmartTimetableBuilder";
 import Announcements from "./assets/pages/Announcements";
+import CBTPracticePage from "./assets/pages/CBTPracticePage";
 import NotFound from "./assets/pages/NotFound";
 import SelectRole from "./assets/pages/SelectRole";
 
@@ -137,6 +138,25 @@ const App = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname]);
 
+  const updateUserPresence = async (user) => {
+    if (!user) return;
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          lastActive: serverTimestamp(),
+          lastSeenAt: serverTimestamp(),
+          lastStudyActivityAt: serverTimestamp(),
+          notificationsEnabled: true,
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.log("Presence sync failed:", error);
+    }
+  };
+
   /* ================= AUTH LISTENER ================= */
 
   useEffect(() => {
@@ -160,13 +180,7 @@ const App = () => {
       try {
         /* ================= UPDATE LAST ACTIVE ================= */
 
-        await setDoc(
-          doc(db, "users", user.uid),
-          {
-            lastActive: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        await updateUserPresence(user);
 
         /* ================= REQUEST FCM TOKEN ================= */
 
@@ -227,6 +241,12 @@ const App = () => {
     };
 }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      updateUserPresence(currentUser);
+    }
+  }, [currentUser, location.pathname]);
+
   /* ================= LOADING SCREEN ================= */
 
   if (loadingRole) {
@@ -280,6 +300,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Announcements dark={dark} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cbt-practice"
+              element={
+                <ProtectedRoute>
+                  <CBTPracticePage dark={dark} />
                 </ProtectedRoute>
               }
             />

@@ -379,48 +379,67 @@ function ScientificCalculator({
   theme,
   setHistory,
 }) {
-  const [expression, setExpression] =
-    useState("");
-
+  const [expression, setExpression] = useState("");
   const [result, setResult] = useState("0");
 
-  const buttons = [
-    "sin(",
-    "cos(",
-    "tan(",
-    "sqrt(",
-    "7",
-    "8",
-    "9",
-    "/",
-    "4",
-    "5",
-    "6",
-    "*",
-    "1",
-    "2",
-    "3",
-    "-",
-    "0",
-    ".",
-    "^",
-    "+",
-    "(",
-    ")",
-    "log(",
-    "pi",
+  const keypadButtons = [
+    { label: "sin", value: "sin(", type: "function" },
+    { label: "cos", value: "cos(", type: "function" },
+    { label: "tan", value: "tan(", type: "function" },
+    { label: "π", value: "pi", type: "function" },
+    { label: "ln", value: "ln(", type: "function" },
+    { label: "log", value: "log(", type: "function" },
+    { label: "√", value: "sqrt(", type: "function" },
+    { label: "x²", value: "^2", type: "function" },
+    { label: "7", value: "7", type: "digit" },
+    { label: "8", value: "8", type: "digit" },
+    { label: "9", value: "9", type: "digit" },
+    { label: "÷", value: "/", type: "operator" },
+    { label: "4", value: "4", type: "digit" },
+    { label: "5", value: "5", type: "digit" },
+    { label: "6", value: "6", type: "digit" },
+    { label: "×", value: "*", type: "operator" },
+    { label: "1", value: "1", type: "digit" },
+    { label: "2", value: "2", type: "digit" },
+    { label: "3", value: "3", type: "digit" },
+    { label: "−", value: "-", type: "operator" },
+    { label: "0", value: "0", type: "digit" },
+    { label: ".", value: ".", type: "digit" },
+    { label: "(", value: "(", type: "digit" },
+    { label: "+", value: "+", type: "operator" },
+    { label: ")", value: ")", type: "digit" },
+    { label: "^", value: "^", type: "function" },
   ];
+
+  const appendValue = (value) => {
+    setExpression((prev) => prev + value);
+  };
+
+  const clearExpression = () => {
+    setExpression("");
+    setResult("0");
+  };
+
+  const removeLast = () => {
+    setExpression((prev) => prev.slice(0, -1));
+  };
 
   const calculate = () => {
     try {
-      const res = evaluate(expression);
+      const normalized = expression
+        .replace(/×/g, "*")
+        .replace(/÷/g, "/")
+        .replace(/−/g, "-")
+        .replace(/π/g, "pi");
 
-      setResult(res.toString());
+      const res = evaluate(normalized);
+      const nextResult = res.toString();
 
+      setResult(nextResult);
       setHistory((prev) => [
-        `${expression} = ${res}`,
+        `${expression || "0"} = ${nextResult}`,
         ...prev,
-      ]);
+      ].slice(0, 8));
     } catch {
       setResult("Error");
     }
@@ -430,18 +449,14 @@ function ScientificCalculator({
     <div className="space-y-8">
       <SectionHeader
         title="Scientific Calculator"
-        subtitle="Solve advanced mathematical expressions quickly and easily."
+        subtitle="Solve advanced mathematical expressions with a cleaner, more academic layout."
         theme={theme}
       />
 
       <div className="grid xl:grid-cols-2 gap-8">
-        {/* CALCULATOR */}
-
         <div
           className={`rounded-3xl p-5 md:p-6 ${theme.card} border ${theme.border}`}
         >
-          {/* HELP */}
-
           <div
             className={`flex items-start gap-3 p-4 rounded-2xl mb-6 ${theme.soft}`}
           >
@@ -453,13 +468,10 @@ function ScientificCalculator({
               </p>
 
               <p className={theme.muted}>
-                Tap the buttons to build your
-                equation, then press Calculate.
+                Build your equation with the keypad and tap calculate when you are ready.
               </p>
             </div>
           </div>
-
-          {/* DISPLAY */}
 
           <div
             className={`rounded-3xl p-5 md:p-6 ${theme.input} border ${theme.border}`}
@@ -475,40 +487,57 @@ function ScientificCalculator({
             </div>
           </div>
 
-          {/* BUTTONS */}
+          <div className="mt-6 grid grid-cols-4 gap-3">
+            {keypadButtons.map((button) => {
+              const isOperator = button.type === "operator";
+              const isAction = button.label === "C" || button.label === "⌫";
 
-          <div className="grid grid-cols-4 gap-3 mt-6">
-            {buttons.map((btn) => (
-              <button
-                key={btn}
-                onClick={() =>
-                  setExpression(expression + btn)
-                }
-                className={`
-                  h-14 md:h-16 rounded-2xl font-bold text-base md:text-lg transition-all
-                  ${["+", "-", "*", "/"].includes(btn)
-                    ? "bg-orange-500 hover:bg-orange-600 text-white"
-                    : `${theme.soft} ${theme.softHover}`
-                  }
-                `}
-              >
-                {btn}
-              </button>
-            ))}
+              return (
+                <button
+                  key={button.label + button.value}
+                  onClick={() => {
+                    if (button.label === "C") {
+                      clearExpression();
+                      return;
+                    }
+
+                    if (button.label === "⌫") {
+                      removeLast();
+                      return;
+                    }
+
+                    appendValue(button.value);
+                  }}
+                  className={`h-14 md:h-16 rounded-2xl font-bold text-base md:text-lg transition-all ${
+                    isOperator
+                      ? "bg-orange-500 hover:bg-orange-600 text-white"
+                      : isAction
+                        ? `${theme.danger} text-white`
+                        : `${theme.soft} ${theme.softHover}`
+                  }`}
+                >
+                  {button.label}
+                </button>
+              );
+            })}
 
             <button
-              onClick={() => {
-                setExpression("");
-                setResult("0");
-              }}
+              onClick={clearExpression}
               className={`h-14 md:h-16 rounded-2xl text-white font-bold transition-all ${theme.danger}`}
             >
-              <FaTrash className="mx-auto" />
+              C
+            </button>
+
+            <button
+              onClick={removeLast}
+              className={`h-14 md:h-16 rounded-2xl text-white font-bold transition-all ${theme.soft}`}
+            >
+              ⌫
             </button>
 
             <button
               onClick={calculate}
-              className={`col-span-3 h-14 md:h-16 rounded-2xl text-white font-black text-lg md:text-xl flex items-center justify-center gap-3 transition-all ${theme.primary}`}
+              className={`col-span-2 h-14 md:h-16 rounded-2xl text-white font-black text-lg md:text-xl flex items-center justify-center gap-3 transition-all ${theme.primary}`}
             >
               <FaEquals />
               Calculate
@@ -516,11 +545,7 @@ function ScientificCalculator({
           </div>
         </div>
 
-        {/* QUICK GUIDE */}
-
         <div className="space-y-6">
-          {/* FORMULAS */}
-
           <div
             className={`rounded-3xl p-6 ${theme.card} border ${theme.border}`}
           >
@@ -552,8 +577,6 @@ function ScientificCalculator({
               ))}
             </div>
           </div>
-
-          {/* EXAMPLES */}
 
           <div
             className={`rounded-3xl p-6 ${theme.card} border ${theme.border}`}

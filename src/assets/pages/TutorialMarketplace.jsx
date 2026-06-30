@@ -283,7 +283,7 @@ export default function TutorialMarketplace({ dark }) {
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm mb-5">
               <Sparkles size={16} />
-              Startup Marketplace
+              Tutorial Hub
             </div>
 
             <h1 className="text-4xl sm:text-5xl font-black flex items-center gap-3">

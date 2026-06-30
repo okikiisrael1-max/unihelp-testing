@@ -44,7 +44,7 @@ export default function Contact({
     useState("");
 
   const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:5000";
+    (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
 
   const navigate = useNavigate()
   /* =========================================================
@@ -95,7 +95,7 @@ export default function Contact({
       );
 
       const data =
-        await res.json();
+        await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setError(

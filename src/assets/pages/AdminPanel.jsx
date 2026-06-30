@@ -101,6 +101,13 @@ export default function AdminPanel({ dark }) {
         : h.status === filterStatus
     );
 
+  const filteredUsers = users.filter((u) => {
+    const value = search.toLowerCase();
+    return [u.username, u.name, u.email, u.role]
+      .filter(Boolean)
+      .some((field) => String(field).toLowerCase().includes(value));
+  });
+
   const stats = useMemo(
     () => ({
       total: hostels.length,
@@ -524,54 +531,88 @@ export default function AdminPanel({ dark }) {
 
         {/* USERS */}
         {tab === "users" && (
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {users.map((u) => (
-              <div
-                key={u.id}
-                className={`${glass} rounded-[28px] p-5`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-4">
-                    <div className="h-14 w-14 rounded-2xl text-white bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-black text-lg">
-                      {u.username?.[0] || "U"}
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold text-lg">
-                        {u.username || "No Name"}
-                      </h3>
-
-                      <p className="opacity-60 text-sm break-all">
-                        {u.email}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Bell
-                    size={18}
-                    className="text-yellow-400"
-                  />
-                </div>
-
-                <div className="mt-6">
-                  <button
-                    onClick={() => toggleBanUser(u)}
-                    className={`w-full py-3 rounded-2xl font-semibold transition flex items-center justify-center gap-2 ${
-                      u.banned
-                        ? "bg-red-600 hover:bg-red-700 text-white"
-                        : dark
-                        ? "bg-white/10 hover:bg-white/20"
-                        : "bg-slate-100 hover:bg-slate-200"
-                    }`}
-                  >
-                    <Ban size={18} />
-                    {u.banned
-                      ? "Unban User"
-                      : "Ban User"}
-                  </button>
-                </div>
+          <div className="space-y-5">
+            <div className={`${glass} rounded-[28px] p-4 md:p-5`}>
+              <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${dark ? "bg-white/5" : "bg-slate-100"}`}>
+                <Search size={18} />
+                <input
+                  type="text"
+                  placeholder="Search users by name, email, or role..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="bg-transparent flex-1 outline-none"
+                />
               </div>
-            ))}
+            </div>
+
+            {filteredUsers.length === 0 ? (
+              <div className={`${glass} rounded-[28px] p-10 text-center`}>
+                <Users className="mx-auto opacity-40" size={42} />
+                <h3 className="mt-4 text-xl font-black">No users found</h3>
+                <p className="mt-2 text-sm opacity-60">Try a different name, email, or role.</p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filteredUsers.map((u) => {
+                  const displayName = u.username || u.name || u.displayName || "No Name";
+                  return (
+                    <div
+                      key={u.id}
+                      className={`${glass} rounded-[28px] p-5`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 gap-4">
+                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl text-white bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-black text-lg">
+                            {u.photo || u.photoURL ? <img src={u.photo || u.photoURL} alt="" className="h-full w-full object-cover" /> : displayName?.[0]?.toUpperCase() || "U"}
+                          </div>
+
+                          <div className="min-w-0">
+                            <h3 className="truncate font-bold text-lg">
+                              {displayName}
+                            </h3>
+
+                            <p className="opacity-60 text-sm break-all">
+                              {u.email || "No email"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${u.banned ? "bg-red-500/15 text-red-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+                          {u.banned ? "Banned" : "Active"}
+                        </span>
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                        <div className={`rounded-2xl p-3 ${dark ? "bg-white/5" : "bg-slate-100"}`}>
+                          <p className="opacity-60">Role</p>
+                          <p className="mt-1 font-bold capitalize">{u.role || "student"}</p>
+                        </div>
+                        <div className={`rounded-2xl p-3 ${dark ? "bg-white/5" : "bg-slate-100"}`}>
+                          <p className="opacity-60">Plan</p>
+                          <p className="mt-1 font-bold capitalize">{u.plan || (u.premium ? "premium" : "free")}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6">
+                        <button
+                          onClick={() => toggleBanUser(u)}
+                          className={`w-full py-3 rounded-2xl font-semibold transition flex items-center justify-center gap-2 ${
+                            u.banned
+                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              : "bg-red-600 hover:bg-red-700 text-white"
+                          }`}
+                        >
+                          <Ban size={18} />
+                          {u.banned
+                            ? "Unban User"
+                            : "Ban User"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

@@ -18,6 +18,7 @@ import {
   FileText,
   Loader2,
   MessageCircle,
+  Reply,
   Search,
   Send,
   Settings,
@@ -26,7 +27,7 @@ import {
   User2,
   X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { db } from "../../firebase/config";
 import { uploadFile } from "../../services/cloudinary";
@@ -62,9 +63,28 @@ const Attachment = ({ item }) => {
   return <a href={item.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-indigo-500/10 px-4 py-3 text-sm font-bold text-indigo-400"><FileText size={17} /> {item.name || "Open file"}</a>;
 };
 
+const messagePreview = (message) => {
+  if (message?.text) return message.text.slice(0, 120);
+  return message?.attachments?.[0]?.name || "Attachment";
+};
+
+const firstLetter = (name = "Student") => name.trim().charAt(0).toUpperCase() || "S";
+
+const ChatAvatar = ({ src, name, mine = false }) => (
+  <div
+    className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white shadow-sm ${
+      mine ? "bg-emerald-600" : "bg-indigo-600"
+    }`}
+    title={name || "Student"}
+  >
+    {src ? <img src={src} alt={name || "Student"} className="h-full w-full object-cover" /> : firstLetter(name)}
+  </div>
+);
+
 export default function Messenger({ dark = false }) {
   const t = theme(dark);
   const { user } = useContext(AuthContext);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profile, setProfile] = useState({});
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState("");
@@ -76,6 +96,8 @@ export default function Messenger({ dark = false }) {
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(false);
   const [notice, setNotice] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
+  const openedUserRef = useRef("");
   const bottomRef = useRef(null);
 
   const activeConversation = useMemo(
@@ -107,6 +129,23 @@ export default function Messenger({ dark = false }) {
       setActiveId((current) => current || items[0]?.id || "");
     });
   }, [user]);
+
+  useEffect(() => {
+    const targetUid = searchParams.get("user");
+    if (!targetUid || !user?.uid || targetUid === user.uid || openedUserRef.current === targetUid) return;
+
+    openedUserRef.current = targetUid;
+    getDoc(doc(db, "users", targetUid))
+      .then((snap) => {
+        if (!snap.exists()) {
+          setNotice("User profile was not found.");
+          return;
+        }
+        openUser({ id: snap.id, ...snap.data() });
+        setSearchParams({}, { replace: true });
+      })
+      .catch(() => setNotice("Could not open that conversation."));
+  }, [searchParams, setSearchParams, user]);
 
   useEffect(() => {
     if (!activeId || !user?.uid) return undefined;
@@ -188,9 +227,19 @@ export default function Messenger({ dark = false }) {
           bytes: uploaded.bytes || file.size,
         });
       }
-      await sendDirectMessage(activeConversation, user, profile, { text: text.trim(), attachments });
+      await sendDirectMessage(activeConversation, user, profile, {
+        text: text.trim(),
+        attachments,
+        replyTo: replyTo ? {
+          id: replyTo.id,
+          senderId: replyTo.senderId || "",
+          senderName: replyTo.senderName || "Student",
+          text: messagePreview(replyTo),
+        } : null,
+      });
       setText("");
       setFile(null);
+      setReplyTo(null);
       setTyping(false);
     } finally {
       setSending(false);
@@ -261,7 +310,7 @@ export default function Messenger({ dark = false }) {
           </div>
         </aside>
 
-        <main className={`flex min-h-[80vh] flex-col overflow-hidden rounded-3xl border ${t.panel}`}>
+        <main className={`flex min-h-[90vh] flex-col overflow-hidden rounded-3xl border ${t.panel}`}>
           {activeConversation ? (
             <>
               <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
@@ -279,14 +328,33 @@ export default function Messenger({ dark = false }) {
                 <div className="space-y-3">
                   {messages.map((message) => {
                     const mine = message.senderId === user?.uid;
+                    const senderName = mine
+                      ? profile.username || user?.displayName || "You"
+                      : message.senderName || otherUser?.name || "Student";
+                    const senderAvatar = mine
+                      ? message.senderAvatar || profile.photo || user?.photoURL || ""
+                      : message.senderAvatar || otherUser?.avatar || "";
                     return (
-                      <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[86%] rounded-3xl border p-3 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft}`}>
-                          <p className="text-xs font-bold opacity-75">{formatShortTime(message.createdAt)}</p>
+                      <div key={message.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+                        {!mine && <ChatAvatar src={senderAvatar} name={senderName} />}
+                        <div className={`max-w-[86%] rounded-3xl border px-3 py-1 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft}`}>
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[9px] font-bold opacity-75">{formatShortTime(message.createdAt)}</p>
+                            <button onClick={() => setReplyTo(message)} className="rounded-lg p-1 opacity-80 hover:bg-white/10" aria-label="Reply to message">
+                              <Reply size={22} />
+                            </button>
+                          </div>
+                          {message.replyTo && (
+                            <div className={`mb-2 rounded-2xl border-l-4 p-2 text-xs ${mine ? "border-white/60 bg-white/10" : "border-indigo-400 bg-indigo-500/10"}`}>
+                              <p className="font-bold opacity-80">{message.replyTo.senderName}</p>
+                              <p className="mt-1 line-clamp-2 opacity-75">{message.replyTo.text}</p>
+                            </div>
+                          )}
                           {message.text && <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.text}</p>}
                           {(message.attachments || []).map((item, index) => <Attachment key={index} item={item} />)}
                           {mine && <div className="mt-2 flex justify-end"><CheckCheck size={14} /></div>}
                         </div>
+                        {mine && <ChatAvatar src={senderAvatar} name={senderName} mine />}
                       </div>
                     );
                   })}
@@ -295,6 +363,15 @@ export default function Messenger({ dark = false }) {
               </div>
 
               <div className="border-t border-white/10 p-3">
+                {replyTo && (
+                  <div className={`mb-3 flex items-start justify-between gap-3 rounded-2xl border p-3 text-xs ${t.soft}`}>
+                    <div className="min-w-0">
+                      <p className="font-bold">Replying to {replyTo.senderName || "Student"}</p>
+                      <p className={`mt-1 line-clamp-1 ${t.muted}`}>{messagePreview(replyTo)}</p>
+                    </div>
+                    <button onClick={() => setReplyTo(null)} className="rounded-lg p-1 hover:bg-red-500/10" aria-label="Cancel reply"><X size={15} /></button>
+                  </div>
+                )}
                 {file && <div className={`mb-3 flex items-center justify-between rounded-2xl border p-3 text-xs ${t.soft}`}><span>{file.name}</span><button onClick={() => setFile(null)}><X size={15} /></button></div>}
                 <div className={`flex items-end gap-2 rounded-3xl border p-3 ${t.soft}`}>
                   <button className="rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Emoji"><Smile size={18} /></button>

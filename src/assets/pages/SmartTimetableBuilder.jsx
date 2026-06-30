@@ -421,7 +421,7 @@ export default function SmartTimetableBuilder({ dark = false }) {
   };
 
   return (
-    <div className={`min-h-screen ${t.page}`}>
+    <div className={`min-h-screen md:mt-13 ${t.page}`}>
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
         <div className={`rounded-3xl border p-5 md:p-8 ${t.panel}`}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

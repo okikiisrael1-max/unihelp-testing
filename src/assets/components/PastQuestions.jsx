@@ -392,10 +392,12 @@ const Questions = ({ dark }) => {
                 {/* Meta */}
                 <div className="text-xs space-y-1.5 mb-4 opacity-55">
                   <p className="flex items-center gap-1.5"><School size={12} />{q.school}</p>
-                  <p className="flex items-center gap-1.5"><BookOpen size={12} />{q.courseCode}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="flex items-center gap-1.5"><BookOpen size={12} />{q.courseCode}</p>
                   <p className="flex items-center gap-1.5"><Calendar size={12} />{q.year}</p>
-                  <p className="flex items-center gap-1.5"><User size={12} />{q.userEmail || "Anonymous"}</p>
-                </div>
+                  </div>
+                  
+                  </div>
 
                 {/* File list */}
                 <div className="space-y-2 mt-auto">

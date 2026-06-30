@@ -244,6 +244,16 @@ useEffect(() => {
           },
 
           {
+            to: "/cbt-practice",
+
+            label: "CBT Practice",
+
+            icon: (
+              <CheckSquare size={18} />
+            ),
+          },
+
+          {
             to: "/smart-timetable",
 
             label: "Smart Timetable",
@@ -268,6 +278,16 @@ useEffect(() => {
 
             icon: (
               <YoutubeIcon size={18} />
+            ),
+          },
+
+          {
+            to: "/tutorialmarketplace",
+
+            label: "Tutorial Hub",
+
+            icon: (
+              <VideoIcon size={18} />
             ),
           },
 
@@ -318,16 +338,6 @@ useEffect(() => {
 
             icon: (
               <HomeIcon size={18} />
-            ),
-          },
-
-          {
-            to: "/tutorialmarketplace",
-
-            label: "Tutorial Marketplace",
-
-            icon: (
-              <VideoIcon size={18} />
             ),
           },
 
@@ -521,7 +531,7 @@ useEffect(() => {
           setMobileOpen(!mobileOpen)
         }
         className={`
-          md:hidden fixed top-2 z-[51] right-5
+          md:hidden fixed top-2 z-51 right-5
           p-3 rounded-2xl
           ${dark ? "bg-zinc-900 text-white" : "bg-white text-black border border-zinc-200"}`}>
         {mobileOpen ? (<X size={22} /> ) : (<Menu size={22} />)}

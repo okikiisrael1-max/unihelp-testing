@@ -40,7 +40,7 @@ export default function Report({
     useState("");
 
   const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:5000";
+    (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
   const navigate = useNavigate();
 
   const handleSubmit = async (
@@ -84,7 +84,7 @@ export default function Report({
       );
 
       const data =
-        await res.json();
+        await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setError(

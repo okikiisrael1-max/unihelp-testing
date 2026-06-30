@@ -56,18 +56,34 @@ export const searchUsers = async (term, currentUid, pageSize = 12) => {
   if (value.length < 2) return [];
 
   const usersRef = collection(db, "users");
-  const q = query(
+  const results = new Map();
+  const addSnap = (snap) => {
+    snap.docs
+      .filter((entry) => entry.id !== currentUid)
+      .forEach((entry) => results.set(entry.id, { id: entry.id, ...entry.data() }));
+  };
+
+  const usernameSnap = await getDocs(query(
     usersRef,
     orderBy("usernameLower"),
     where("usernameLower", ">=", value),
     where("usernameLower", "<=", `${value}\uf8ff`),
     limit(pageSize)
-  );
+  ));
+  addSnap(usernameSnap);
 
-  const snap = await getDocs(q);
-  return snap.docs
+  const emailSnap = await getDocs(query(
+    usersRef,
+    orderBy("email"),
+    where("email", ">=", value),
+    where("email", "<=", `${value}\uf8ff`),
+    limit(pageSize)
+  ));
+  addSnap(emailSnap);
+
+  return [...results.values()]
     .filter((entry) => entry.id !== currentUid)
-    .map((entry) => ({ id: entry.id, ...entry.data() }));
+    .slice(0, pageSize);
 };
 
 export const listGroups = async ({ search = "", category = "All", cursor = null } = {}) => {
@@ -332,10 +348,37 @@ export const listenGroupPosts = (groupId, callback) => {
   });
 };
 
-export const reactToPost = async (groupId, postId, emoji) => {
-  await updateDoc(doc(db, "groups", groupId, "posts", postId), {
-    [`reactions.${emoji}`]: increment(1),
-    reactionCount: increment(1),
+export const reactToPost = async (groupId, postId, emoji, uid) => {
+  if (!uid) return;
+
+  const postRef = doc(db, "groups", groupId, "posts", postId);
+  await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(postRef);
+    if (!snap.exists()) return;
+
+    const post = snap.data();
+    const reactions = { ...(post.reactions || {}) };
+    const userReactions = { ...(post.userReactions || {}) };
+    const previousEmoji = userReactions[uid];
+
+    if (previousEmoji === emoji) {
+      reactions[emoji] = Math.max((reactions[emoji] || 1) - 1, 0);
+      if (reactions[emoji] === 0) delete reactions[emoji];
+      delete userReactions[uid];
+    } else {
+      if (previousEmoji) {
+        reactions[previousEmoji] = Math.max((reactions[previousEmoji] || 1) - 1, 0);
+        if (reactions[previousEmoji] === 0) delete reactions[previousEmoji];
+      }
+      reactions[emoji] = (reactions[emoji] || 0) + 1;
+      userReactions[uid] = emoji;
+    }
+
+    transaction.update(postRef, {
+      reactions,
+      userReactions,
+      reactionCount: Object.values(reactions).reduce((total, count) => total + count, 0),
+    });
   });
 };
 

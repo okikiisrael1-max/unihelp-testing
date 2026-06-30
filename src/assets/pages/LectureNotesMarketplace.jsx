@@ -41,6 +41,7 @@ import {
   Share2,
   Upload,
   X,
+  DownloadIcon,
 } from "lucide-react";
 
 import { db } from "../../firebase/config";
@@ -590,7 +591,7 @@ export default function LectureNotesMarketplace({ dark }) {
             <Loader2 className="h-10 w-10 animate-spin" />
           </div>
         ) : tab === "notes" ? (
-          <div className="mt-6 grid gap-6 grid-cols-1 xl:grid-cols-2">
+          <div className="mt-6 w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
             {filteredNotes.length === 0 ? (
               <div className={`${card} rounded-[32px] p-12 text-center xl:col-span-2`}>
                 <FileText size={44} className="mx-auto mb-4 opacity-40" />
@@ -609,17 +610,17 @@ export default function LectureNotesMarketplace({ dark }) {
                         {note.course} · {note.dept}
                       </p>
                       <p className="mt-1 text-xs opacity-50">
-                        {note.lecturer || "Lecturer"} · {note.school || "School"}
+                        {note.lecturer} · {note.school}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-indigo-500/10 px-3 py-2 text-right">
-                      <p className="text-sm uppercase tracking-[0.2em] opacity-60">Downloads</p>
+                    <div className="rounded-2xl flex gap-1.5 justify-center items-center bg-indigo-500/10 px-3 py-2 text-right">
+                      <DownloadIcon size={22}/>
                       <p className="mt-1 text-lg font-black">{note.downloads || 0}</p>
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between gap-3">
+                  <div className="mt-2">
                     <div className="flex items-center gap-1 text-yellow-400">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -635,19 +636,14 @@ export default function LectureNotesMarketplace({ dark }) {
                       ))}
                     </div>
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleShare(note)}
-                        className={`inline-flex h-11 items-center gap-2 rounded-2xl px-4 font-semibold ${
-                          dark ? "bg-white/5" : "bg-slate-100"
-                        }`}
-                      >
+                    <div className="flex w-full justify-around gap-1 mt-2.5">
+                      <button onClick={() => handleShare(note)}
+                        className={`flex h-11 items-center gap-2 rounded-2xl px-4 font-semibold ${ dark ? "bg-white/5" : "bg-slate-100"}`}>
                         <Share2 size={16} />
                         Share
                       </button>
-                      <button
-                        onClick={() => openViewer(note)}
-                        className={`inline-flex h-11 items-center gap-2 rounded-2xl px-4 font-semibold ${
+                      <button onClick={() => openViewer(note)}
+                        className={`flex h-11 items-center gap-2 rounded-2xl px-4 font-semibold ${
                           dark ? "bg-white/5" : "bg-slate-100"
                         }`}
                       >
@@ -656,8 +652,7 @@ export default function LectureNotesMarketplace({ dark }) {
                       </button>
                       <button
                         onClick={() => handleDownload(note)}
-                        className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-semibold text-white hover:bg-indigo-700"
-                      >
+                        className="flex h-11 items-center gap-2 text-[12px] rounded-2xl bg-indigo-600 px-3 font-semibold text-white hover:bg-indigo-700">
                         <Download size={16} />
                         Download
                       </button>

@@ -41,6 +41,7 @@ import {
   FileWarning,
   Library,
   Bookmark,
+  ComputerIcon,
 } from "lucide-react";
 
 import {
@@ -188,6 +189,7 @@ const Dashboard = ({ dark }) => {
         { title: "CGPA Tracker", desc: "Track academic performance", icon: Activity, color: "from-pink-500 to-rose-500", link: "/CGPA" },
         { title: "Past Questions", desc: "Practice with exam materials", icon: File, color: "from-blue-500 to-cyan-500", link: "/questions" },
         { title: "Lecture Notes", desc: "Upload and access notes", icon: UploadCloud, color: "from-yellow-500 to-orange-500", link: "/lecturenotesmarketplace" },
+        { title: "CBT Practice", desc: "Practice with exam materials", icon: ComputerIcon, color: "from-blue-500 to-cyan-500", link: "/cbt-practice" },
         { title: "Task Management", desc: "Plan assignments and deadlines", icon: Clock3, color: "from-teal-500 to-emerald-600", link: "/tasks" },
         { title: "Smart Timetable", desc: "Generate a balanced weekly schedule", icon: CalendarDays, color: "from-cyan-500 to-indigo-600", link: "/smart-timetable" },
         { title: "Upload Questions", desc: "Contribute academic materials", icon: UploadCloud, color: "from-orange-500 to-red-500", link: "/uploadquestion" },

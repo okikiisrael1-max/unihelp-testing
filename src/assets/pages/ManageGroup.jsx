@@ -245,7 +245,7 @@ export default function ManageGroup({ dark = false }) {
   }
 
   return (
-    <div className={`min-h-screen ${t.page}`}>
+    <div className={`min-h-screen md:mt-15 ${t.page}`}>
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
         <button onClick={() => navigate(`/community/${groupId}`)} className={`mb-4 inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${t.soft}`}>
           <ChevronLeft size={17} /> Back to group

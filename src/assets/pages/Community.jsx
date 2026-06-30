@@ -14,6 +14,8 @@ import {
 } from "firebase/firestore";
 import {
   Bell,
+  Calendar,
+  Calendar1,
   Check,
   ChevronLeft,
   FileText,
@@ -23,6 +25,7 @@ import {
   MessageCircle,
   MoreHorizontal,
   Plus,
+  Reply,
   Search,
   Send,
   Settings,
@@ -31,6 +34,7 @@ import {
   UploadCloud,
   UserMinus,
   Users,
+  Users2,
   Video,
   X,
 } from "lucide-react";
@@ -117,6 +121,26 @@ const AttachmentPreview = ({ attachment }) => {
     </a>
   );
 };
+
+const messagePreview = (message) => {
+  if (message?.text) return message.text.slice(0, 120);
+  return message?.attachments?.[0]?.name || "Attachment";
+};
+
+const firstLetter = (name = "Student") => name.trim().charAt(0).toUpperCase() || "S";
+
+const ChatAvatar = ({ src, name, mine = false }) => (
+  <div
+    className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white shadow-sm ${
+      mine ? "bg-emerald-600" : "bg-indigo-600"
+    }`}
+    title={name || "Student"}
+  >
+    {src ? <img src={src} alt={name || "Student"} className="h-full w-full object-cover" /> : firstLetter(name)}
+  </div>
+);
+
+const mentionToken = (member) => `@${(member?.name || "Student").replace(/\s+/g, "")}`;
 
 function CreateGroupModal({ dark, onClose, onCreated, user, profile }) {
   const t = themeClasses(dark);
@@ -337,7 +361,7 @@ function GroupDiscovery({ dark }) {
   );
 }
 
-function Composer({ dark, placeholder, onSend, allowVideo = true }) {
+function Composer({ dark, placeholder, onSend, allowVideo = true, replyTo = null, onCancelReply, mentionMembers = [] }) {
   const t = themeClasses(dark);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -363,9 +387,27 @@ function Composer({ dark, placeholder, onSend, allowVideo = true }) {
           bytes: uploaded.bytes || file.size,
         });
       }
-      await onSend({ text: text.trim(), attachments });
+      const mentions = mentionMembers
+        .filter((member) => text.includes(mentionToken(member)))
+        .map((member) => ({
+          uid: member.id || member.uid,
+          name: member.name || "Student",
+        }));
+
+      await onSend({
+        text: text.trim(),
+        attachments,
+        mentions,
+        replyTo: replyTo ? {
+          id: replyTo.id,
+          senderId: replyTo.senderId || "",
+          senderName: replyTo.senderName || "Student",
+          text: messagePreview(replyTo),
+        } : null,
+      });
       setText("");
       setFile(null);
+      onCancelReply?.();
     } catch (err) {
       setError(err?.errors?.[0] || err.message || "Could not send.");
     } finally {
@@ -375,7 +417,30 @@ function Composer({ dark, placeholder, onSend, allowVideo = true }) {
 
   return (
     <div className={`rounded-3xl border p-3 ${t.panel}`}>
+      {replyTo && (
+        <div className={`mb-3 flex items-start justify-between gap-3 rounded-2xl border p-3 text-xs ${t.soft}`}>
+          <div className="min-w-0">
+            <p className="font-bold">Replying to {replyTo.senderName || "Student"}</p>
+            <p className={`mt-1 line-clamp-1 ${t.muted}`}>{messagePreview(replyTo)}</p>
+          </div>
+          <button type="button" onClick={onCancelReply} className="rounded-lg p-1 hover:bg-red-500/10" aria-label="Cancel reply"><X size={15} /></button>
+        </div>
+      )}
       <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder={placeholder} className={`${t.input} resize-none border-0`} />
+      {mentionMembers.length > 0 && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {mentionMembers.slice(0, 8).map((member) => (
+            <button
+              key={member.id || member.uid}
+              type="button"
+              onClick={() => setText((current) => `${current}${current && !current.endsWith(" ") ? " " : ""}${mentionToken(member)} `)}
+              className={`shrink-0 rounded-full border px-3 py-1 text-xs font-bold ${t.soft}`}
+            >
+              {mentionToken(member)}
+            </button>
+          ))}
+        </div>
+      )}
       {file && <div className={`mt-3 flex items-center justify-between rounded-2xl border p-3 text-xs ${t.soft}`}><span>{file.name}</span><button onClick={() => setFile(null)}><X size={15} /></button></div>}
       {error && <div className="mt-3 rounded-2xl bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
       <div className="mt-3 flex items-center justify-between gap-3">
@@ -404,6 +469,7 @@ function GroupDetail({ dark, groupId }) {
   const [messages, setMessages] = useState([]);
   const [messageCursor, setMessageCursor] = useState(null);
   const [members, setMembers] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -454,7 +520,7 @@ function GroupDetail({ dark, groupId }) {
   }, [groupId, isMember, tab]);
 
   useEffect(() => {
-    if (!isMember || tab !== "Members") return undefined;
+    if (!isMember || (tab !== "Members" && tab !== "Chat")) return undefined;
     const q = query(collection(db, "groups", groupId, "members"), orderBy("joinedAt", "desc"), limit(50));
     const run = async () => {
       const snap = await getDocs(q);
@@ -484,7 +550,15 @@ function GroupDetail({ dark, groupId }) {
   };
 
   const sendPost = async (payload) => createPost(groupId, user, profile, payload);
-  const sendChat = async (payload) => sendGroupMessage(groupId, user, profile, payload);
+  const sendChat = async (payload) => {
+    await sendGroupMessage(groupId, user, profile, payload);
+    setReplyTo(null);
+  };
+
+  const openDirectMessage = (uid) => {
+    if (!uid || uid === user?.uid) return;
+    navigate(`/messages?user=${encodeURIComponent(uid)}`);
+  };
 
   const mediaItems = posts.flatMap((post) => (post.attachments || []).filter((item) => item.type === "image" || item.type === "video").map((item) => ({ ...item, postId: post.id })));
   const fileItems = posts.flatMap((post) => (post.attachments || []).filter((item) => item.type === "pdf" || item.type === "document").map((item) => ({ ...item, postId: post.id })));
@@ -504,7 +578,7 @@ function GroupDetail({ dark, groupId }) {
           <ChevronLeft size={17} /> Groups
         </button>
 
-        <div className={`overflow-hidden rounded-3xl border ${t.panel}`}>
+        <div className={`overflow-hidden relative rounded-3xl border ${t.panel}`}>
           <div className="h-44 bg-gradient-to-r from-indigo-700 via-sky-500 to-emerald-400 md:h-64">
             {group.coverUrl && <img src={group.coverUrl} alt="" className="h-full w-full object-cover" />}
           </div>
@@ -522,8 +596,8 @@ function GroupDetail({ dark, groupId }) {
                   <p className={`mt-3 max-w-3xl text-sm leading-7 ${t.muted}`}>{group.description}</p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
                     <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-400">{group.category}</span>
-                    <span className={`rounded-full px-3 py-1 ${t.soft}`}>{group.memberCount || 0} members</span>
-                    <span className={`rounded-full px-3 py-1 ${t.soft}`}>Created {formatShortTime(group.createdAt)}</span>
+                    <span className={`rounded-full flex items-center gap-1 px-3 py-1 ${t.soft}`}>{group.memberCount || 0} <Users2 size={20}/></span>
+                    <span className={`rounded-full flex items-center gap-1 px-3 py-1 ${t.soft}`}><Calendar size={20}/> {formatShortTime(group.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -532,7 +606,7 @@ function GroupDetail({ dark, groupId }) {
                 {isMember ? (
                   <>
                     <button onClick={() => setTab("Chat")} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white"><MessageCircle size={17} /> Chat</button>
-                    {membership?.role !== "owner" && <button onClick={async () => { await leaveGroup(group, user.uid); await refresh(); }} className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}><UserMinus size={17} /> Leave</button>}
+                    {membership?.role !== "owner" && <button onClick={async () => { await leaveGroup(group, user.uid); await refresh(); }} className={`absolute top-1 right-1 inline-flex h-10 items-center gap-2 rounded-2xl border px-3 font-bold text-red-500 ${dark ? "border-red-500/10 bg-slate-800" : "border-red-200 bg-slate-50"}`}><UserMinus size={17} /> Leave</button>}
                   </>
                 ) : (
                   <button onClick={join} disabled={busy || pendingRequest} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white disabled:opacity-60">
@@ -580,7 +654,18 @@ function GroupDetail({ dark, groupId }) {
                         {post.text && <p className="mt-4 whitespace-pre-wrap text-sm leading-7">{post.text}</p>}
                         {(post.attachments || []).map((item, index) => <AttachmentPreview key={`${post.id}-${index}`} attachment={item} />)}
                         <div className="mt-4 flex flex-wrap items-center gap-2">
-                          {REACTIONS.map((emoji) => <button key={emoji} onClick={() => reactToPost(groupId, post.id, emoji)} className={`rounded-full border px-3 py-1 text-sm ${t.soft}`}>{emoji} {post.reactions?.[emoji] || ""}</button>)}
+                          {REACTIONS.map((emoji) => {
+                            const selected = post.userReactions?.[user.uid] === emoji;
+                            return (
+                              <button
+                                key={emoji}
+                                onClick={() => reactToPost(groupId, post.id, emoji, user.uid)}
+                                className={`rounded-full border px-3 py-1 text-sm ${selected ? "border-indigo-500 bg-indigo-600 text-white" : t.soft}`}
+                              >
+                                {emoji} {post.reactions?.[emoji] || ""}
+                              </button>
+                            );
+                          })}
                         </div>
                       </article>
                     ))}
@@ -589,7 +674,7 @@ function GroupDetail({ dark, groupId }) {
 
                 {tab === "Chat" && (
                   <div className={`overflow-hidden rounded-3xl border ${t.panel}`}>
-                    <div className="max-h-[58vh] overflow-y-auto p-4">
+                    <div className="max-h-[80vh] overflow-y-auto p-4">
                       {messageCursor && <button onClick={async () => {
                         const older = await loadOlderGroupMessages(groupId, messageCursor);
                         setMessages((current) => [...older.messages, ...current]);
@@ -598,13 +683,44 @@ function GroupDetail({ dark, groupId }) {
                       <div className="space-y-3">
                         {messages.map((message) => {
                           const mine = message.senderId === user.uid;
+                          const senderName = mine
+                            ? profile.username || user?.displayName || "You"
+                            : message.senderName || "Student";
+                          const senderAvatar = mine
+                            ? message.senderAvatar || profile.photo || user?.photoURL || ""
+                            : message.senderAvatar || "";
                           return (
-                            <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                            <div key={message.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+                              {!mine && <span onClick={() => openDirectMessage(message.senderId)} className="cursor-pointer">
+                                <ChatAvatar src={senderAvatar} name={senderName} />
+                              </span>}
                               <div className={`max-w-[86%] rounded-3xl border p-3 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft}`}>
-                                <p className="text-xs font-bold opacity-80">{message.senderName} · {formatShortTime(message.createdAt)}</p>
+                                <p className="text-xs font-bold opacity-80">{senderName} - {formatShortTime(message.createdAt)}</p>
+                                <div className="mb-1 flex items-center justify-end gap-2">
+                                  
+                                  <button onClick={() => setReplyTo(message)} className="flex gap-1.5 rounded-lg p-1 opacity-80 hover:bg-white/10" aria-label="Reply to message">
+                                    <Reply size={14} /> reply
+                                  </button>
+                                </div>
+                                {message.replyTo && (
+                                  <div className={`mb-2 rounded-2xl border-l-4 p-2 text-xs ${mine ? "border-white/60 bg-white/10" : "border-indigo-400 bg-indigo-500/10"}`}>
+                                    <p className="font-bold opacity-80">{message.replyTo.senderName}</p>
+                                    <p className="mt-1 line-clamp-2 opacity-75">{message.replyTo.text}</p>
+                                  </div>
+                                )}
+                                {message.mentions?.length > 0 && (
+                                  <div className="mb-2 flex flex-wrap gap-1">
+                                    {message.mentions.map((mention) => (
+                                      <button key={mention.uid || mention.name} onClick={() => openDirectMessage(mention.uid)} className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[9px] font-bold text-cyan-300">
+                                        @{mention.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
                                 {message.text && <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.text}</p>}
                                 {(message.attachments || []).map((item, index) => <AttachmentPreview key={index} attachment={item} />)}
                               </div>
+                              {mine && <ChatAvatar src={senderAvatar} name={senderName} mine />}
                             </div>
                           );
                         })}
@@ -612,7 +728,15 @@ function GroupDetail({ dark, groupId }) {
                       </div>
                     </div>
                     <div className="border-t border-white/10 p-3">
-                      <Composer dark={dark} placeholder="Message this group..." onSend={sendChat} allowVideo={isPremium} />
+                      <Composer
+                        dark={dark}
+                        placeholder="Message this group..."
+                        onSend={sendChat}
+                        allowVideo={isPremium}
+                        replyTo={replyTo}
+                        onCancelReply={() => setReplyTo(null)}
+                        mentionMembers={members.filter((member) => member.id !== user?.uid)}
+                      />
                     </div>
                   </div>
                 )}
@@ -637,13 +761,13 @@ function GroupDetail({ dark, groupId }) {
                     )}
                     <div className="grid gap-3 md:grid-cols-2">
                       {members.map((member) => (
-                        <div key={member.id} className={`flex items-center gap-3 rounded-3xl border p-4 ${t.panel}`}>
+                        <button key={member.id} onClick={() => openDirectMessage(member.id)} className={`flex items-center gap-3 rounded-3xl border p-4 text-left ${t.panel}`}>
                           <div className="h-12 w-12 overflow-hidden rounded-2xl bg-indigo-500/10">{member.avatar && <img src={member.avatar} alt="" className="h-full w-full object-cover" />}</div>
                           <div className="min-w-0">
                             <p className="truncate font-bold">{member.name}</p>
                             <p className={`text-xs capitalize ${t.muted}`}>{member.role}</p>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -696,3 +820,4 @@ export default function Community({ dark = false }) {
   const { groupId } = useParams();
   return groupId ? <GroupDetail dark={dark} groupId={groupId} /> : <GroupDiscovery dark={dark} />;
 }
+

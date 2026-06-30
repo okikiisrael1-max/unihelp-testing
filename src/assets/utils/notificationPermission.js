@@ -9,9 +9,22 @@ const getServiceWorkerRegistration = async () => {
   if (!("serviceWorker" in navigator)) return null;
 
   try {
-    return await navigator.serviceWorker.register(
-      "/firebase-messaging-sw.js",
+    const existingRegistration = await navigator.serviceWorker.getRegistration(
+      "/firebase-messaging-sw.js"
     );
+
+    if (existingRegistration) {
+      await navigator.serviceWorker.ready;
+      return existingRegistration;
+    }
+
+    const registration = await navigator.serviceWorker.register(
+      "/firebase-messaging-sw.js",
+      { scope: "/" }
+    );
+
+    await navigator.serviceWorker.ready;
+    return registration;
   } catch (error) {
     console.log("Service worker registration failed:", error);
     return null;
