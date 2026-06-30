@@ -299,13 +299,7 @@ export const demoAds = [
     title: "Get Premium Access To UniHelp",
 
     description:
-      "Unlock premium tutorials, AI tools, advanced CBT practice and more student features.",
-
-    buttonText: "Upgrade Now",
-
-    buttonLink: "/premium",
-
-    theme: "default",
+        "Unlock premium learning, AI tools, advanced CBT practice and more student features.",
   },
 
   {

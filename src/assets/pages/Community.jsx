@@ -63,7 +63,7 @@ import {
   sendGroupMessage,
 } from "../service/communityService";
 
-const CATEGORIES = ["All", "Academics", "JAMB", "Campus Life", "Marketplace", "Tutorials", "Study Group"];
+const CATEGORIES = ["All", "Academics", "JAMB", "Campus Life", "Marketplace", "Study Group"];
 const TABS = ["Feed", "Members", "Chat", "Media", "Files", "About"];
 const REACTIONS = ["👍", "❤️", "😂", "🔥", "👏"];
 

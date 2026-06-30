@@ -15,7 +15,7 @@ const policyPoints = [
   {
     icon: FileText,
     title: "How files are used",
-    body: "Files are used for the feature you selected, such as lecture notes, payment proofs, tutorial documents, or profile images.",
+    body: "Files are used for the feature you selected, such as lecture notes, payment proofs, documents, or profile images.",
   },
   {
     icon: Lock,

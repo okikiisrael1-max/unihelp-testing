@@ -15,7 +15,7 @@ const sections = [
   {
     icon: ShieldCheck,
     title: "Payment verification",
-    body: "Premium access and tutorial access are approved manually after payment proof is submitted through the app.",
+    body: "Premium access and paid content access are approved manually after payment proof is submitted through the app.",
   },
   {
     icon: MessageSquare,

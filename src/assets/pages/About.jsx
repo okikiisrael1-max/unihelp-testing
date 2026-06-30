@@ -34,7 +34,7 @@ const About = ({ dark }) => {
       icon: <BookOpen size={28} />,
       title: "Learning Hub",
       description:
-        "Access tutorials, educational videos, and student-created learning resources.",
+        "Access educational videos and student-created learning resources.",
     },
     {
       icon: <ShoppingBag size={28} />,
@@ -229,7 +229,7 @@ const About = ({ dark }) => {
                     : "text-slate-600"
                 }
               >
-                Access tutorials, videos, notes, and educational
+                Access educational videos, notes, and learning resources
                 content from fellow students.
               </p>
             </div>

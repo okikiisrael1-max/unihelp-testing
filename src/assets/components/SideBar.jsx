@@ -107,7 +107,6 @@ useEffect(() => {
       setOpenDropdowns(["Formula Hub"]);
 
     } else if (
-      path.includes("tutorial") ||
       path.includes("lecture") ||
       path.includes("video")
     ) {
@@ -264,65 +263,6 @@ useEffect(() => {
           },
         ],
       },
-
-      {
-        title: "Learning",
-
-        icon: <BookOpen size={19} />,
-
-        links: [
-          {
-            to: "/tutorials",
-
-            label: "YouTube Videos",
-
-            icon: (
-              <YoutubeIcon size={18} />
-            ),
-          },
-
-          {
-            to: "/tutorialmarketplace",
-
-            label: "Tutorial Hub",
-
-            icon: (
-              <VideoIcon size={18} />
-            ),
-          },
-
-          {
-            to: "/my-purchases",
-
-            label: "My Purchases",
-
-            icon: (
-              <Wallet size={18} />
-            ),
-          },
-
-          {
-            to: "/tutor-dashboard",
-
-            label: "Tutor Dashboard",
-
-            icon: (
-              <GraduationCap size={18} />
-            ),
-          },
-
-          {
-            to: "/create-tutorial",
-
-            label: "Upload Tutorial",
-
-            icon: (
-              <BookOpen size={18} />
-            ),
-          },
-        ],
-      },
-
       {
         title: "Marketplace",
 

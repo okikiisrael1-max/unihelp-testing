@@ -323,7 +323,7 @@ const SelectRole = ({ dark }) => {
                   <h2 className="text-2xl font-black">University Student</h2>
 
                   <p className="opacity-70 text-sm mt-3 leading-relaxed">
-                    Manage GPA, access notes, tutorials, hostel listings and
+                    Manage GPA, access notes, learning resources, hostel listings and
                     connect with other students.
                   </p>
                 </div>

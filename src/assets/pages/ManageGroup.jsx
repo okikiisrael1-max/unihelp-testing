@@ -29,7 +29,7 @@ import {
   updateGroupMemberRole,
 } from "../service/communityService";
 
-const CATEGORIES = ["Academics", "JAMB", "Campus Life", "Marketplace", "Tutorials", "Study Group"];
+const CATEGORIES = ["Academics", "JAMB", "Campus Life", "Marketplace", "Study Group"];
 const TABS = ["Details", "Requests", "Members"];
 const ROLE_OPTIONS = ["member", "moderator", "admin"];
 

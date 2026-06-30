@@ -193,18 +193,6 @@ const Dashboard = ({ dark }) => {
         { title: "Task Management", desc: "Plan assignments and deadlines", icon: Clock3, color: "from-teal-500 to-emerald-600", link: "/tasks" },
         { title: "Smart Timetable", desc: "Generate a balanced weekly schedule", icon: CalendarDays, color: "from-cyan-500 to-indigo-600", link: "/smart-timetable" },
         { title: "Upload Questions", desc: "Contribute academic materials", icon: UploadCloud, color: "from-orange-500 to-red-500", link: "/uploadquestion" },
-      ],
-    },
-    {
-      title: "Learning",
-      desc: "Tutorials, videos, stories, purchases, and creator tools.",
-      icon: BookOpen,
-      items: [
-        { title: "Tutorial Marketplace", desc: "Learn from student creators", icon: Video, color: "from-green-500 to-emerald-600", link: "/tutorialmarketplace" },
-        { title: "YouTube Videos", desc: "Watch educational content", icon: Youtube, color: "from-red-500 to-rose-600", link: "/tutorials" },
-        { title: "My Purchases", desc: "Access bought tutorials and files", icon: Wallet, color: "from-slate-500 to-slate-700", link: "/my-purchases" },
-        { title: "Tutor Dashboard", desc: "Manage your creator activity", icon: GraduationCap, color: "from-violet-500 to-purple-700", link: "/tutor-dashboard" },
-        { title: "Upload Tutorial", desc: "Create and publish a tutorial", icon: BookOpen, color: "from-emerald-500 to-teal-600", link: "/create-tutorial" },
         { title: "Stories", desc: "Read and create student stories", icon: PlayCircle, color: "from-fuchsia-500 to-pink-600", link: "/stories" },
       ],
     },
@@ -216,7 +204,6 @@ const Dashboard = ({ dark }) => {
         { title: "Hostel Marketplace", desc: "Find hostels around campus", icon: Home, color: "from-purple-500 to-indigo-600", link: "/hostelmarketplace" },
         { title: "Student Marketplace", desc: "Buy and sell student items", icon: ShoppingBag, color: "from-emerald-500 to-green-600", link: "/studentmarketplace" },
         { title: "My Hostels", desc: "Manage uploaded hostel listings", icon: Home, color: "from-sky-500 to-blue-700", link: "/myhostels" },
-        { title: "Tutorial Sales", desc: "Browse paid learning resources", icon: BadgeDollarSign, color: "from-amber-500 to-orange-600", link: "/tutorialmarketplace" },
       ],
     },
     {
@@ -299,7 +286,7 @@ const Dashboard = ({ dark }) => {
 
               <p className="mt-4 text-[12px] md:text-base text-white/80 leading-relaxed max-w-xl">
                 Access all your academic tools,
-                learning resources, tutorials,
+                learning resources,
                 marketplace services, and CGPA
                 tracking in one organized platform.
               </p>
@@ -309,13 +296,6 @@ const Dashboard = ({ dark }) => {
                   to="/questions"
                   className="px-4 py-3 text-[14px] rounded-2xl bg-white text-black font-semibold hover:scale-105 transition">
                   Start Practicing
-                </Link>
-
-                <Link
-                  to="/tutorialmarketplace"
-                  className="px-4 py-3 text-[14px] rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md hover:bg-white/20 transition"
-                >
-                  Explore Tutorials
                 </Link>
               </div>
             </div>

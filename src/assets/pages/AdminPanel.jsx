@@ -35,7 +35,6 @@ import AdminWithdrawals from "./AdminWithdrawals";
 import MarketplaceAdmin from "../components/MarketplaceAdmin";
 import AdminAnnouncements from "../components/AdminAnncouncement";
 import Announcements from './Announcements';
-import AdminTutorialPayments from "./AdminTutorialPayments";
 import AdminSubscriptionPanel from './../components/AdminSubscriptionPanel';
 
 export default function AdminPanel({ dark }) {
@@ -181,11 +180,6 @@ export default function AdminPanel({ dark }) {
       id: "payments",
       label: "Payments",
       icon: CreditCard,
-    },
-    {
-      id: "purchases",
-      label: "Purchases",
-      icon: DollarSignIcon,
     },
     {
       id: "jambPayments",
@@ -624,11 +618,6 @@ export default function AdminPanel({ dark }) {
         {/* PAYMENTS */}
         {tab === "payments" && (
           <AdminWithdrawals dark={dark}/>
-        )}
-        
-        {/*Tutorial Purchase*/}
-        {tab === "purchases" && (
-          <AdminTutorialPayments dark={dark}/>
         )}
         {tab === 'jambPayments' && (
           <AdminSubscriptionPanel dark={dark}/>

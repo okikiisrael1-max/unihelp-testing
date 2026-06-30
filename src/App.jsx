@@ -36,17 +36,10 @@ import Messenger from "./assets/pages/Messenger";
 import NotificationsCenter from "./assets/pages/NotificationsCenter";
 import CommunitySettings from "./assets/pages/CommunitySettings";
 import ComingSoon from "./assets/pages/ComingSoon";
-import TutorialPage from "./assets/pages/Tutorials";
 import MyHostels from "./assets/pages/MyUploadedHostel";
-import TutorialMarketplace from "./assets/pages/TutorialMarketplace";
 import Contact from "./assets/pages/Contact";
 import Report from "./assets/pages/Report";
 import StudentMarketplace from "./assets/pages/StudentMarketplace";
-import CreateTutorial from "./assets/pages/creator/CreateTutorial";
-import TutorDashboard from "./assets/pages/creator/TutorDashboard";
-import TutorialDetails from "./assets/pages/TutorialDetails";
-import ProtectedPdfViewer from "./assets/pages/ProtectedPdfViewer";
-import TutorEarnings from "./assets/pages/creator/TutorEarnings";
 import AdminWithdrawals from "./assets/pages/AdminWithdrawals";
 import AdminPanel from "./assets/pages/AdminPanel";
 import PremiumSubscriptionPage from "./assets/pages/PremiumSubscriptionPage";
@@ -71,7 +64,6 @@ import ProtectedRoute from "./assets/components/ProtectedRoutes";
 import InstallPrompt from "./assets/components/InstallPrompt";
 import JambLayout from "./assets/Layouts/JambLayout";
 import JambSettings from "./assets/pages/jamb/JambSettings";
-import StudentPurchases from "./assets/pages/StudentPurchases";
 import JambSubjects from "./assets/pages/jamb/JambSubjects";
 import JambStudyMaterials from "./assets/pages/jamb/JambStudyMaterial";
 import SubjectDetailPage from "./assets/pages/jamb/SubjectDetailsPage";
@@ -603,15 +595,6 @@ const App = () => {
                   }
                 />
                 <Route
-                  path="/my-purchases"
-                  element={
-                    <ProtectedRoute>
-                      <StudentPurchases dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
                   path="/questions"
                   element={
                     <ProtectedRoute>
@@ -640,71 +623,6 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AiAssistance dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/tutorials"
-              element={
-                <ProtectedRoute>
-                  <TutorialPage dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/tutorialmarketplace"
-              element={
-                <ProtectedRoute>
-                  <TutorialMarketplace dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/tutorial/:id"
-              element={
-                <ProtectedRoute>
-                  <TutorialDetails dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/pdf/:tutorialId"
-              element={
-                <ProtectedRoute>
-                  <ProtectedPdfViewer dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ================= CREATOR ================= */}
-
-            <Route
-              path="/create-tutorial"
-              element={
-                <ProtectedRoute>
-                  <CreateTutorial dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/tutor-dashboard"
-              element={
-                <ProtectedRoute>
-                  <TutorDashboard dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/earnings"
-              element={
-                <ProtectedRoute>
-                  <TutorEarnings dark={dark} />
                 </ProtectedRoute>
               }
             />

@@ -20,7 +20,7 @@ export default function FAQPage({ dark = false }) {
       icon: <GraduationCap size={20} />,
       question: "What is UniHelp?",
       answer:
-        "UniHelp is an all-in-one student platform that helps university students access lecture notes, past questions, GPA/CGPA calculators, tutorial videos, hostel listings, student marketplace services, and community discussions."
+        "UniHelp is an all-in-one student platform that helps university students access lecture notes, past questions, GPA/CGPA calculators, learning videos, hostel listings, student marketplace services, and community discussions."
     },
     {
       icon: <BookOpen size={20} />,
@@ -66,9 +66,9 @@ export default function FAQPage({ dark = false }) {
     },
     {
       icon: <BookOpen size={20} />,
-      question: "How do tutorial videos work?",
+      question: "How do learning videos work?",
       answer:
-        "Students can access educational videos uploaded by tutors or linked from trusted educational platforms like YouTube."
+        "Students can access educational videos and learning resources from trusted creators and platforms."
     },
     {
       icon: <GraduationCap size={20} />,
