@@ -44,6 +44,9 @@ import {
   ComputerIcon,
   Trophy,
   Flame,
+  Search,
+  X,
+  ChevronRight,
 } from "lucide-react";
 
 import {
@@ -71,6 +74,9 @@ const Dashboard = ({ dark }) => {
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [showAllRecords, setShowAllRecords] = useState(false);
 
   /* ------------------------------------------------ */
   /* FETCH CGPA RECORDS */
@@ -117,8 +123,12 @@ const Dashboard = ({ dark }) => {
       setRecords((prev) =>
         prev.filter((item) => item.id !== id)
       );
+      toast.success("Record deleted");
     } catch (err) {
       console.log(err);
+      toast.error("Couldn't delete that record");
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -134,6 +144,10 @@ const Dashboard = ({ dark }) => {
       return bTime - aTime;
     });
   }, [records]);
+
+  const visibleRecords = showAllRecords
+    ? sortedRecords
+    : sortedRecords.slice(0, 6);
 
   /* ------------------------------------------------ */
   /* DASHBOARD STATS */
@@ -180,6 +194,17 @@ const Dashboard = ({ dark }) => {
       ? "text-gray-400"
       : "text-gray-500",
   };
+
+  /* ------------------------------------------------ */
+  /* GREETING */
+  /* ------------------------------------------------ */
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  }, []);
 
   const featureSections = [
     {
@@ -248,6 +273,41 @@ const Dashboard = ({ dark }) => {
     },
   ];
 
+  /* ------------------------------------------------ */
+  /* SEARCH FILTERING */
+  /* ------------------------------------------------ */
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredSections = useMemo(() => {
+    if (!normalizedQuery) return featureSections;
+
+    return featureSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) =>
+            item.title.toLowerCase().includes(normalizedQuery) ||
+            item.desc.toLowerCase().includes(normalizedQuery)
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [normalizedQuery]);
+
+  const totalToolCount = featureSections.reduce(
+    (acc, s) => acc + s.items.length,
+    0
+  );
+
+  const scrollToSection = (title) => {
+    const el = document.getElementById(
+      `section-${title.replace(/\s+/g, "-").toLowerCase()}`
+    );
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div
       className={`min-h-screen md:pt-20 ${theme.bg} transition-all duration-300`}>
@@ -259,18 +319,24 @@ const Dashboard = ({ dark }) => {
         {/* ================================================= */}
 
         <div
-          className={`relative overflow-hidden rounded-4xl p-3 md:p-8 mb-8 border ${
+          className={`relative overflow-hidden rounded-4xl p-4 md:p-8 mb-6 border ${
             dark
               ? "bg-linear-to-br from-indigo-950 via-[#0f172a] to-black border-white/10"
               : "bg-linear-to-br from-indigo-500 via-violet-900 to-purple-700 border-indigo-400/20 text-white"
           }`}>
-          <div className="absolute top-0 right-0 opacity-20">
+          <div className="absolute top-0 right-0 opacity-20 pointer-events-none">
             <Sparkles size={180} />
           </div>
+          <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
 
             <div className="max-w-2xl">
+
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/70 bg-white/10 px-3 py-1 rounded-full mb-3">
+                <Sparkles size={12} />
+                {greeting}
+              </span>
 
               <h1 className="text-2xl md:text-4xl font-bold leading-tight">
                 Welcome back,
@@ -291,14 +357,22 @@ const Dashboard = ({ dark }) => {
               <div className="flex flex-wrap gap-2 mt-6">
                 <Link
                   to="/questions"
-                  className="px-4 py-3 text-[14px] rounded-2xl bg-white text-black font-semibold hover:scale-105 transition">
+                  className="px-4 py-3 text-[14px] rounded-2xl bg-white text-black font-semibold hover:scale-105 transition inline-flex items-center gap-2"
+                >
                   Start Practicing
+                  <ArrowRight size={16} />
+                </Link>
+                <Link
+                  to="/CGPA"
+                  className="px-4 py-3 text-[14px] rounded-2xl bg-white/10 border border-white/20 text-white font-semibold hover:bg-white/20 transition"
+                >
+                  Track CGPA
                 </Link>
               </div>
             </div>
 
             {/* RIGHT STATS */}
-            <div className="grid grid-cols-2 gap-3 w-full lg:w-[420px]">
+            <div className="grid grid-cols-2 gap-3 w-full lg:w-[440px]">
 
               <StatCard
                 dark={dark}
@@ -312,7 +386,7 @@ const Dashboard = ({ dark }) => {
                 icon={TrendingUp}
                 title="Best CGPA"
                 value={dashboard.bestCGPA}
-                valueColor="text-green-400"
+                valueColor="text-emerald-300"
               />
 
               <StatCard
@@ -320,7 +394,7 @@ const Dashboard = ({ dark }) => {
                 icon={Activity}
                 title="Average CGPA"
                 value={dashboard.avgCGPA}
-                valueColor="text-cyan-400"
+                valueColor="text-cyan-300"
               />
 
               <StatCard
@@ -328,20 +402,60 @@ const Dashboard = ({ dark }) => {
                 icon={Clock3}
                 title="Latest CGPA"
                 value={dashboard.latestCGPA}
-                valueColor="text-yellow-300"
+                valueColor="text-amber-300"
               />
             </div>
           </div>
         </div>
 
-        
-
         {/* ================================================= */}
         {/* ADS BANNER */}
         {/* ================================================= */}
 
-        <div className="mb-8">
+        <div className="mb-6">
           <PromotionAdsBanner   dark={dark}   autoSlide={true} interval={5000} />
+        </div>
+
+        {/* ================================================= */}
+        {/* SEARCH + QUICK JUMP NAV */}
+        {/* ================================================= */}
+
+        <div className={`sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 mb-6 backdrop-blur-xl ${dark ? "bg-[#070b14]/80" : "bg-[#f5f7fb]/80"}`}>
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <div className={`relative flex-1 md:max-w-sm rounded-2xl border ${theme.card}`}>
+              <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Search ${totalToolCount} tools...`}
+                className="w-full h-12 pl-11 pr-9 rounded-2xl bg-transparent outline-none text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition"
+                  aria-label="Clear search"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            {!normalizedQuery && (
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
+                {featureSections.map((section) => (
+                  <button
+                    key={section.title}
+                    onClick={() => scrollToSection(section.title)}
+                    className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap border transition ${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`}
+                  >
+                    {section.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ================================================= */}
@@ -349,40 +463,53 @@ const Dashboard = ({ dark }) => {
         {/* ================================================= */}
 
         <section className="mb-10">
-          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
-                <Sparkles size={22} />
+          {!normalizedQuery && (
+            <>
+              <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
+                    <Sparkles size={22} />
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-black">
+                      All UniHelp Features
+                    </h2>
+
+                    <p className={`text-sm ${theme.textSoft}`}>
+                      Organized tools for learning, campus life, community, and support.
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  to="/coming-soon"
+                  className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold ${theme.card}`}
+                >
+                  <Rocket size={17} />
+                  View Upcoming
+                </Link>
               </div>
 
-              <div>
-                <h2 className="text-2xl font-black">
-                  All UniHelp Features
-                </h2>
+              <DailyChallengeBanner dark={dark} />
+            </>
+          )}
 
-                <p className={`text-sm ${theme.textSoft}`}>
-                  Organized tools for learning, campus life, community, and support.
-                </p>
-              </div>
+          {normalizedQuery && filteredSections.length === 0 && (
+            <div className={`rounded-3xl p-10 text-center ${theme.soft}`}>
+              <Search className="mx-auto mb-4 opacity-40" size={40} />
+              <h3 className="font-bold text-lg mb-1">No tools match "{searchQuery}"</h3>
+              <p className={`text-sm ${theme.textSoft}`}>Try a different keyword or clear the search.</p>
             </div>
-
-            <Link
-              to="/coming-soon"
-              className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold ${theme.card}`}
-            >
-              <Rocket size={17} />
-              View Upcoming
-            </Link>
-          </div>
-
-          <DailyChallengeBanner dark={dark} />
+          )}
 
           <div className="space-y-7">
-            {featureSections.map((section) => {
+            {(normalizedQuery ? filteredSections : featureSections).map((section) => {
               const SectionIcon = section.icon;
+              const sectionId = `section-${section.title.replace(/\s+/g, "-").toLowerCase()}`;
 
               return (
-                <div key={section.title}>
+                <div key={section.title} id={sectionId} className="scroll-mt-24">
                   <div className="mb-4 flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.card} text-indigo-500`}>
@@ -447,16 +574,29 @@ const Dashboard = ({ dark }) => {
                 </p>
               </div>
             </div>
+
+            {!loading && records.length > 0 && (
+              <Link
+                to="/CGPA"
+                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-500 px-4 text-sm font-bold text-white hover:bg-indigo-600 transition"
+              >
+                Add New Record
+                <ArrowRight size={16} />
+              </Link>
+            )}
           </div>
 
           {/* LOADING */}
           {loading && (
-            <div className="py-10 text-center">
-              <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-
-              <p className={theme.textSoft}>
-                Loading records...
-              </p>
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className={`rounded-3xl p-5 ${theme.soft} animate-pulse`}>
+                  <div className="h-4 w-20 rounded bg-current opacity-10 mb-3" />
+                  <div className="h-8 w-24 rounded bg-current opacity-10 mb-5" />
+                  <div className="h-14 rounded-2xl bg-current opacity-5 mb-2" />
+                  <div className="h-14 rounded-2xl bg-current opacity-5" />
+                </div>
+              ))}
             </div>
           )}
 
@@ -492,79 +632,114 @@ const Dashboard = ({ dark }) => {
 
           {/* RECORDS */}
           {!loading && records.length > 0 && (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <>
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
 
-              {sortedRecords.map((record) => (
-                <div
-                  key={record.id}
-                  className={`rounded-3xl p-5 transition-all hover:-translate-y-1 ${theme.soft}`}
-                >
-                  <div className="flex items-start justify-between mb-4">
+                {visibleRecords.map((record) => (
+                  <div
+                    key={record.id}
+                    className={`rounded-3xl p-5 transition-all hover:-translate-y-1 ${theme.soft}`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
 
-                    <div>
-                      <p
-                        className={`text-sm ${theme.textSoft}`}
-                      >
-                        Current CGPA
-                      </p>
+                      <div>
+                        <p
+                          className={`text-sm ${theme.textSoft}`}
+                        >
+                          Current CGPA
+                        </p>
 
-                      <h2 className="text-3xl font-black text-indigo-500">
-                        {record.cgpa}
-                      </h2>
+                        <h2 className="text-3xl font-black text-indigo-500">
+                          {record.cgpa}
+                        </h2>
+                      </div>
+
+                      {confirmDeleteId === record.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleDelete(record.id)}
+                            className="rounded-xl bg-red-500 px-2.5 py-2 text-xs font-bold text-white hover:bg-red-600 transition"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className={`rounded-xl px-2.5 py-2 text-xs font-bold transition ${dark ? "bg-white/10 hover:bg-white/15" : "bg-white hover:bg-gray-100"}`}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(record.id)}
+                          className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition"
+                          aria-label="Delete record"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
 
-                    <button
-                      onClick={() =>
-                        handleDelete(record.id)
-                      }
-                      className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                    <div className="space-y-3">
 
-                  <div className="space-y-3">
+                      {record.semesters?.map(
+                        (semester, index) => (
+                          <div
+                            key={index}
+                            className={`rounded-2xl p-3 flex items-center justify-between ${
+                              dark
+                                ? "bg-black/20"
+                                : "bg-white"
+                            }`}
+                          >
+                            <div>
+                              <h4 className="font-semibold text-sm">
+                                {semester.name}
+                              </h4>
 
-                    {record.semesters?.map(
-                      (semester, index) => (
-                        <div
-                          key={index}
-                          className={`rounded-2xl p-3 flex items-center justify-between ${
-                            dark
-                              ? "bg-black/20"
-                              : "bg-white"
-                          }`}
-                        >
-                          <div>
-                            <h4 className="font-semibold text-sm">
-                              {semester.name}
-                            </h4>
+                              <p
+                                className={`text-xs ${theme.textSoft}`}
+                              >
+                                {semester.units} Units
+                              </p>
+                            </div>
 
-                            <p
-                              className={`text-xs ${theme.textSoft}`}
-                            >
-                              {semester.units} Units
-                            </p>
+                            <div className="text-right">
+                              <p className="font-black text-indigo-500">
+                                {semester.gpa}
+                              </p>
+
+                              <p
+                                className={`text-xs ${theme.textSoft}`}
+                              >
+                                GPA
+                              </p>
+                            </div>
                           </div>
-
-                          <div className="text-right">
-                            <p className="font-black text-indigo-500">
-                              {semester.gpa}
-                            </p>
-
-                            <p
-                              className={`text-xs ${theme.textSoft}`}
-                            >
-                              GPA
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    )}
+                        )
+                      )}
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              {sortedRecords.length > 6 && (
+                <div className="text-center mt-6">
+                  <button
+                    onClick={() => setShowAllRecords((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 text-sm font-bold text-indigo-500 hover:text-indigo-400 transition`}
+                  >
+                    {showAllRecords
+                      ? "Show fewer records"
+                      : `Show all ${sortedRecords.length} records`}
+                    <ChevronRight
+                      size={15}
+                      className={`transition-transform ${showAllRecords ? "-rotate-90" : "rotate-90"}`}
+                    />
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </section>
 
@@ -581,17 +756,21 @@ const FeatureCard = ({ item, theme }) => {
   return (
     <Link
       to={item.link}
-      className={`${theme.card} group flex min-h-40 flex-col justify-between rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl`}
+      className={`${theme.card} group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl`}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div
+        className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-linear-to-br ${item.color} opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20`}
+      />
+
+      <div className="relative flex items-start justify-between gap-4">
         <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r ${item.color} text-white shadow-lg`}>
           <Icon size={24} />
         </div>
 
-        <ArrowRight className="opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100" />
+        <ArrowRight size={18} className="opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100" />
       </div>
 
-      <div className="mt-5">
+      <div className="relative mt-5">
         <h4 className="text-lg font-black leading-tight">
           {item.title}
         </h4>
@@ -663,18 +842,15 @@ const StatCard = ({
   dark,
 }) => {
   return (
-    <div className={`rounded-3xl p-2 flex items-center gap-2 backdrop-blur-xl border ${
-        dark ? "bg-white/5 border-white/10" : "bg-white/10 border-white/20"}`}>
-      <div className="flex items-center justify-between ">
-        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${ dark ? "bg-white/10" : "bg-white/20"}`}>
-          <Icon size={20} />
-        </div>
+    <div className={`rounded-2xl p-3.5 flex items-center gap-3 backdrop-blur-xl border transition-all hover:-translate-y-0.5 ${
+        dark ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white/10 border-white/20 hover:bg-white/15"}`}>
+      <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${ dark ? "bg-white/10" : "bg-white/20"}`}>
+        <Icon size={19} />
       </div>
-      <div>
-        <p className="text-[10px] text-white/70">{title}</p>
-      <h2 className={`text-xl font-black mt-1 ${ valueColor || "text-white"}`}>{value}</h2>
+      <div className="min-w-0">
+        <p className="text-[11px] text-white/70 truncate">{title}</p>
+        <h2 className={`text-xl font-black mt-0.5 leading-none ${ valueColor || "text-white"}`}>{value}</h2>
       </div>
-      
     </div>
   );
 };

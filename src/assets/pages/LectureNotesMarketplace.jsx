@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 
 import {
   addDoc,
@@ -42,6 +42,10 @@ import {
   Upload,
   X,
   DownloadIcon,
+  School,
+  Library,
+  Layers,
+  ChevronDown,
 } from "lucide-react";
 
 import { db } from "../../firebase/config";
@@ -54,6 +58,100 @@ import {
 } from "../../services/cloudinary";
 import ViewerModal from "../components/ViewerModal";
 import { buildShareUrl, shareContent } from "../utils/share";
+import {
+  ALL_NIGERIAN_SCHOOLS,
+  NIGERIAN_UNIVERSITIES,
+  NIGERIAN_POLYTECHNICS,
+  NIGERIAN_COLLEGES_OF_EDUCATION,
+  COMMON_DEPARTMENTS,
+} from "../data/nigerianSchools";
+
+function SearchableSelect({ value, onChange, options, placeholder, dark }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef(null);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return options;
+    const q = search.toLowerCase();
+    return options.filter(
+      (o) =>
+        (o.name || o.label || "").toLowerCase().includes(q) ||
+        (o.shortName || "").toLowerCase().includes(q)
+    );
+  }, [options, search]);
+
+  const selectedLabel = options.find((o) => o.id === value || o.name === value);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <div
+        className={`w-full h-14 px-4 rounded-2xl border outline-none transition-all flex items-center gap-2 cursor-pointer ${
+          dark ? "bg-slate-950 border-white/10" : "bg-slate-100 border-slate-200"
+        }`}
+        onClick={() => setOpen(!open)}
+      >
+        <span className={`flex-1 text-sm ${selectedLabel ? "" : "opacity-40"}`}>
+          {selectedLabel
+            ? selectedLabel.shortName
+              ? `${selectedLabel.name} (${selectedLabel.shortName})`
+              : selectedLabel.name || selectedLabel.label
+            : placeholder}
+        </span>
+        <ChevronDown size={16} className="opacity-40" />
+      </div>
+      {open && (
+        <div className={`absolute z-20 w-full mt-1 rounded-2xl border max-h-60 overflow-y-auto shadow-lg ${
+          dark ? "bg-slate-950 border-white/10" : "bg-white border-slate-200"
+        }`}>
+          <div className={`sticky top-0 p-2 border-b ${dark ? "border-white/10" : "border-slate-200"}`}>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl">
+              <Search size={16} className="opacity-40 shrink-0" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search..."
+                className="w-full bg-transparent outline-none text-sm"
+                autoFocus
+              />
+            </div>
+          </div>
+          {filtered.length > 0 ? (
+            filtered.map((item) => (
+              <button
+                key={item.id || item.name}
+                type="button"
+                onClick={() => {
+                  onChange(item);
+                  setOpen(false);
+                  setSearch("");
+                }}
+                className="w-full text-left px-4 py-3 hover:bg-indigo-500/10 transition text-sm flex items-center gap-2"
+              >
+                <span className="flex-1 font-medium">
+                  {item.name || item.label}
+                  {item.shortName && <span className="opacity-50 ml-1">({item.shortName})</span>}
+                </span>
+                {item.faculty && <span className="text-xs opacity-50">{item.faculty}</span>}
+              </button>
+            ))
+          ) : (
+            <div className="px-4 py-6 text-center text-sm opacity-60">No results found</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PDFThumbnail = ({ note, dark }) => {
   const [failed, setFailed] = useState(false);
@@ -128,9 +226,26 @@ export default function LectureNotesMarketplace({ dark }) {
     dept: "",
     lecturer: "",
     school: "",
+    level: "",
   });
 
   const isPremium = userProfile?.premium === true;
+
+  const ACADEMIC_LEVELS = [
+    { value: "100", label: "100 Level" },
+    { value: "200", label: "200 Level" },
+    { value: "300", label: "300 Level" },
+    { value: "400", label: "400 Level" },
+    { value: "500", label: "500 Level" },
+    { value: "600", label: "600 Level" },
+    { value: "postgraduate", label: "Postgraduate" },
+  ];
+
+  const SCHOOL_TYPES = [
+    { value: "university", label: "University" },
+    { value: "polytechnic", label: "Polytechnic" },
+    { value: "college_of_education", label: "College of Education" },
+  ];
 
   const bg = dark ? "bg-[#050816] text-white" : "bg-[#f5f7ff] text-slate-900";
   const card = dark
@@ -328,6 +443,7 @@ export default function LectureNotesMarketplace({ dark }) {
         dept: "",
         lecturer: "",
         school: "",
+        level: "",
       });
       setFile(null);
       setProgress(0);
@@ -758,28 +874,64 @@ export default function LectureNotesMarketplace({ dark }) {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  {[
-                    { key: "title", placeholder: "Lecture Note Title" },
-                    { key: "course", placeholder: "Course Code" },
-                    { key: "dept", placeholder: "Department" },
-                    { key: "school", placeholder: "School" },
-                  ].map((field) => (
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block opacity-80">Lecture Note Title</label>
                     <input
-                      key={field.key}
-                      value={form[field.key]}
-                      onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                      placeholder={field.placeholder}
+                      value={form.title}
+                      onChange={(event) => setForm({ ...form, title: event.target.value })}
+                      placeholder="e.g. Data Structures — Week 4"
                       className={`${inputClass} h-14 px-4`}
                     />
-                  ))}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block opacity-80">Course Code</label>
+                    <input
+                      value={form.course}
+                      onChange={(event) => setForm({ ...form, course: event.target.value })}
+                      placeholder="e.g. CSC 204"
+                      className={`${inputClass} h-14 px-4`}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block opacity-80">Department</label>
+                    <SearchableSelect
+                      value={form.dept}
+                      onChange={(item) => setForm({ ...form, dept: item.name })}
+                      options={COMMON_DEPARTMENTS.map((d, i) => ({ ...d, id: `dept-${i}` }))}
+                      placeholder="Search for your department..."
+                      dark={dark}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block opacity-80">School</label>
+                    <SearchableSelect
+                      value={form.school}
+                      onChange={(item) => setForm({ ...form, school: item.name })}
+                      options={ALL_NIGERIAN_SCHOOLS.map((s, i) => ({ ...s, id: `sch-${i}` }))}
+                      placeholder="Search for your school..."
+                      dark={dark}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block opacity-80">Level</label>
+                    <SearchableSelect
+                      value={form.level}
+                      onChange={(item) => setForm({ ...form, level: item.value })}
+                      options={ACADEMIC_LEVELS.map((l) => ({ ...l, id: l.value, name: l.label }))}
+                      placeholder="Select your level..."
+                      dark={dark}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block opacity-80">Lecturer name (optional)</label>
+                    <input
+                      value={form.lecturer}
+                      onChange={(event) => setForm({ ...form, lecturer: event.target.value })}
+                      placeholder="e.g. Dr. Adebayo"
+                      className={`${inputClass} h-14 px-4`}
+                    />
+                  </div>
                 </div>
-
-                <input
-                  value={form.lecturer}
-                  onChange={(event) => setForm({ ...form, lecturer: event.target.value })}
-                  placeholder="Lecturer name (optional)"
-                  className={`${inputClass} mt-4 h-14 px-4`}
-                />
 
                 <label
                   className={`mt-4 flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed transition-colors ${
