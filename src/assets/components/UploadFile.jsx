@@ -72,7 +72,8 @@ function SearchableSelect({ label, icon: Icon, value, onChange, options, placeho
     return options.filter(
       (o) =>
         (o.name || o.label || "").toLowerCase().includes(q) ||
-        (o.shortName || "").toLowerCase().includes(q)
+        (o.shortName || "").toLowerCase().includes(q) ||
+        (o.faculty || "").toLowerCase().includes(q)
     );
   }, [options, search]);
 
@@ -118,7 +119,7 @@ function SearchableSelect({ label, icon: Icon, value, onChange, options, placeho
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className={`absolute z-20 w-full mt-1.5 rounded-2xl border max-h-64 overflow-y-auto shadow-xl backdrop-blur-2xl ${
+            className={`absolute z-30 w-full mt-1.5 rounded-2xl border max-h-72 overflow-y-auto shadow-xl backdrop-blur-2xl ${
               dark ? "bg-[#0f172a] border-white/[0.08]" : "bg-white border-slate-200"
             }`}
           >
@@ -134,6 +135,9 @@ function SearchableSelect({ label, icon: Icon, value, onChange, options, placeho
                   autoFocus
                 />
               </div>
+            </div>
+            <div className={`px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide ${dark ? "text-slate-400" : "text-slate-500"}`}>
+              {filtered.length} {filtered.length === 1 ? "result" : "results"}
             </div>
             {filtered.length > 0 ? (
               filtered.map((item) => (
@@ -153,7 +157,10 @@ function SearchableSelect({ label, icon: Icon, value, onChange, options, placeho
                 </button>
               ))
             ) : (
-              <div className="px-4 py-8 text-center text-sm opacity-50">No results found</div>
+              <div className="px-4 py-8 text-center">
+                <p className="text-sm font-semibold">No matching option</p>
+                <p className="mt-1 text-xs opacity-60">Try searching by department or faculty.</p>
+              </div>
             )}
           </motion.div>
         )}

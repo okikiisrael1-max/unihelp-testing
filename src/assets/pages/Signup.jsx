@@ -143,9 +143,11 @@ const Signup = ({ dark }) => {
   };
 
   const filteredSchools = getFilteredSchools();
-  const filteredDepartments = COMMON_DEPARTMENTS.filter((d) =>
-    d.name?.toLowerCase().includes(deptSearch.toLowerCase())
-  );
+  const filteredDepartments = COMMON_DEPARTMENTS.filter((d) => {
+    const q = deptSearch.trim().toLowerCase();
+    if (!q) return true;
+    return d.name?.toLowerCase().includes(q) || d.faculty?.toLowerCase().includes(q);
+  });
 
   useEffect(() => {
     if (!form.username || form.username.length < 3) { setUsernameAvailable(null); return; }
@@ -504,7 +506,7 @@ const Signup = ({ dark }) => {
                           <School size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 ${muted}`} />
                           <input type="text" readOnly value={form.schoolName || ""} placeholder="Select from the list below..."
                             className={`w-full h-12 pl-11 pr-4 rounded-lg border outline-none cursor-pointer ${inputStyle} ${errors.schoolId ? 'border-red-500' : ''}`}
-                            onClick={() => setShowSchoolDropdown(!showSchoolDropdown)} onFocus={() => setShowSchoolDropdown(true)} />
+                            onClick={() => setShowSchoolDropdown(!showSchoolDropdown)} />
                           <ChevronDown size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${muted}`} />
                         </div>
                         {showSchoolDropdown && (
@@ -534,22 +536,28 @@ const Signup = ({ dark }) => {
                           <Library size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 ${muted}`} />
                           <input type="text" readOnly value={form.departmentName || ""} placeholder="Select from the list below..."
                             className={`w-full h-12 pl-11 pr-4 rounded-lg border outline-none cursor-pointer ${inputStyle} ${errors.departmentId ? 'border-red-500' : ''}`}
-                            onClick={() => setShowDeptDropdown(!showDeptDropdown)} onFocus={() => setShowDeptDropdown(true)} />
+                            onClick={() => setShowDeptDropdown(!showDeptDropdown)}/>
                           <ChevronDown size={18} className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${muted}`} />
                         </div>
                         {showDeptDropdown && (
-                          <div className={`absolute z-20 w-full mt-1 rounded-xl border max-h-48 overflow-y-auto ${card} shadow-lg`}>
+                          <div className={`absolute z-30 w-full mt-1 rounded-xl border max-h-72 overflow-y-auto ${card} shadow-lg`}>
                             <div className={`sticky top-0 p-2 border-b ${hairline}`} style={{ backgroundColor: dark ? "#111827" : "#FFFFFF" }}>
-                              <input type="text" value={deptSearch} onChange={(e) => { setDeptSearch(e.target.value); setForm({ ...form, departmentId: "", departmentName: "" }); }} placeholder="Search departments..." className={`w-full h-10 px-3 rounded-lg border text-sm outline-none ${inputStyle}`} autoFocus />
+                              <input type="text" value={deptSearch} onChange={(e) => { setDeptSearch(e.target.value); setForm({ ...form, departmentId: "", departmentName: "" }); }} placeholder="Search department or faculty..." className={`w-full h-10 px-3 rounded-lg border text-sm outline-none ${inputStyle}`} autoFocus />
+                            </div>
+                            <div className={`px-4 py-2 text-[11px] font-semibold uppercase tracking-wide ${muted}`}>
+                              {filteredDepartments.length} {filteredDepartments.length === 1 ? "department" : "departments"}
                             </div>
                             {filteredDepartments.length > 0 ? filteredDepartments.map((d, i) => (
                               <button key={`${d.name}-${i}`} type="button" onClick={() => { setForm({ ...form, departmentId: `dept-${i}`, departmentName: d.name, faculty: d.faculty || "" }); setDeptSearch(""); setShowDeptDropdown(false); }}
-                                className={`w-full text-left px-4 py-3 transition text-sm ${dark ? "hover:bg-[#1E293B]" : "hover:bg-[#EEF2FF]"}`}>
+                                className={`w-full text-left px-4 py-3 transition text-sm flex items-center justify-between gap-3 ${dark ? "hover:bg-[#1E293B]" : "hover:bg-[#EEF2FF]"}`}>
                                 <span className="font-medium">{d.name}</span>
-                                {d.faculty && <span className={`${muted} text-xs ml-2`}>{d.faculty}</span>}
+                                {d.faculty && <span className={`${muted} text-xs shrink-0`}>{d.faculty}</span>}
                               </button>
                             )) : (
-                              <div className={`px-4 py-6 text-center text-sm ${muted}`}>No departments found matching "{deptSearch}"</div>
+                              <div className={`px-4 py-8 text-center ${muted}`}>
+                                <p className="text-sm font-semibold">No matching department</p>
+                                <p className="mt-1 text-xs">Try a faculty name like Science, Engineering, Arts, Health, or Management.</p>
+                              </div>
                             )}
                           </div>
                         )}

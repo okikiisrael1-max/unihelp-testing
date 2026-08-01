@@ -768,7 +768,7 @@ const Profile = ({
                 <div className="relative">
                   <School size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 z-10" />
                   <input type="text" readOnly value={form.school || ""} placeholder="Select school..." className={`w-full h-12 pl-11 pr-9 rounded-2xl outline-none cursor-pointer ${inputStyle}`}
-                    onClick={() => setShowSchoolDropdown(!showSchoolDropdown)} onFocus={() => setShowSchoolDropdown(true)} />
+                    onClick={() => setShowSchoolDropdown(!showSchoolDropdown)}/>
                   <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
                 </div>
                 {showSchoolDropdown && (
@@ -797,7 +797,7 @@ const Profile = ({
                 <div className="relative">
                   <Library size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 z-10" />
                   <input type="text" readOnly value={form.department || ""} placeholder="Select department..." className={`w-full h-12 pl-11 pr-9 rounded-2xl outline-none cursor-pointer ${inputStyle}`}
-                    onClick={() => setShowDeptDropdown(!showDeptDropdown)} onFocus={() => setShowDeptDropdown(true)} />
+                    onClick={() => setShowDeptDropdown(!showDeptDropdown)} />
                   <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
                 </div>
                 {showDeptDropdown && (
