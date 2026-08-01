@@ -64,46 +64,34 @@ const CGPATracker = ({ dark }) => {
       },
     ]);
 
-  const [records, setRecords] =
-    useState([]);
+  const [records, setRecords] = useState([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [warning, setWarning] =
-    useState("");
+  const [warning, setWarning] = useState("");
 
-  const [msg, setMsg] =
-    useState("");
+  const [msg, setMsg] = useState("");
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [showSaveModal, setShowSaveModal] =
-    useState(false);
+  const [showSaveModal, setShowSaveModal] =   useState(false);
 
-  const [predictedGPA, setPredictedGPA] =
-    useState("");
+  const [predictedGPA, setPredictedGPA] = useState("");
 
-  const [predictedUnits, setPredictedUnits] =
-    useState("");
+  const [predictedUnits, setPredictedUnits] = useState("");
 
-  const [predictedResult, setPredictedResult] =
-    useState("");
+  const [predictedResult, setPredictedResult] = useState("");
 
-  const [targetCGPA, setTargetCGPA] =
-    useState("");
+  const [targetCGPA, setTargetCGPA] = useState("");
 
-  const [targetCourses, setTargetCourses] =
-    useState([
+  const [targetCourses, setTargetCourses] =  useState([
       {
         title: "",
         unit: "",
       },
     ]);
 
-  const [gradeAdvice, setGradeAdvice] =
-    useState([]);
+  const [gradeAdvice, setGradeAdvice] =   useState([]);
 
   /* =====================================================
      THEME
@@ -658,48 +646,26 @@ const CGPATracker = ({ dark }) => {
 
             <div className="max-w-2xl">
 
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-semibold mb-5">
-                <GraduationCap size={16} />
-                Smart Academic Tracker
-              </div>
-
               <h1 className="text-4xl md:text-6xl font-black leading-tight">
                 Track Your
                 <span className="text-indigo-500">
-                  {" "}
-                  CGPA
-                </span>{" "}
-                Like a Pro
+                  {" "} CGPA </span>{" "}  Like a Pro
               </h1>
 
               <p className="opacity-70 mt-5 text-base md:text-lg leading-relaxed">
-                Predict future
-                results, monitor
-                academic growth,
-                plan target grades,
-                and save your
-                progress beautifully.
+                Predict future results, monitor academic growth, plan target grades, and save your progress beautifully.
               </p>
 
               <div className="flex flex-wrap gap-3 mt-7">
 
-                <button
-                  onClick={() =>
-                    setShowSaveModal(
-                      true
-                    )
-                  }
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center gap-2 transition"
-                >
+                <button onClick={() =>setShowSaveModal(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center gap-2 transition">
                   <Save size={18} />
                   Save Record
                 </button>
 
                 <button className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5 font-semibold flex items-center gap-2">
-                  <Sparkles
-                    size={18}
-                  />
-                  AI Insights
+                  <Sparkles size={18}/> AI Insights
                 </button>
               </div>
             </div>
@@ -708,7 +674,7 @@ const CGPATracker = ({ dark }) => {
 
             <div className="relative flex justify-center">
 
-              <div className="w-72 h-72 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 p-3 shadow-[0_0_80px_rgba(99,102,241,0.4)]">
+              <div className="w-52 h-52 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 p-3 shadow-[0_0_80px_rgba(99,102,241,0.4)]">
 
                 <div
                   className={`w-full h-full rounded-full flex flex-col items-center justify-center ${
