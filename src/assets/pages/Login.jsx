@@ -358,7 +358,7 @@ const Login = ({ dark }) => {
               </div>
             ) : (
               <div className="py-2">
-                <div className="flex flex-col items-start gap-3 mb-6">
+                <div className="flex flex-col items-center justify-center w-full gap-3 mb-6">
                   <div className="w-16 h-16 flex items-center justify-center shrink-0">
                     <img 
                       src={customPadlock} 
@@ -372,10 +372,12 @@ const Login = ({ dark }) => {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold mb-2">Forgot Password?</h3>
-                <p className={`text-sm mb-8 ${dark ? "text-slate-400" : "text-slate-500"}`}>
-                  No worries! Enter your email address and we'll send you a link to reset your password.
-                </p>
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-2">Forgot Password?</h3>
+                  <p className={`text-sm mb-8 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                    No worries! Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                </div>
 
                 <form onSubmit={handleResetPassword} className="space-y-6">
                   <div className="space-y-2">
