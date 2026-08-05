@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff, Lock, CheckCircle2, X, Mail, Sparkles, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
-import customPadlock from "../images/customPadlock.jpeg";
+import customPadlock from "../images/padlock.png";
 import { auth, db } from "../../firebase/config";
 import {
   GoogleAuthProvider,
@@ -359,11 +359,11 @@ const Login = ({ dark }) => {
             ) : (
               <div className="py-2">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-gray-100 p-1">
+                  <div className="w-16 h-16 flex items-center justify-center shrink-0">
                     <img 
                       src={customPadlock} 
                       alt="Padlock" 
-                      className="w-full h-full object-contain mix-blend-multiply" 
+                      className="w-full h-full object-contain" 
                     />
                   </div>
                   <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center border border-emerald-200 dark:border-emerald-500/30 gap-1.5">
