@@ -76,6 +76,7 @@ import About from "./assets/pages/About";
 import HelpCenter from "./assets/pages/HelpCenter";
 import PrivacyPolicy from "./assets/pages/PrivacyPolicy";
 import TermsOfService from "./assets/pages/TermsOfService";
+import CompleteProfile from "./assets/pages/CompleteProfile";
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -236,16 +237,10 @@ const App = () => {
       <div className={`${dark ? "bg-[#020617] text-white" : "bg-[#f8fafc] text-black"}`}>
         <Routes>
           {/* ================= AUTH ================= */}
-          <Route
-            path="/login"
-            element={
-              currentUser ? <Navigate to="/" replace /> : <Login dark={dark} />
-            }/>
-          <Route
-            path="/register"
-            element={
-              currentUser ? <Navigate to="/" replace /> : <Signup dark={dark} />
-            }/>
+          <Route path="/login"
+            element={currentUser ? <Navigate to="/" replace /> : <Login dark={dark} />}/>
+          <Route path="/register" element={ currentUser ? <Navigate to="/" replace /> : <Signup dark={dark} /> }/>
+          <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
           {/* ================= PROFILE ================= */}
 
             <Route
