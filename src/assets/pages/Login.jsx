@@ -358,7 +358,7 @@ const Login = ({ dark }) => {
               </div>
             ) : (
               <div className="py-2">
-                <div className="flex items-center gap-4 mb-6">
+                <div className="flex flex-col items-start gap-3 mb-6">
                   <div className="w-16 h-16 flex items-center justify-center shrink-0">
                     <img 
                       src={customPadlock} 
