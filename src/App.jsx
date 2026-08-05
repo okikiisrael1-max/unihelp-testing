@@ -21,6 +21,7 @@ import { requestNotificationPermission } from "./firebaseMessaging";
 import Dashboard from "./assets/pages/Dashboard";
 import Login from "./assets/pages/Login";
 import Signup from "./assets/pages/Signup";
+import ResetPassword from "./assets/pages/ResetPassword";
 import CGPA from "./assets/pages/CGPA";
 import Profile from "./assets/pages/Profile";
 import Question from "./assets/pages/Question";
@@ -240,6 +241,7 @@ const App = () => {
           <Route path="/login"
             element={currentUser ? <Navigate to="/" replace /> : <Login dark={dark} />}/>
           <Route path="/register" element={ currentUser ? <Navigate to="/" replace /> : <Signup dark={dark} /> }/>
+          <Route path="/reset-password" element={ currentUser ? <Navigate to="/" replace /> : <ResetPassword dark={dark} /> }/>
           <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
           {/* ================= PROFILE ================= */}
 
