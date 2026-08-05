@@ -62,18 +62,6 @@ const SignUp = ({ dark }) => {
     }
   };
 
-  const getUserRole = async (userId) => {
-    try {
-      const userSnap = await getDoc(doc(db, "users", userId));
-      if (userSnap.exists()) {
-        return userSnap.data()?.role || null;
-      }
-    } catch (err) {
-      console.error(err);
-    }
-    return null;
-  };
-
   const validate = () => {
     if (!fullName.trim()) {
       toast.error("Please enter your full name");
@@ -112,7 +100,7 @@ const SignUp = ({ dark }) => {
       });
 
       toast.success("Account created successfully");
-      navigate("/select-role");
+      navigate("/complete-profile");
     } catch (error) {
       switch (error.code) {
         case "auth/email-already-in-use":
@@ -136,17 +124,17 @@ const SignUp = ({ dark }) => {
     try {
       setIsLoading(true);
       const result = await signInWithPopup(auth, provider);
-      const existingRole = await getUserRole(result.user.uid);
+      const userSnap = await getDoc(doc(db, "users", result.user.uid));
       await createUserDoc(result.user.uid, {
         name: result.user.displayName || "",
         email: result.user.email || "",
       });
 
       toast.success("Google sign-up successful");
-      if (existingRole) {
-        navigate("/");
+      if (userSnap.exists()) {
+        navigate("/complete-profile");
       } else {
-        navigate("/select-role");
+        navigate("/complete-profile");
       }
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
@@ -182,7 +170,7 @@ const SignUp = ({ dark }) => {
       </div>
 
       {/* DESKTOP IMAGE PANEL */}
-      <div className="hidden lg:flex w-[45%] relative flex-col justify-between p-12 xl:p-16 overflow-hidden z-10">
+      <div className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 w-[45%] flex-col justify-between p-12 xl:p-16 overflow-hidden z-10">
         <img
           src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
           alt="Students learning"
@@ -211,7 +199,7 @@ const SignUp = ({ dark }) => {
       </div>
 
       {/* FORM PANEL */}
-      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-4 pb-8 lg:p-12 xl:p-16 relative z-10 -mt-6 lg:mt-0 lg:min-h-screen">
+      <div className="w-full lg:w-[55%] lg:ml-[45%] flex flex-col justify-center items-center px-4 pb-8 lg:p-12 xl:p-16 relative z-10 -mt-6 lg:mt-0 lg:min-h-screen">
 
         <div className="hidden lg:block absolute top-16 right-16 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
         <div className="hidden lg:block absolute bottom-10 left-10 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
@@ -219,7 +207,8 @@ const SignUp = ({ dark }) => {
         <div
           className={`w-full max-w-[420px] lg:max-w-[480px] xl:max-w-[520px] mx-auto p-8 lg:p-10 xl:p-12 rounded-t-3xl lg:rounded-3xl transition-all relative z-10 overflow-hidden
           ${dark
-            ? "bg-slate-900 shadow-2xl shadow-black/80 lg:bg-slate-800/60 lg:backdrop-blur-xl lg:border lg:border-slate-700/80 lg:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]" : "bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:bg-white/90 lg:backdrop-blur-xl lg:border lg:border-gray-100 lg:shadow-[0_20px_60px_-15px_rgba(67,56,202,0.18)]"
+            ? "bg-slate-900 shadow-2xl shadow-black/80 lg:bg-slate-800/60 lg:backdrop-blur-xl lg:border lg:border-slate-700/80 lg:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+            : "bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:bg-white/90 lg:backdrop-blur-xl lg:border lg:border-gray-100 lg:shadow-[0_20px_60px_-15px_rgba(67,56,202,0.18)]"
           }`}
         >
           <div className="hidden lg:block absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-400" />
