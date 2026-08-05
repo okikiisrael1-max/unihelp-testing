@@ -357,18 +357,13 @@ const Login = ({ dark }) => {
               </div>
             ) : (
               <div>
-                <div className="h-40 md:h-44 -mt-8 -mx-8 mb-8 relative shrink-0">
-                  <img 
-                    src="https://images.unsplash.com/photo-1582139329536-e7284fece509?q=80&w=800&auto=format&fit=crop" 
-                    alt="Security Padlock" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-5 left-8 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-                      <Lock className="text-white" size={18} />
-                    </div>
-                    <span className="text-white font-bold tracking-wide">Account Recovery</span>
+                <div className="h-32 md:h-40 -mt-8 -mx-8 mb-8 relative shrink-0 bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                  <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-black/10 rounded-full blur-xl"></div>
+                  
+                  <div className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.2)] border border-white/30">
+                    <Lock className="text-white drop-shadow-md" size={40} />
                   </div>
                 </div>
 
