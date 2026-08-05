@@ -359,7 +359,7 @@ const Login = ({ dark }) => {
               <div>
                 <div className="h-40 md:h-44 -mt-8 -mx-8 mb-8 relative shrink-0">
                   <img 
-                    src="https://images.unsplash.com/photo-1614064641913-6b714b622329?q=80&w=800&auto=format&fit=crop" 
+                    src="https://images.unsplash.com/photo-1582139329536-e7284fece509?q=80&w=800&auto=format&fit=crop" 
                     alt="Security Padlock" 
                     className="w-full h-full object-cover"
                   />
