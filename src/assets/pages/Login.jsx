@@ -325,23 +325,21 @@ const Login = ({ dark }) => {
           onClick={closeForgotModal}
         >
           <div
-            className={`w-full max-w-[400px] p-8 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 ${
+            className={`w-full max-w-[420px] p-8 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden ${
               dark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeForgotModal}
-              className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
-                dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"
-              }`}
+              className="absolute top-4 right-4 z-20 p-2 rounded-full transition-colors hover:bg-black/20 bg-black/10 text-white backdrop-blur-sm"
               aria-label="Close"
             >
               <X size={20} />
             </button>
 
             {resetSent ? (
-              <div className="text-center py-6">
+              <div className="text-center py-6 mt-4">
                 <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
                   <CheckCircle2 size={32} className="text-emerald-500" />
                 </div>
@@ -358,9 +356,20 @@ const Login = ({ dark }) => {
                 </button>
               </div>
             ) : (
-              <div className="py-2">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-6">
-                  <Lock className="text-indigo-600 dark:text-indigo-400" size={24} />
+              <div>
+                <div className="h-40 md:h-44 -mt-8 -mx-8 mb-8 relative shrink-0">
+                  <img 
+                    src="https://images.unsplash.com/photo-1614064641913-6b714b622329?q=80&w=800&auto=format&fit=crop" 
+                    alt="Security Padlock" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                  <div className="absolute bottom-5 left-8 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
+                      <Lock className="text-white" size={18} />
+                    </div>
+                    <span className="text-white font-bold tracking-wide">Account Recovery</span>
+                  </div>
                 </div>
 
                 <h3 className="text-2xl font-bold mb-2">Forgot Password?</h3>
