@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff, Lock, CheckCircle2, X, Mail, Sparkles, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
+import customPadlock from "../images/padlock.png";
 import { auth, db } from "../../firebase/config";
 import {
   GoogleAuthProvider,
@@ -92,7 +93,7 @@ const Login = ({ dark }) => {
       if (role) {
         navigate("/");
       } else {
-        navigate("/select-role");
+        navigate("/profile");
       }
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
@@ -356,14 +357,18 @@ const Login = ({ dark }) => {
                 </button>
               </div>
             ) : (
-              <div>
-                <div className="h-32 md:h-40 -mt-8 -mx-8 mb-8 relative shrink-0 bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                  <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-black/10 rounded-full blur-xl"></div>
-                  
-                  <div className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.2)] border border-white/30">
-                    <Lock className="text-white drop-shadow-md" size={40} />
+              <div className="py-2">
+                <div className="flex flex-col items-start gap-3 mb-6">
+                  <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                    <img 
+                      src={customPadlock} 
+                      alt="Padlock" 
+                      className="w-full h-full object-contain" 
+                    />
+                  </div>
+                  <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center border border-emerald-200 dark:border-emerald-500/30 gap-1.5">
+                    <ShieldCheck className="text-emerald-600 dark:text-emerald-400" size={14} />
+                    <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold tracking-wide uppercase">100% Secure</span>
                   </div>
                 </div>
 

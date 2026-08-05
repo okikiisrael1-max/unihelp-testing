@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -124,16 +124,24 @@ const SignUp = ({ dark }) => {
     try {
       setIsLoading(true);
       const result = await signInWithPopup(auth, provider);
-      const userSnap = await getDoc(doc(db, "users", result.user.uid));
-      await createUserDoc(result.user.uid, {
-        name: result.user.displayName || "",
-        email: result.user.email || "",
-      });
+      const uid = result?.user?.uid;
+      const isNew = result?.additionalUserInfo?.isNewUser;
 
-      toast.success("Google sign-up successful");
-      if (userSnap.exists()) {
-        navigate("/");
+      if (!uid) {
+        toast.error("Google sign-in failed");
+        return;
+      }
+
+      if (isNew) {
+        await createUserDoc(uid, {
+          name: result.user.displayName || "",
+          email: result.user.email || "",
+        });
+
+        toast.success("Google sign-up successful");
+        navigate("/complete-profile");
       } else {
+        toast.success("Google sign-in successful");
         navigate("/complete-profile");
       }
     } catch (error) {
