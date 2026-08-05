@@ -325,23 +325,21 @@ const Login = ({ dark }) => {
           onClick={closeForgotModal}
         >
           <div
-            className={`w-full max-w-[400px] p-8 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 ${
+            className={`w-full max-w-[420px] p-8 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden ${
               dark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeForgotModal}
-              className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
-                dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"
-              }`}
+              className="absolute top-4 right-4 z-20 p-2 rounded-full transition-colors hover:bg-black/20 bg-black/10 text-white backdrop-blur-sm"
               aria-label="Close"
             >
               <X size={20} />
             </button>
 
             {resetSent ? (
-              <div className="text-center py-6">
+              <div className="text-center py-6 mt-4">
                 <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
                   <CheckCircle2 size={32} className="text-emerald-500" />
                 </div>
@@ -358,9 +356,15 @@ const Login = ({ dark }) => {
                 </button>
               </div>
             ) : (
-              <div className="py-2">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-6">
-                  <Lock className="text-indigo-600 dark:text-indigo-400" size={24} />
+              <div>
+                <div className="h-32 md:h-40 -mt-8 -mx-8 mb-8 relative shrink-0 bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                  <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-black/10 rounded-full blur-xl"></div>
+                  
+                  <div className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.2)] border border-white/30">
+                    <Lock className="text-white drop-shadow-md" size={40} />
+                  </div>
                 </div>
 
                 <h3 className="text-2xl font-bold mb-2">Forgot Password?</h3>
