@@ -50,6 +50,17 @@ const Login = ({ dark }) => {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
     try {
       setIsLoading(true);
       const credential = await signInWithEmailAndPassword(auth, email, password);
@@ -110,6 +121,12 @@ const Login = ({ dark }) => {
     e.preventDefault();
     if (!resetEmail) {
       toast.error("Please enter your email");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
