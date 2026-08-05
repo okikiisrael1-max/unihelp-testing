@@ -48,11 +48,6 @@ import SmartTimetableBuilder from "./assets/pages/SmartTimetableBuilder";
 import Announcements from "./assets/pages/Announcements";
 import CBTPracticePage from "./assets/pages/CBTPracticePage";
 import NotFound from "./assets/pages/NotFound";
-import SelectRole from "./assets/pages/SelectRole";
-
-/* ================= JAMB ================= */
-
-import JambDashboard from "./assets/pages/jamb/jambDashboard";
 
 /* ================= LAYOUTS ================= */
 
@@ -62,23 +57,6 @@ import DashboardLayout from "./assets/Layouts/DashboardLayout";
 
 import ProtectedRoute from "./assets/components/ProtectedRoutes";
 import InstallPrompt from "./assets/components/InstallPrompt";
-import JambLayout from "./assets/Layouts/JambLayout";
-import JambSettings from "./assets/pages/jamb/JambSettings";
-import JambSubjects from "./assets/pages/jamb/JambSubjects";
-import JambStudyMaterials from "./assets/pages/jamb/JambStudyMaterial";
-import SubjectDetailPage from "./assets/pages/jamb/SubjectDetailsPage";
-import CBTExamPage from "./assets/pages/jamb/CBTExamPage";
-import PastQuestionsSubjects from "./assets/pages/jamb/PastQuestionsSubjects";
-import PastQuestionsViewer from "./assets/pages/jamb/PastQuestionViewer";
-import JambSubscriptionPage from "./assets/pages/jamb/JambSubscriptionPage";
-import GoalsPage from "./assets/pages/jamb/GoalsPage";
-import AnalyticsPage from "./assets/pages/jamb/AnalyticsPage";
-import StudyPlannerPage from "./assets/pages/jamb/StudyPlannerPage";
-import JambAITutor from "./assets/pages/jamb/JambAITutor";
-import JambLeaderboard from "./assets/pages/jamb/JambLeaderboard";
-import Achievements from "./assets/pages/jamb/JambAchievements";
-import FullMockExam from "./assets/pages/jamb/FullMockExam";
-import FullMockSetup from "./assets/pages/jamb/FullMockSetup";
 import AcademicCalculator from "./assets/components/AcademicCalculator";
 import StoriesHome from "./assets/pages/stories/StoriesHome";
 import StoryDetails from "./assets/pages/stories/StoryDetails";
@@ -111,8 +89,6 @@ const App = () => {
   });
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [userRole, setUserRole] = useState(null);
 
   const [loadingRole, setLoadingRole] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -163,7 +139,6 @@ const App = () => {
       setCurrentUser(user);
 
       if (!user) {
-        setUserRole(null);
         setLoadingRole(false);
 
         if (unsubRole) unsubRole();
@@ -207,15 +182,7 @@ const App = () => {
 
         unsubRole = onSnapshot(
           doc(db, "users", user.uid),
-          (snap) => {
-            if (snap.exists()) {
-              const data = snap.data();
-
-              setUserRole(data.role || null);
-            } else {
-              setUserRole(null);
-            }
-
+          () => {
             setLoadingRole(false);
           }
         );
@@ -311,58 +278,6 @@ const App = () => {
             <Route path="/privacy" element={<PrivacyPolicy dark={dark} />} />
             <Route path="/terms" element={<TermsOfService dark={dark} />} />
 
-          {/* ================= SELECT ROLE ================= */}
-
-          <Route
-            path="/select-role"
-            element={
-              <ProtectedRoute>
-                <SelectRole dark={dark} />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route element={<ProtectedRoute> <JambLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/></ProtectedRoute>}>
-          
-          {/* ================= JAMB ROUTES ================= */}
-            
-          {userRole === "jamb" && (
-            <Route path="/" element={ <ProtectedRoute> <JambDashboard dark={dark} /> </ProtectedRoute> }/>
-          )}
-          <Route path="/settings" element={<ProtectedRoute><JambSettings dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/subjects" element={<ProtectedRoute><JambSubjects dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/materials" element={<ProtectedRoute><JambStudyMaterials dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/subjects/:subjectId" element={<ProtectedRoute><SubjectDetailPage dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/subjects/:subjectId/CBT" element={<ProtectedRoute><CBTExamPage dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/subjects-list" element={<ProtectedRoute><PastQuestionsSubjects   dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/past-questions/:subjectId" element={<ProtectedRoute><PastQuestionsViewer   dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/subscription" element={<ProtectedRoute><JambSubscriptionPage dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/goals" element={<ProtectedRoute><GoalsPage dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/planner" element={<ProtectedRoute><StudyPlannerPage dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/ai-tutor" element={<ProtectedRoute><JambAITutor dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/leaderboard" element={<ProtectedRoute><JambLeaderboard dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/achievements" element={<ProtectedRoute><Achievements dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/mock-exam" element={<ProtectedRoute><FullMockExam dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          <Route path="/mock-setup" element={<ProtectedRoute><FullMockSetup dark={dark} setDark={setDark}/></ProtectedRoute>} />
-
-          </Route>
-
           <Route
               path="/contact"
               element={
@@ -429,7 +344,7 @@ const App = () => {
               path="/"
               element={
                 <ProtectedRoute>
-                  {userRole === "university" && <Dashboard dark={dark} />}
+                  <Dashboard dark={dark} />
                 </ProtectedRoute>
               }
             />
@@ -548,8 +463,6 @@ const App = () => {
 
             {/* ================= UNIVERSITY ROUTES ================= */}
 
-            {userRole === "university" && (
-              <>
                 <Route
                   path="/cgpa"
                   element={
@@ -626,13 +539,9 @@ const App = () => {
 
               <Route path="/read-story/:storyId/:chapterId" element={<ReadStory />} />
 
-              <Route path="/create-story" element={<CreateStory dark={dark} />} />
+                <Route path="/create-story" element={<CreateStory dark={dark} />} />
 
               <Route path="/create-chapter/:storyId" element={<CreateChapter dark={dark} />} />
-              </>
-
-              
-            )}
 
             {/* ================= SHARED FEATURES ================= */}
 

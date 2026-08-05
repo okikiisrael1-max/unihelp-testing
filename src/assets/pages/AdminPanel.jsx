@@ -17,7 +17,6 @@ import {
   ShoppingBag,
   RadioTower,
   DollarSignIcon,
-  Target,
 } from "lucide-react";
 
 import useAdmin from "../hooks/useAdmin";
@@ -35,7 +34,6 @@ import AdminWithdrawals from "./AdminWithdrawals";
 import MarketplaceAdmin from "../components/MarketplaceAdmin";
 import AdminAnnouncements from "../components/AdminAnncouncement";
 import Announcements from './Announcements';
-import AdminSubscriptionPanel from './../components/AdminSubscriptionPanel';
 
 export default function AdminPanel({ dark }) {
 
@@ -180,11 +178,6 @@ export default function AdminPanel({ dark }) {
       id: "payments",
       label: "Payments",
       icon: CreditCard,
-    },
-    {
-      id: "jambPayments",
-      label: "Jamb Payments",
-      icon: Target,
     },
   ];
 
@@ -618,9 +611,6 @@ export default function AdminPanel({ dark }) {
         {/* PAYMENTS */}
         {tab === "payments" && (
           <AdminWithdrawals dark={dark}/>
-        )}
-        {tab === 'jambPayments' && (
-          <AdminSubscriptionPanel dark={dark}/>
         )}
       </div>
     </div>

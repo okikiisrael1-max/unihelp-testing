@@ -87,7 +87,6 @@ export default function SmartFeed({ dark }) {
       text.toLowerCase();
 
     if (
-      t.includes("jamb") ||
       t.includes("utme") ||
       t.includes("admission")
     )

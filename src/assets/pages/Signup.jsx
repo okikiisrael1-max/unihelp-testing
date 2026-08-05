@@ -15,7 +15,6 @@ import {
   Mail,
   School,
   Sparkles,
-  Target,
   Upload,
   User2,
   X,
@@ -57,15 +56,9 @@ const SCHOOL_TYPES = [
   { value: "college_of_education", label: "College of Education" },
 ];
 
-const STUDENT_TYPES = [
-  { value: "university", label: "University Student" },
-  { value: "jamb", label: "JAMB Aspirant" },
-];
-
 // Fake-but-real-feeling "course codes" for each platform feature — reads like a
 // Nigerian transcript, which is the whole point of the design (see FEATURES row).
 const FEATURES = [
-  { code: "JMB 101", icon: Target, title: "JAMB CBT Practice", desc: "Real CBT simulation with timer and scoring" },
   { code: "GPA 204", icon: Calculator, title: "CGPA Calculator", desc: "Track your academic performance with ease" },
   { code: "LIB 110", icon: Upload, title: "Lecture Notes", desc: "Upload and access learning materials anytime" },
   { code: "SOC 150", icon: User2, title: "Student Community", desc: "Connect and grow with students like you" },
@@ -89,7 +82,7 @@ const Signup = ({ dark }) => {
     firstName: "", lastName: "", username: "", email: "", password: "",
     schoolId: "", schoolName: "", schoolType: "university",
     departmentId: "", departmentName: "",
-    faculty: "", level: "", studentType: "university", preferredCourse: "", targetUniversity: "",
+    faculty: "", level: "", studentType: "university",
   });
   const [errors, setErrors] = useState({});
   const [schoolSearch, setSchoolSearch] = useState("");
@@ -175,15 +168,9 @@ const Signup = ({ dark }) => {
       else if (form.password.length < 6) errs.password = "Password must be at least 6 characters";
     }
     if (s === 2) {
-      if (!form.studentType) errs.studentType = "Select your student type";
-      if (form.studentType === "university") {
-        if (!form.schoolId) errs.schoolId = "Select your school";
-        if (!form.departmentId) errs.departmentId = "Select your department";
-        if (!form.level) errs.level = "Select your level";
-      }
-      if (form.studentType === "jamb") {
-        if (!form.preferredCourse.trim()) errs.preferredCourse = "Enter your preferred course";
-      }
+      if (!form.schoolId) errs.schoolId = "Select your school";
+      if (!form.departmentId) errs.departmentId = "Select your department";
+      if (!form.level) errs.level = "Select your level";
     }
     return errs;
   };
@@ -225,8 +212,6 @@ const Signup = ({ dark }) => {
         faculty: form.faculty || "",
         level: form.level || "",
         studentType: form.studentType,
-        preferredCourse: form.preferredCourse || "",
-        targetUniversity: form.targetUniversity || "",
         photo: "",
         provider: "email",
         points: 0,
@@ -234,7 +219,7 @@ const Signup = ({ dark }) => {
         createdAt: serverTimestamp(),
       });
       toast.success("Account created successfully!");
-      navigate(form.studentType === "jamb" ? "/jamb" : "/");
+      navigate("/");
     } catch (error) {
       switch (error.code) {
         case "auth/email-already-in-use": toast.error("Email already exists"); break;
@@ -258,15 +243,14 @@ const Signup = ({ dark }) => {
           username: user.displayName || "Student",
           usernameLower: (user.displayName || "Student").trim().toLowerCase(),
           email: user.email,
-          role: "",
+          role: "university",
           photo: user.photoURL || "",
           provider: "google",
           createdAt: serverTimestamp(),
         });
       }
-      const role = userSnap.data()?.role || null;
       toast.success("Google login successful");
-      navigate(role ? "/" : "/select-role");
+      navigate("/");
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
@@ -317,7 +301,7 @@ const Signup = ({ dark }) => {
                 Learn.<br />Prepare.<br /><span className={accentText}>Succeed.</span>
               </h1>
               <p className={`mt-6 text-base leading-relaxed ${muted}`}>
-                One platform for JAMB aspirants and university students to learn, practice, collaborate and grow.
+                One platform for university students to learn, practice, collaborate and grow.
               </p>
             </div>
 
@@ -467,25 +451,10 @@ const Signup = ({ dark }) => {
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={`text-[11px] uppercase tracking-wider mb-1.5 block ${muted}`} style={{ fontFamily: FONT_MONO }}>I am a...</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {STUDENT_TYPES.map((t) => (
-                        <button key={t.value} type="button" onClick={() => setForm({ ...form, studentType: t.value, schoolId: "", schoolName: "", departmentId: "", departmentName: "", faculty: "", level: "" })}
-                          className={`p-4 rounded-xl border text-left transition-all ${form.studentType === t.value ? `${dark ? "border-[#818CF8] bg-[#6366F1]/15" : "border-[#4F46E5] bg-[#EEF2FF]"}` : `${card}`}`}>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.studentType === t.value ? (dark ? "border-[#818CF8]" : "border-[#4F46E5]") : hairline}`}>
-                              {form.studentType === t.value && <div className={`w-3 h-3 rounded-full ${dark ? "bg-[#818CF8]" : "bg-[#4F46E5]"}`} />}
-                            </div>
-                            <span className="font-medium text-sm">{t.label}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                    {errors.studentType && <p className="text-red-500 text-xs mt-1" style={{ fontFamily: FONT_MONO }}>&times; {errors.studentType}</p>}
+                    <label className={`text-[11px] uppercase tracking-wider mb-1.5 block ${muted}`} style={{ fontFamily: FONT_MONO }}>Academic Profile</label>
+                    <p className={`text-sm ${muted}`}>Tell us about your school so UniHelp can personalize your dashboard.</p>
                   </div>
 
-                  {form.studentType === "university" && (
-                    <>
                       <div>
                         <label className={`text-[11px] uppercase tracking-wider mb-1.5 block ${muted}`} style={{ fontFamily: FONT_MONO }}>School Type</label>
                         <div className="flex flex-wrap gap-2">
@@ -577,22 +546,6 @@ const Signup = ({ dark }) => {
                         </div>
                         {errors.level && <p className="text-red-500 text-xs mt-1" style={{ fontFamily: FONT_MONO }}>&times; {errors.level}</p>}
                       </div>
-                    </>
-                  )}
-
-                  {form.studentType === "jamb" && (
-                    <>
-                      <div>
-                        <label className={`text-[11px] uppercase tracking-wider mb-1.5 block ${muted}`} style={{ fontFamily: FONT_MONO }}>Preferred Course</label>
-                        <input type="text" value={form.preferredCourse} onChange={(e) => setForm({ ...form, preferredCourse: e.target.value })} placeholder="e.g. Computer Science" className={`w-full h-12 px-4 rounded-lg border outline-none transition-all ${inputStyle} ${errors.preferredCourse ? 'border-red-500' : ''}`} />
-                        {errors.preferredCourse && <p className="text-red-500 text-xs mt-1" style={{ fontFamily: FONT_MONO }}>&times; {errors.preferredCourse}</p>}
-                      </div>
-                      <div>
-                        <label className={`text-[11px] uppercase tracking-wider mb-1.5 block ${muted}`} style={{ fontFamily: FONT_MONO }}>Target University (optional)</label>
-                        <input type="text" value={form.targetUniversity} onChange={(e) => setForm({ ...form, targetUniversity: e.target.value })} placeholder="e.g. University of Lagos" className={`w-full h-12 px-4 rounded-lg border outline-none transition-all ${inputStyle}`} />
-                      </div>
-                    </>
-                  )}
                 </div>
               )}
 

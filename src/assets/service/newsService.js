@@ -79,7 +79,6 @@ const categorize = (text = "") => {
     t.includes("school") ||
     t.includes("education") ||
     t.includes("university") ||
-    t.includes("jamb") ||
     t.includes("waec") ||
     t.includes("student")
   )

@@ -9,7 +9,7 @@ export const formulas = [
     title: "Quadratic Formula",
     subject: "Mathematics",
     category: "Algebra",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
@@ -31,7 +31,7 @@ export const formulas = [
     title: "Pythagoras Theorem",
     subject: "Mathematics",
     category: "Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "a^2 + b^2 = c^2",
 
@@ -52,7 +52,7 @@ export const formulas = [
     title: "Area of a Circle",
     subject: "Mathematics",
     category: "Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "A = \\pi r^2",
 
@@ -73,7 +73,7 @@ export const formulas = [
     title: "Simple Interest",
     subject: "Mathematics",
     category: "Commercial Math",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "SI = \\frac{PRT}{100}",
 
@@ -118,7 +118,7 @@ export const formulas = [
     title: "Slope Formula",
     subject: "Mathematics",
     category: "Coordinate Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "m = \\frac{y_2 - y_1}{x_2 - x_1}",
@@ -142,7 +142,7 @@ export const formulas = [
     title: "Distance Formula",
     subject: "Mathematics",
     category: "Coordinate Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "d = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}",
@@ -166,7 +166,7 @@ export const formulas = [
     title: "Volume of Cylinder",
     subject: "Mathematics",
     category: "Mensuration",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "V = \\pi r^2 h",
 
@@ -187,7 +187,7 @@ export const formulas = [
     title: "Area of Triangle",
     subject: "Mathematics",
     category: "Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "A = \\frac{1}{2}bh",
 
@@ -207,7 +207,7 @@ export const formulas = [
     title: "Probability Formula",
     subject: "Mathematics",
     category: "Statistics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "P(E) = \\frac{n(E)}{n(S)}",
@@ -232,7 +232,7 @@ export const formulas = [
     title: "Ohm's Law",
     subject: "Physics",
     category: "Electricity",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "V = IR",
 
@@ -253,7 +253,7 @@ export const formulas = [
     title: "Newton's Second Law",
     subject: "Physics",
     category: "Mechanics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "F = ma",
 
@@ -295,7 +295,7 @@ export const formulas = [
     title: "Potential Energy",
     subject: "Physics",
     category: "Energy",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "PE = mgh",
 
@@ -316,7 +316,7 @@ export const formulas = [
     title: "Speed Formula",
     subject: "Physics",
     category: "Motion",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "Speed = \\frac{Distance}{Time}",
@@ -337,7 +337,7 @@ export const formulas = [
     title: "Momentum",
     subject: "Physics",
     category: "Mechanics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "p = mv",
 
@@ -358,7 +358,7 @@ export const formulas = [
     title: "Pressure Formula",
     subject: "Physics",
     category: "Fluid Mechanics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "P = \\frac{F}{A}",
@@ -380,7 +380,7 @@ export const formulas = [
     title: "Wave Equation",
     subject: "Physics",
     category: "Waves",
-    level: "JAMB",
+    level: "Foundational",
 
     formula: "v = f\\lambda",
 
@@ -405,7 +405,7 @@ export const formulas = [
     title: "Mole Formula",
     subject: "Chemistry",
     category: "Stoichiometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "n = \\frac{m}{M}",
@@ -452,7 +452,7 @@ export const formulas = [
     title: "Density Formula",
     subject: "Chemistry",
     category: "Physical Chemistry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "\\rho = \\frac{m}{V}",
@@ -504,7 +504,7 @@ export const formulas = [
     title: "Avogadro's Law",
     subject: "Chemistry",
     category: "Gas Laws",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "\\frac{V_1}{n_1} = \\frac{V_2}{n_2}",
@@ -553,7 +553,7 @@ export const formulas = [
     title: "Magnification Formula",
     subject: "Biology",
     category: "Microscopy",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "Magnification = \\frac{Image\\ Size}{Actual\\ Size}",
@@ -599,7 +599,7 @@ export const formulas = [
     title: "Profit Formula",
     subject: "Economics",
     category: "Business",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "Profit = Selling\\ Price - Cost\\ Price",
@@ -620,7 +620,7 @@ export const formulas = [
     title: "Percentage Profit",
     subject: "Economics",
     category: "Business",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "\\%Profit = \\frac{Profit}{Cost\\ Price} \\times 100",
@@ -3186,7 +3186,7 @@ export const formulas = [
     title: "Quadratic Formula",
     subject: "Mathematics",
     category: "Algebra",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
@@ -3209,7 +3209,7 @@ export const formulas = [
     title: "Pythagorean Theorem",
     subject: "Mathematics",
     category: "Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "a^2 + b^2 = c^2",
@@ -3232,7 +3232,7 @@ export const formulas = [
     title: "Area of Circle",
     subject: "Mathematics",
     category: "Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "A = \\pi r^2",
@@ -3279,7 +3279,7 @@ export const formulas = [
     title: "Simple Interest",
     subject: "Mathematics",
     category: "Financial Maths",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "SI = \\frac{PRT}{100}",
@@ -3302,7 +3302,7 @@ export const formulas = [
     title: "Ohm's Law",
     subject: "Physics",
     category: "Electricity",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "V = IR",
@@ -3437,7 +3437,7 @@ export const formulas = [
     title: "Speed Formula",
     subject: "Physics",
     category: "Motion",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "Speed = \\frac{Distance}{Time}",
@@ -3482,7 +3482,7 @@ export const formulas = [
     title: "Pressure Formula",
     subject: "Physics",
     category: "Mechanics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "P = \\frac{F}{A}",
@@ -3528,7 +3528,7 @@ export const formulas = [
     title: "Work Done",
     subject: "Physics",
     category: "Mechanics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "W = Fs",
@@ -3551,7 +3551,7 @@ export const formulas = [
     title: "Circumference of Circle",
     subject: "Mathematics",
     category: "Geometry",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "C = 2\\pi r",
@@ -3661,7 +3661,7 @@ export const formulas = [
     title: "Mean Formula",
     subject: "Mathematics",
     category: "Statistics",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "\\bar{x} = \\frac{\\sum x}{n}",
@@ -3734,7 +3734,7 @@ export const formulas = [
     title: "Acceleration Formula",
     subject: "Physics",
     category: "Motion",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "a = \\frac{v - u}{t}",
@@ -4126,7 +4126,7 @@ export const formulas = [
     title: "Exponential Law",
     subject: "Mathematics",
     category: "Algebra",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "a^m \\times a^n = a^{m+n}",
@@ -4774,7 +4774,7 @@ export const formulas = [
     title: "Velocity Equation",
     subject: "Physics",
     category: "Motion",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "v = u + at",
@@ -4798,7 +4798,7 @@ export const formulas = [
     title: "Displacement Equation",
     subject: "Physics",
     category: "Motion",
-    level: "JAMB",
+    level: "Foundational",
 
     formula:
       "s = ut + \\frac{1}{2}at^2",

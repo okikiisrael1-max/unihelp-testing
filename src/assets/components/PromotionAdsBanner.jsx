@@ -299,20 +299,20 @@ export const demoAds = [
     title: "Get Premium Access To UniHelp",
 
     description:
-        "Unlock premium learning, AI tools, advanced CBT practice and more student features.",
+        "Unlock premium learning, AI tools, productivity support and more student features.",
   },
 
   {
     badge: "📚 Academic",
 
-    title: "Practice JAMB Questions Daily",
+    title: "Practice Questions Daily",
 
     description:
-      "Boost your JAMB score with CBT simulations and daily quizzes.",
+      "Build confidence with practice sessions and daily quizzes.",
 
     buttonText: "Start Practicing",
 
-    buttonLink: "/subjects",
+    buttonLink: "/questions",
 
     theme: "success",
   },

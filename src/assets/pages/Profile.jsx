@@ -35,7 +35,6 @@ import {
 
 import {
   ArrowLeft,
-  ArrowRight,
   BadgeCheck,
   BookOpen,
   BrainCircuit,
@@ -46,7 +45,6 @@ import {
   Edit3,
   Flame,
   GraduationCap,
-  LayoutDashboard,
   Loader2,
   LogOut,
   Mail,
@@ -90,7 +88,6 @@ const Profile = ({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [roleLoading, setRoleLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -138,12 +135,6 @@ const Profile = ({
       gradient: "from-indigo-500 via-blue-500 to-cyan-500",
       icon: <GraduationCap size={22} />,
       description: "Access CGPA tools, campus resources and university dashboard.",
-    },
-    jamb: {
-      label: "JAMB",
-      gradient: "from-purple-500 to-indigo-500",
-      icon: <BrainCircuit size={22} />,
-      description: "Prepare for JAMB using CBT practice and AI tools.",
     },
   };
 
@@ -254,20 +245,6 @@ const Profile = ({
   };
 
   // =====================================================
-  // ROLE SWITCH
-  // =====================================================
-
-  const handleRoleSwitch = async (role) => {
-    try {
-      setRoleLoading(true);
-      await setDoc(doc(db, "users", auth.currentUser.uid), { role, updatedAt: serverTimestamp() }, { merge: true });
-      setProfile((prev) => ({ ...prev, role }));
-      navigate("/");
-    } catch (error) { console.log(error); }
-    finally { setRoleLoading(false); }
-  };
-
-  // =====================================================
   // LOGOUT
   // =====================================================
 
@@ -281,8 +258,7 @@ const Profile = ({
   // =====================================================
 
   const initial = useMemo(() => profile?.username?.charAt(0)?.toUpperCase() || "U", [profile]);
-  const currentRole = profile?.role || "university";
-  const activeRole = roleThemes[currentRole];
+  const activeRole = roleThemes[profile?.role] || roleThemes.university;
 
   const getFilteredSchools = () => {
     let schools = [];
@@ -498,49 +474,6 @@ const Profile = ({
                   </div>
                 </div>
 
-                {/* ROLE SWITCH */}
-                <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-8`}>
-                  <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-                    <div>
-                      <h2 className="text-2xl md:text-3xl font-black">Switch Dashboard</h2>
-                      <p className={`mt-1 text-sm ${muted}`}>Change your learning experience instantly</p>
-                    </div>
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                      <LayoutDashboard size={24} />
-                    </div>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {Object.entries(roleThemes).map(([key, value]) => (
-                      <button
-                        key={key}
-                        disabled={roleLoading}
-                        onClick={() => handleRoleSwitch(key)}
-                        className={`relative overflow-hidden rounded-[24px] p-5 md:p-7 border transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-xl ${
-                          currentRole === key ? "border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/10" : dark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white/50"
-                        }`}
-                      >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${value.gradient} opacity-[0.06]`} />
-                        <div className="relative z-10">
-                          <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-gradient-to-br ${value.gradient} flex items-center justify-center text-white mb-4 md:mb-6 shadow-lg`}>{value.icon}</div>
-                          <h3 className="text-xl md:text-2xl font-black">{value.label}</h3>
-                          <p className={`mt-2 md:mt-4 text-sm ${muted}`}>{value.description}</p>
-                          <div className="mt-4 md:mt-7 flex items-center justify-between">
-                            {currentRole === key ? (
-                              <div className="flex items-center gap-2 text-emerald-500 font-medium text-sm">
-                                <CheckCircle2 size={16} /> Active
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 text-indigo-500 font-medium text-sm">
-                                Switch <ArrowRight size={16} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </>
             )}
 

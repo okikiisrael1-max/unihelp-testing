@@ -345,7 +345,7 @@ const FormulaHome = ({ dark }) => {
                       `}
                     >
                       Master formulas for
-                      JAMB & university
+                      university
                       courses with AI-powered
                       explanations.
                     </p>
