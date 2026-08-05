@@ -3,6 +3,7 @@ import { Eye, EyeOff, Lock, CheckCircle2, X, Mail, Sparkles, ShieldCheck } from 
 import { Link, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
 import customPadlock from "../images/padlock.png";
+import successVideo from "../images/success.mp4";
 import { auth, db } from "../../firebase/config";
 import {
   GoogleAuthProvider,
@@ -358,9 +359,9 @@ const Login = ({ dark }) => {
 
             {resetSent ? (
               <div className="text-center py-6 mt-4">
-                <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center relative">
+                <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center relative overflow-hidden rounded-full">
                   <div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-500/10 rounded-full animate-ping opacity-20"></div>
-                  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2705/512.gif" alt="Success" className="w-full h-full object-contain relative z-10" />
+                  <video src={successVideo} autoPlay loop muted playsInline className="w-full h-full object-cover relative z-10 scale-110" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Check Your Email!</h3>
                 <p className={`text-sm mb-6 ${dark ? "text-slate-300" : "text-slate-600"}`}>
