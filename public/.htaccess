@@ -1,9 +1,0 @@
-RewriteEngine On
-
-# Serve existing files and folders directly.
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# Fall back to the SPA entry point for React Router routes.
-RewriteRule ^ index.html [L]
