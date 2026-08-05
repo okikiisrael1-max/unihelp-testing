@@ -357,20 +357,18 @@ const Login = ({ dark }) => {
                 </button>
               </div>
             ) : (
-              <div>
-                <div className="h-40 md:h-44 -mt-8 -mx-8 mb-8 relative shrink-0">
-                  <img 
-                    src={customPadlock} 
-                    alt="Secure Padlock" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-5 left-8 flex items-center gap-3">
-                    <div className="px-3 py-1.5 bg-emerald-500/90 backdrop-blur-md rounded-full flex items-center justify-center border border-emerald-400 shadow-lg shadow-emerald-500/20 gap-1.5">
-                      <ShieldCheck className="text-white" size={16} />
-                      <span className="text-white text-xs font-bold tracking-wide uppercase">100% Secure</span>
-                    </div>
-                    <span className="text-white font-bold tracking-wide">Account Recovery</span>
+              <div className="py-2">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-gray-100 p-1">
+                    <img 
+                      src={customPadlock} 
+                      alt="Padlock" 
+                      className="w-full h-full object-contain mix-blend-multiply" 
+                    />
+                  </div>
+                  <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center border border-emerald-200 dark:border-emerald-500/30 gap-1.5">
+                    <ShieldCheck className="text-emerald-600 dark:text-emerald-400" size={14} />
+                    <span className="text-emerald-700 dark:text-emerald-400 text-xs font-bold tracking-wide uppercase">100% Secure</span>
                   </div>
                 </div>
 
