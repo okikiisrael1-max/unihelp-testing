@@ -4,6 +4,7 @@ import { auth, db } from '../../firebase/config';
 import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { toast } from 'react-toastify';
+import { toCloudinaryAsset, uploadImage } from '../../services/cloudinary';
 import { ALL_NIGERIAN_SCHOOLS, COMMON_DEPARTMENTS } from '../data/nigerianSchools';
 import {
   Search,
@@ -15,10 +16,15 @@ import {
   Layers,
   Sparkles,
   ArrowRight,
+  Camera,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { Images } from '../data/data';
 
 const LEVELS = ['100', '200', '300', '400', '500', 'All'];
+const MAX_AVATAR_MB = 5;
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /* ---------------------------------------------------------------------- */
 /*  Searchable dropdown — shared by School, Department, and Level fields  */
@@ -165,6 +171,75 @@ const SearchableSelect = ({
 };
 
 /* ---------------------------------------------------------------------- */
+/*  Avatar upload                                                         */
+/* ---------------------------------------------------------------------- */
+
+const AvatarUpload = ({ dark, previewUrl, uploading, onSelect, onRemove }) => {
+  const fileInputRef = useRef(null);
+
+  return (
+    <div className="flex flex-col items-center gap-3 mb-2">
+      <div className="relative w-24 h-24 lg:w-28 lg:h-28">
+        <div
+          className={`w-full h-full rounded-full overflow-hidden border-2 flex items-center justify-center ${
+            dark ? 'bg-slate-800 border-slate-700' : 'bg-gray-100 border-gray-200'
+          }`}
+        >
+          {previewUrl ? (
+            <img src={previewUrl} alt="Profile" className="w-full h-full object-cover" />
+          ) : (
+            <User size={36} className={dark ? 'text-slate-600' : 'text-gray-300'} />
+          )}
+
+          {uploading && (
+            <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+              <Loader2 size={24} className="text-white animate-spin" />
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className={`absolute -bottom-1 -right-1 w-9 h-9 rounded-full flex items-center justify-center shadow-lg border-2 transition-all active:scale-95 bg-indigo-600 hover:bg-indigo-500 ${
+            dark ? 'border-slate-900' : 'border-white'
+          } ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
+          aria-label="Upload profile photo"
+        >
+          <Camera size={16} className="text-white" />
+        </button>
+
+        {previewUrl && !uploading && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 transition-all active:scale-95 ${
+              dark ? 'bg-slate-700 border-slate-900 hover:bg-slate-600' : 'bg-white border-white hover:bg-gray-100'
+            }`}
+            aria-label="Remove profile photo"
+          >
+            <X size={12} className={dark ? 'text-slate-200' : 'text-slate-600'} />
+          </button>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_TYPES.join(',')}
+          onChange={onSelect}
+          className="hidden"
+        />
+      </div>
+
+      <p className={`text-xs font-medium ${dark ? 'text-slate-500' : 'text-gray-400'}`}>
+        JPG, PNG or WebP · up to {MAX_AVATAR_MB}MB
+      </p>
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------------------- */
 /*  CompleteProfile                                                       */
 /* ---------------------------------------------------------------------- */
 
@@ -172,6 +247,7 @@ const CompleteProfile = ({ dark = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [form, setForm] = useState({
     username: '',
@@ -179,6 +255,12 @@ const CompleteProfile = ({ dark = false }) => {
     department: '',
     level: '100',
   });
+
+  // Photo state kept separate from `form` since it uploads independently,
+  // mirroring how Profile.jsx treats `photo`/`photoAsset` as their own fields.
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoAsset, setPhotoAsset] = useState(null);
+  const objectUrlRef = useRef(null);
 
   const schoolOptions = useMemo(() => ALL_NIGERIAN_SCHOOLS.map((s) => s.name), []);
   const departmentOptions = useMemo(() => COMMON_DEPARTMENTS.map((d) => d.name), []);
@@ -207,8 +289,11 @@ const CompleteProfile = ({ dark = false }) => {
             department: data.department || '',
             level: data.level || '100',
           }));
+          setPhotoUrl(data.photo || user.photoURL || '');
+          setPhotoAsset(data.photoAsset || null);
         } else {
           setForm((f) => ({ ...f, username: user.displayName || '' }));
+          setPhotoUrl(user.photoURL || '');
         }
       } catch (err) {
         console.error(err);
@@ -224,7 +309,76 @@ const CompleteProfile = ({ dark = false }) => {
     };
   }, [navigate]);
 
+  // Clean up any local object URL we created for an instant preview
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
+
   const setField = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast.error('Please choose a JPG, PNG, or WebP image');
+      return;
+    }
+    if (file.size > MAX_AVATAR_MB * 1024 * 1024) {
+      toast.error(`Image must be under ${MAX_AVATAR_MB}MB`);
+      return;
+    }
+
+    // Instant local preview while the real upload happens
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    const localPreview = URL.createObjectURL(file);
+    objectUrlRef.current = localPreview;
+    setPhotoUrl(localPreview);
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    setUploadingPhoto(true);
+    try {
+      const result = await uploadImage(file);
+      const url = result.secure_url;
+
+      await updateProfile(user, { photoURL: url });
+      await setDoc(
+        doc(db, 'users', user.uid),
+        { photo: url, photoAsset: toCloudinaryAsset(result) },
+        { merge: true }
+      );
+
+      setPhotoUrl(url);
+      setPhotoAsset(toCloudinaryAsset(result));
+      toast.success('Profile picture updated');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to upload photo');
+      setPhotoUrl(user.photoURL || '');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    const user = auth.currentUser;
+    setPhotoUrl('');
+    setPhotoAsset(null);
+
+    if (!user) return;
+    try {
+      await updateProfile(user, { photoURL: null });
+      await setDoc(doc(db, 'users', user.uid), { photo: '', photoAsset: null }, { merge: true });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to remove photo');
+    }
+  };
 
   const validate = () => {
     if (!form.username.trim()) {
@@ -257,6 +411,8 @@ const CompleteProfile = ({ dark = false }) => {
           school: form.school,
           department: form.department,
           level: form.level,
+          photo: photoUrl,
+          photoAsset: photoAsset,
           updatedAt: serverTimestamp(),
         },
         { merge: true }
@@ -359,7 +515,7 @@ const CompleteProfile = ({ dark = false }) => {
         >
           <div className="hidden lg:block absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-400 rounded-t-3xl" />
 
-          <div className="mb-8 mt-2 lg:mt-0 text-center lg:text-left">
+          <div className="mb-6 mt-2 lg:mt-0 text-center lg:text-left">
             <h2 className="text-[1.75rem] lg:text-[2.25rem] font-bold tracking-tight mb-2">
               Complete your profile
             </h2>
@@ -367,6 +523,14 @@ const CompleteProfile = ({ dark = false }) => {
               A few details to personalize your UniHelp experience.
             </p>
           </div>
+
+          <AvatarUpload
+            dark={dark}
+            previewUrl={photoUrl}
+            uploading={uploadingPhoto}
+            onSelect={handlePhotoSelect}
+            onRemove={handlePhotoRemove}
+          />
 
           <div className="space-y-5">
             <div className="space-y-2">
@@ -427,36 +591,17 @@ const CompleteProfile = ({ dark = false }) => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-white font-bold text-[15px] transition-all shadow-lg ${
-                  saving
-                    ? 'bg-indigo-400 cursor-not-allowed shadow-none'
-                    : 'bg-[#4338ca] hover:bg-[#3730a3] hover:shadow-[#4338ca]/30 active:scale-[0.98]'
-                }`}
-              >
+                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-white font-bold text-[15px] transition-all shadow-lg ${ saving ? 'bg-indigo-400 cursor-not-allowed shadow-none' : 'bg-[#4338ca] hover:bg-[#3730a3] hover:shadow-[#4338ca]/30 active:scale-[0.98]'}`}>
                 {saving ? (
-                  <>
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  <>
-                    Save and continue
-                    <ArrowRight size={18} />
-                  </>
-                )}
+                  <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>) : (
+                  <>Save and continue <ArrowRight size={18} /> </>)}
               </button>
 
-              <button
-                onClick={() => navigate('/')}
-                className={`px-5 py-4 rounded-xl border-2 font-bold text-[15px] transition-all ${
-                  dark
-                    ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
-                    : 'border-gray-200 hover:bg-gray-50 text-slate-600'
-                }`}
-              >
-                Skip
-              </button>
+              <button onClick={() => navigate('/')} className={`px-5 py-4 rounded-xl border-2 font-bold text-[15px] transition-all ${ dark ? 'border-slate-700 hover:bg-slate-800 text-slate-300' : 'border-gray-200 hover:bg-gray-50 text-slate-600' }`}> Skip </button>
             </div>
+            <p className="text-sm text-center text-slate-500">
+              By completing your profile, you'll get personalized recommendations and a better experience on UniHelp.
+            </p>
           </div>
         </div>
       </div>
