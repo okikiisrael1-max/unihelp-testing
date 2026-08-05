@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Lock, CheckCircle2, X, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, CheckCircle2, X, Mail, Sparkles, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
 import { auth, db } from "../../firebase/config";
@@ -24,7 +24,7 @@ const Login = ({ dark }) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
@@ -53,7 +53,7 @@ const Login = ({ dark }) => {
       setIsLoading(true);
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const role = await getUserRole(credential.user.uid);
-      
+
       toast.success("Login successful");
       if (role) {
         navigate("/");
@@ -139,11 +139,12 @@ const Login = ({ dark }) => {
 
   return (
     <div className={`min-h-screen w-full flex flex-col lg:flex-row relative overflow-hidden ${dark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-900"}`}>
-      
+
+      {/* MOBILE HERO (unchanged) */}
       <div className="lg:hidden relative w-full h-[32vh] shrink-0">
-        <img 
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop" 
-          alt="Students collaborating" 
+        <img
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
+          alt="Students collaborating"
           className="w-full h-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -158,14 +159,15 @@ const Login = ({ dark }) => {
         </div>
       </div>
 
-      <div className="hidden lg:flex w-[45%] relative flex-col justify-between p-12 overflow-hidden z-10">
-        <img 
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop" 
-          alt="Students learning" 
+      {/* DESKTOP IMAGE PANEL */}
+      <div className="hidden lg:flex w-[45%] relative flex-col justify-between p-12 xl:p-16 overflow-hidden z-10">
+        <img
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
+          alt="Students learning"
           className="absolute inset-0 w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-        
+
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg p-1">
              <img src={Images.logo} alt="UniHelp Logo" className="w-full h-full object-contain" />
@@ -173,11 +175,11 @@ const Login = ({ dark }) => {
           <span className="text-2xl font-bold tracking-tight text-white drop-shadow-lg">UniHelp</span>
         </div>
 
-        <div className="relative z-10 mt-auto">
-          <span className="inline-block py-1.5 px-4 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-sm font-semibold tracking-wider mb-6">
-            ✨ WELCOME BACK
+        <div className="relative z-10 mt-auto max-w-lg">
+          <span className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-sm font-semibold tracking-wider mb-6">
+            <Sparkles size={14} /> WELCOME BACK
           </span>
-          <h1 className="text-4xl lg:text-5xl font-black leading-[1.1] mb-5 text-white drop-shadow-md">
+          <h1 className="text-4xl xl:text-5xl font-black leading-[1.1] mb-5 text-white drop-shadow-md">
             Continue your <br/><span className="text-indigo-300">learning journey.</span>
           </h1>
           <p className="text-lg max-w-md text-gray-200 drop-shadow font-medium leading-relaxed">
@@ -186,14 +188,22 @@ const Login = ({ dark }) => {
         </div>
       </div>
 
-      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-4 pb-8 lg:p-12 relative z-10 -mt-6 lg:mt-0">
-        
-        <div className={`w-full max-w-[420px] mx-auto p-8 lg:p-0 rounded-t-3xl lg:rounded-none lg:shadow-none transition-all
-          ${dark ? "bg-slate-900 shadow-2xl shadow-black/80 lg:bg-transparent lg:shadow-none" : "bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:bg-transparent lg:shadow-none"} 
-          `}
+      {/* FORM PANEL */}
+      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-4 pb-8 lg:p-12 xl:p-16 relative z-10 -mt-6 lg:mt-0 lg:min-h-screen">
+
+        {/* Decorative background accents — desktop only, sits behind the card */}
+        <div className="hidden lg:block absolute top-16 right-16 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+        <div className="hidden lg:block absolute bottom-10 left-10 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+
+        <div
+          className={`w-full max-w-[420px] lg:max-w-[440px] mx-auto p-8 lg:p-10 xl:p-12 rounded-t-3xl lg:rounded-3xl transition-all relative z-10
+          ${dark
+            ? "bg-slate-900 shadow-2xl shadow-black/80 lg:bg-slate-800/60 lg:backdrop-blur-xl lg:border lg:border-slate-700/80 lg:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+            : "bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:bg-white/90 lg:backdrop-blur-xl lg:border lg:border-gray-100 lg:shadow-[0_20px_60px_-15px_rgba(67,56,202,0.18)]"
+          }`}
         >
           <div className="mb-8 mt-2 lg:mt-0 text-center lg:text-left">
-            <h2 className="text-[1.75rem] lg:text-[2rem] font-bold tracking-tight mb-2">Login to UniHelp</h2>
+            <h2 className="text-[1.75rem] lg:text-[2.25rem] font-bold tracking-tight mb-2">Login to UniHelp</h2>
             <p className={`text-[15px] font-medium ${dark ? "text-slate-400" : "text-slate-500"}`}>
               Welcome back! Please enter your details.
             </p>
@@ -210,8 +220,8 @@ const Login = ({ dark }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter email or phone number"
                 className={`w-full px-4 py-3.5 rounded-xl border text-[15px] transition-all focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                  dark 
-                    ? "bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500" 
+                  dark
+                    ? "bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500"
                     : "bg-white border-gray-300/80 text-slate-900 placeholder:text-gray-400"
                 }`}
               />
@@ -228,8 +238,8 @@ const Login = ({ dark }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className={`w-full pl-4 pr-12 py-3.5 rounded-xl border text-[15px] transition-all focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                    dark 
-                      ? "bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500" 
+                    dark
+                      ? "bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500"
                       : "bg-white border-gray-300/80 text-slate-900 placeholder:text-gray-400"
                   }`}
                 />
@@ -237,6 +247,7 @@ const Login = ({ dark }) => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className={`absolute right-4 top-1/2 -translate-y-1/2 p-1 transition-colors ${dark ? "text-slate-400 hover:text-slate-200" : "text-gray-400 hover:text-gray-700"}`}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -298,25 +309,33 @@ const Login = ({ dark }) => {
               Sign up
             </Link>
           </p>
+
+          <div className={`hidden lg:flex items-center justify-center gap-1.5 mt-6 pt-6 border-t text-xs font-medium ${
+            dark ? "border-slate-700/80 text-slate-500" : "border-gray-100 text-slate-400"
+          }`}>
+            <ShieldCheck size={14} />
+            Your details are encrypted and never shared
+          </div>
         </div>
       </div>
 
       {showForgotModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={closeForgotModal}
         >
-          <div 
+          <div
             className={`w-full max-w-[400px] p-8 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 ${
               dark ? "bg-slate-800 border border-slate-700" : "bg-white"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
+            <button
               onClick={closeForgotModal}
               className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
                 dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"
               }`}
+              aria-label="Close"
             >
               <X size={20} />
             </button>
@@ -343,7 +362,7 @@ const Login = ({ dark }) => {
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-6">
                   <Lock className="text-indigo-600 dark:text-indigo-400" size={24} />
                 </div>
-                
+
                 <h3 className="text-2xl font-bold mb-2">Forgot Password?</h3>
                 <p className={`text-sm mb-8 ${dark ? "text-slate-400" : "text-slate-500"}`}>
                   No worries! Enter your email address and we'll send you a link to reset your password.
@@ -360,14 +379,14 @@ const Login = ({ dark }) => {
                         onChange={(e) => setResetEmail(e.target.value)}
                         placeholder="Enter your email address"
                         className={`w-full pl-11 pr-4 py-3.5 rounded-xl border text-[15px] transition-all focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                          dark 
-                            ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500" 
+                          dark
+                            ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
                             : "bg-white border-gray-300 text-slate-900 placeholder:text-gray-400"
                         }`}
                       />
                     </div>
                   </div>
-                  
+
                   <button
                     type="submit"
                     disabled={resetLoading}
