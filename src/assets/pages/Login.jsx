@@ -179,7 +179,7 @@ const Login = ({ dark }) => {
       </div>
 
       {/* DESKTOP IMAGE PANEL */}
-      <div className="hidden lg:flex w-[45%] relative flex-col justify-between p-12 xl:p-16 overflow-hidden z-10">
+      <div className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 w-[45%] flex-col justify-between p-12 xl:p-16 overflow-hidden z-10">
         <img
           src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
           alt="Students learning"
@@ -208,7 +208,7 @@ const Login = ({ dark }) => {
       </div>
 
       {/* FORM PANEL */}
-      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-4 pb-8 lg:p-12 xl:p-16 relative z-10 -mt-6 lg:mt-0 lg:min-h-screen">
+      <div className="w-full lg:w-[55%] lg:ml-[45%] flex flex-col justify-center items-center px-4 pb-8 lg:p-12 xl:p-16 relative z-10 -mt-6 lg:mt-0 lg:min-h-screen">
 
         {/* Decorative background accents — desktop only, sits behind the card */}
         <div className="hidden lg:block absolute top-16 right-16 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
