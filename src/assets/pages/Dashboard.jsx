@@ -254,7 +254,7 @@ const Dashboard = ({ dark }) => {
   ];
 
   return (
-    <div className={`min-h-screen md:mt-20 ${theme.bg} transition-colors duration-300`}>
+    <div className={`min-h-screen px-4 md:px-8 lg:px-10 md:mt-20 ${theme.bg} transition-colors duration-300`}>
       <div className="px-4 md:px-6 lg:px-8 py-6 md:py-10 max-w-[1400px] mx-auto">
         {/* ================================================= */}
         {/* HERO */}
@@ -278,7 +278,7 @@ const Dashboard = ({ dark }) => {
 
             <p className={`mt-5 text-sm md:text-base leading-relaxed max-w-lg ${theme.textSoft}`}>
               Access every academic tool, learning resource, marketplace
-              listing, and CGPA record UniHelp offers &mdash; organized in a
+              listing, and CGPA record UniHelp offers organized in a
               single dashboard built for Nigerian university students.
             </p>
 
@@ -311,17 +311,12 @@ const Dashboard = ({ dark }) => {
           {/* HERO VISUAL PANEL */}
           <div className="relative pb-6 sm:pb-0">
             <div
-              className={`relative overflow-hidden rounded-[2rem] border ${
-                dark
-                  ? "bg-gradient-to-br from-indigo-950 via-[#0f172a] to-black border-white/10"
-                  : "bg-gradient-to-br from-indigo-50 via-white to-violet-50 border-indigo-100"
-              }`}
-            >
+              className={`relative overflow-hidden rounded-[2rem] border ${ dark ? "bg-gradient-to-br from-indigo-950 via-[#0f172a] to-black border-white/10" : "bg-gradient-to-br from-indigo-50 via-white to-violet-50 border-indigo-100"}`}>
               <div className="absolute -top-10 -right-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-10 -left-10 w-56 h-56 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
               <img
                 src={Images.hero_image}
-                className="aspect-[4/5] sm:aspect-[4/5] w-full object-cover object-center"
+                className="aspect-[4/5] sm:aspect-[3/3] w-full object-cover object-center"
                 alt="UniHelp platform preview"
               />
             </div>
@@ -369,9 +364,7 @@ const Dashboard = ({ dark }) => {
         {/* STATS STRIP */}
         {/* ================================================= */}
 
-        <section
-          className={`grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 rounded-3xl border mb-10 md:mb-14 overflow-hidden ${theme.card} ${theme.border}`}
-        >
+        <section className={`grid grid-cols-2 md:grid-cols-4 rounded-3xl border mb-10 md:mb-14 overflow-hidden ${theme.card} ${theme.border}`}>
           {statsStrip.map((stat) => (
             <div key={stat.label} className="flex items-center gap-3 px-4 md:px-6 py-5">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${stat.tint}`}>
