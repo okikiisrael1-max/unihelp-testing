@@ -304,43 +304,43 @@ const Profile = ({
       <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[400px] h-[400px] bg-cyan-500/5 blur-3xl rounded-full" />
 
       {/* CONTENT */}
-      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-8">
+      <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6">
         
         {/* MESSAGE TOAST */}
         {message && (
           <div className="mb-4 animate-slideDown">
-            <div className="bg-green-500/10 border border-green-500/20 text-green-500 rounded-2xl p-4 text-center font-medium backdrop-blur-xl">
+            <div className="bg-green-500/10 border border-green-500/20 text-green-500 rounded-2xl p-3 text-sm text-center font-medium backdrop-blur-xl">
               {message}
             </div>
           </div>
         )}
 
         {/* HERO SECTION */}
-        <div className={`relative overflow-hidden rounded-[24px] md:rounded-[32px] p-6 md:p-8 lg:p-10 ${glass} mb-6 shadow-sm`}>
-          <div className="flex flex-col lg:flex-row gap-8 lg:items-start lg:justify-between">
+        <div className={`relative overflow-hidden rounded-[20px] md:rounded-[24px] p-5 md:p-6 lg:p-8 ${glass} mb-5 shadow-sm`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
             {/* LEFT - Avatar & Info */}
-            <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 items-center sm:items-start">
+            <div className="flex flex-col sm:flex-row gap-5 lg:gap-6 items-center sm:items-start">
               {/* Avatar */}
               <div className="relative shrink-0">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full p-1 bg-gradient-to-br from-indigo-500 to-purple-500">
-                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center text-4xl font-black text-white" style={{ backgroundColor: dark ? "#0f172a" : "#1e293b" }}>
-                    {profile?.photo ? (
-                      <img src={profile.photo} alt="profile" className="w-full h-full object-cover" />
-                    ) : (profile?.username ? profile.username[0].toUpperCase() : "U")}
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full p-1 bg-gradient-to-br from-indigo-500 to-purple-500">
+                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center text-3xl font-black text-white" style={{ backgroundColor: dark ? "#0f172a" : "#1e293b" }}>
+                    {(profile?.photo || auth.currentUser?.photoURL) ? (
+                      <img src={profile?.photo || auth.currentUser?.photoURL} alt="profile" className="w-full h-full object-cover" />
+                    ) : ((profile?.username || auth.currentUser?.displayName) ? (profile?.username || auth.currentUser?.displayName)[0].toUpperCase() : "U")}
                   </div>
                 </div>
-                <label className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 transition-all flex items-center justify-center cursor-pointer shadow-lg">
-                  {uploading ? <Loader2 className="animate-spin" size={16} /> : <Camera size={16} />}
+                <label className="absolute bottom-0 right-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 transition-all flex items-center justify-center cursor-pointer shadow-lg">
+                  {uploading ? <Loader2 className="animate-spin" size={14} /> : <Camera size={14} />}
                   <input type="file" hidden accept="image/*" onChange={handlePhoto} />
                 </label>
               </div>
 
               {/* Info */}
               <div className="text-center sm:text-left">
-                <h1 className="text-2xl md:text-4xl font-black tracking-tight">{profile?.username || "Student Name"}</h1>
-                <p className={`mt-1 text-sm font-medium ${muted}`}>@{profile?.username?.toLowerCase().replace(/\s+/g, '') || "student"} • Student</p>
+                <h1 className="text-xl md:text-3xl font-black tracking-tight">{profile?.username || auth.currentUser?.displayName || "Student Name"}</h1>
+                <p className={`mt-0.5 text-xs font-medium ${muted}`}>@{(profile?.username || auth.currentUser?.displayName || "student").toLowerCase().replace(/\s+/g, '')} • Student</p>
 
-                <div className={`mt-4 space-y-2 text-sm font-medium ${muted}`}>
+                <div className={`mt-3 space-y-1.5 text-sm font-medium ${muted}`}>
                   {profile?.school && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <GraduationCap size={16} className="text-indigo-500 shrink-0" />
@@ -360,74 +360,74 @@ const Profile = ({
                     </div>
                   )}
                   <div className="flex items-center justify-center sm:justify-start gap-2">
-                    <Calendar size={16} className="text-indigo-500 shrink-0" />
-                    <span>Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
+                    <Calendar size={14} className="text-indigo-500 shrink-0" />
+                    <span className="text-xs">Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
                   </div>
                 </div>
-
-                <button onClick={() => setEditOpen(true)} className={`mt-5 px-5 py-2.5 rounded-full border font-semibold text-sm transition-all flex items-center gap-2 mx-auto sm:mx-0 ${dark ? "border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}>
-                  <Edit3 size={16} /> Edit Profile
+                  <button onClick={() => setEditOpen(true)} className={`mt-3 px-3 py-1.5 rounded-full border font-semibold text-[10px] transition-all flex items-center gap-1 mx-auto sm:mx-0 ${dark ? "border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}>
+                  <Edit3 size={12} /> Edit Profile
                 </button>
               </div>
             </div>
+            </div>
 
             {/* RIGHT - UniHelp Rank */}
-            <div className={`w-full lg:w-80 rounded-3xl border p-6 ${dark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} shadow-sm shrink-0`}>
-              <p className={`text-xs font-bold uppercase tracking-wider mb-4 ${muted}`}>UniHelp Rank</p>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
-                  <Star size={24} fill="currentColor" />
+            <div className={`w-full lg:w-72 rounded-[20px] border p-5 ${dark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} shadow-sm shrink-0`}>
+              <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${muted}`}>UniHelp Rank</p>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                  <Star size={20} fill="currentColor" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black">{challengeStats?.rank || "Novice"}</h3>
+                  <h3 className="text-xl font-black">{challengeStats?.rank || "Novice"}</h3>
                 </div>
               </div>
-              <p className={`text-sm ${muted} mb-4`}>Keep learning to unlock more rewards!</p>
+              <p className={`text-xs ${muted} mb-3 leading-tight`}>Keep learning to unlock more rewards!</p>
               
-              <div className={`w-full h-2 rounded-full overflow-hidden mb-2 ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+              <div className={`w-full h-1.5 rounded-full overflow-hidden mb-1.5 ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                 <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${Math.min(((challengeStats?.xp || 0) % 500) / 500 * 100, 100)}%` }}></div>
               </div>
-              <p className={`text-xs font-bold text-right ${muted}`}>{((challengeStats?.xp || 0) % 500).toLocaleString()} / 500 XP to next</p>
+              <p className={`text-[10px] font-bold text-right ${muted}`}>{((challengeStats?.xp || 0) % 500).toLocaleString()} / 500 XP to next</p>
             </div>
           </div>
         </div>
 
         {/* STATS STRIP */}
-        <div className={`flex flex-wrap md:flex-nowrap items-center gap-4 md:gap-6 rounded-[24px] p-4 md:p-6 ${glass} mb-6 shadow-sm overflow-x-auto`}>
+        <div className={`flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 rounded-[20px] p-3 md:p-4 ${glass} mb-5 shadow-sm overflow-x-auto`}>
           {[
-            { icon: <BookOpen size={20} className="text-indigo-500" />, bg: "bg-indigo-500/10", label: "Uploads", value: profile?.uploadCount || profile?.uploads || profile?.files || "0" },
-            { icon: <CheckCircle2 size={20} className="text-emerald-500" />, bg: "bg-emerald-500/10", label: "Questions Practiced", value: challengeStats?.questionsAnswered?.toLocaleString() || "0" },
-            { icon: <Library size={20} className="text-rose-500" />, bg: "bg-rose-500/10", label: "Accuracy", value: challengeStats?.accuracy ? `${challengeStats.accuracy}%` : "0%" },
-            { icon: <Flame size={20} className="text-orange-500" />, bg: "bg-orange-500/10", label: "Streak", value: challengeStats?.currentStreak ? `${challengeStats.currentStreak}d` : "0d" },
-            { icon: <Layers size={20} className="text-blue-500" />, bg: "bg-blue-500/10", label: "XP Points", value: challengeStats?.xp?.toLocaleString() || "0" },
+            { icon: <BookOpen size={16} className="text-indigo-500" />, bg: "bg-indigo-500/10", label: "Uploads", value: profile?.uploadCount || profile?.uploads || profile?.files || "0" },
+            { icon: <CheckCircle2 size={16} className="text-emerald-500" />, bg: "bg-emerald-500/10", label: "Questions Practiced", value: challengeStats?.questionsAnswered?.toLocaleString() || "0" },
+            { icon: <Library size={16} className="text-rose-500" />, bg: "bg-rose-500/10", label: "Accuracy", value: challengeStats?.accuracy ? `${challengeStats.accuracy}%` : "0%" },
+            { icon: <Flame size={16} className="text-orange-500" />, bg: "bg-orange-500/10", label: "Streak", value: challengeStats?.currentStreak ? `${challengeStats.currentStreak}d` : "0d" },
+            { icon: <Layers size={16} className="text-blue-500" />, bg: "bg-blue-500/10", label: "XP Points", value: challengeStats?.xp?.toLocaleString() || "0" },
           ].map((stat, i) => (
-            <div key={i} className="flex items-center gap-3 min-w-[140px]">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${stat.bg}`}>
+            <div key={i} className="flex items-center gap-2.5 min-w-[130px]">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${stat.bg}`}>
                 {stat.icon}
               </div>
               <div>
-                <p className={`text-[10px] font-semibold uppercase ${muted}`}>{stat.label}</p>
-                <p className="text-lg font-black">{stat.value}</p>
+                <p className={`text-[9px] font-bold uppercase ${muted}`}>{stat.label}</p>
+                <p className="text-base font-black leading-tight">{stat.value}</p>
               </div>
             </div>
           ))}
           
-          <div className={`ml-auto pl-4 border-l ${dark ? 'border-white/10' : 'border-slate-200'}`}>
-            <button className={`whitespace-nowrap px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${dark ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-              View Analytics
+          <div className={`ml-auto pl-3 border-l ${dark ? 'border-white/10' : 'border-slate-200'}`}>
+            <button className={`whitespace-nowrap px-3 py-1.5 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 ${dark ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              Analytics
             </button>
           </div>
         </div>
 
         {/* BOTTOM SECTION (2 COLUMNS) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           
           {/* LEFT COLUMN */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             
             {/* About Me */}
-            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
+            <div className={`rounded-[20px] p-5 md:p-6 ${glass} shadow-sm`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black text-lg">About Me</h3>
                 <Pencil size={16} className="text-indigo-500 cursor-pointer" onClick={() => setEditOpen(true)} />
@@ -488,59 +488,33 @@ const Profile = ({
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             
             {/* My Recent Activity */}
-            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
-              <div className="flex items-center justify-between mb-6">
+            <div className={`rounded-[20px] p-5 md:p-6 ${glass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black text-lg">My Recent Activity</h3>
-                <span className="text-indigo-500 text-sm font-bold cursor-pointer hover:text-indigo-600 transition">View All</span>
               </div>
-              <div className="space-y-5">
-                {[
-                  { icon: <BookOpen size={16} />, bg: "bg-emerald-500/10 text-emerald-500", title: "Saved \"Thermodynamics - Complete Notes.pdf\"", sub: "Lecture Notes", time: "2 hours ago" },
-                  { icon: <Library size={16} />, bg: "bg-rose-500/10 text-rose-500", title: "Watched \"Engineering Mechanics - Full Course\"", sub: "Tutorial Videos", time: "1 day ago" },
-                  { icon: <CheckCircle2 size={16} />, bg: "bg-indigo-500/10 text-indigo-500", title: "Practiced 20 questions on Physics", sub: "Past Questions", time: "2 days ago" },
-                  { icon: <MessageCircle size={16} />, bg: "bg-blue-500/10 text-blue-500", title: "Asked a question to AI Tutor", sub: "AI Tutor", time: "3 days ago" },
-                ].map((act, i) => (
-                  <div key={i} className="flex items-start gap-4 hover:scale-[1.01] transition-transform cursor-default">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${act.bg}`}>
-                      {act.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-slate-800'}`}>{act.title}</p>
-                      <p className={`text-[11px] font-medium ${mutedLight}`}>{act.sub}</p>
-                    </div>
-                    <span className={`text-[11px] font-semibold whitespace-nowrap mt-0.5 ${muted}`}>{act.time}</span>
-                  </div>
-                ))}
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className={`w-12 h-12 rounded-full ${dark ? 'bg-white/5' : 'bg-slate-100'} flex items-center justify-center mb-3`}>
+                  <BookOpen size={20} className={muted} />
+                </div>
+                <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-slate-800'}`}>No recent activity</p>
+                <p className={`text-xs mt-1 max-w-[200px] ${muted}`}>Your recent studies, practice questions, and notes will appear here.</p>
               </div>
             </div>
 
             {/* Badges Earned */}
-            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
-              <div className="flex items-center justify-between mb-6">
+            <div className={`rounded-[20px] p-5 md:p-6 ${glass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black text-lg">Badges Earned</h3>
-                <span className="text-indigo-500 text-sm font-bold cursor-pointer hover:text-indigo-600 transition">View All</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
-                {[
-                  { icon: <Star fill="currentColor" />, bg: "bg-indigo-500/10 text-indigo-500", title: "Consistent", sub: "7-Day Streak" },
-                  { icon: <BookOpen fill="currentColor" />, bg: "bg-cyan-500/10 text-cyan-500", title: "Scholar", sub: "100 Notes" },
-                  { icon: <CheckCircle2 fill="currentColor" />, bg: "bg-purple-500/10 text-purple-500", title: "Quiz Master", sub: "500 Questions" },
-                  { icon: <Library fill="currentColor" />, bg: "bg-rose-500/10 text-rose-500", title: "Video Learner", sub: "50 Videos" },
-                  { icon: <Trophy fill="currentColor" />, bg: "bg-amber-500/10 text-amber-500", title: "Top Contributor", sub: "10 Posts" },
-                ].map((badge, i) => (
-                  <div key={i} className="flex flex-col items-center group cursor-default">
-                    <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center rotate-45 group-hover:rotate-0 transition-all duration-300 mb-4 ${badge.bg} shadow-md`}>
-                      <div className="-rotate-45 group-hover:rotate-0 transition-all duration-300">
-                        {React.cloneElement(badge.icon, { size: 20 })}
-                      </div>
-                    </div>
-                    <p className={`text-[11px] font-bold leading-tight ${dark ? 'text-slate-200' : 'text-slate-800'}`}>{badge.title}</p>
-                    <p className={`text-[9px] font-medium mt-0.5 ${muted}`}>{badge.sub}</p>
-                  </div>
-                ))}
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className={`w-12 h-12 rounded-full ${dark ? 'bg-white/5' : 'bg-slate-100'} flex items-center justify-center mb-3`}>
+                  <Trophy size={20} className={muted} />
+                </div>
+                <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-slate-800'}`}>No badges yet</p>
+                <p className={`text-xs mt-1 max-w-[200px] ${muted}`}>Keep learning and engaging to unlock exclusive badges.</p>
               </div>
             </div>
 
