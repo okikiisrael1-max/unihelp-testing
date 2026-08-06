@@ -8,6 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
+  sendEmailVerification,
 } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -98,8 +99,9 @@ const SignUp = ({ dark }) => {
         name: fullName.trim(),
         email: email.trim(),
       });
+      await sendEmailVerification(credential.user);
 
-      toast.success("Account created successfully");
+      toast.success("Account created! Please check your email to verify.");
       navigate("/complete-profile");
     } catch (error) {
       switch (error.code) {
