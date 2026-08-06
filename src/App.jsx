@@ -78,6 +78,7 @@ import HelpCenter from "./assets/pages/HelpCenter";
 import PrivacyPolicy from "./assets/pages/PrivacyPolicy";
 import TermsOfService from "./assets/pages/TermsOfService";
 import CompleteProfile from "./assets/pages/CompleteProfile";
+import FeaturesCatalog from "./assets/pages/FeaturesCatalog";
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -325,14 +326,13 @@ const App = () => {
 
           {/* ================= DASHBOARD LAYOUT ================= */}
            <Route
-            element={<ProtectedRoute>
+            element={
               <DashboardLayout
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
                 dark={dark}
                 setDark={setDark}
-              />
-            </ProtectedRoute>}>
+              />}>
           
           
             {/* ================= HOME REDIRECT ================= */}
@@ -340,9 +340,7 @@ const App = () => {
             <Route
               path="/"
               element={
-                <ProtectedRoute>
                   <Dashboard dark={dark} />
-                </ProtectedRoute>
               }
             />
 
@@ -405,6 +403,7 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
 
             <Route

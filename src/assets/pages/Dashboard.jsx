@@ -1,52 +1,21 @@
-import React, {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 
 import {
   Activity,
+  ArrowRight,
+  BarChart3,
+  Bot,
   BookOpen,
-  Calculator,
-  File,
-  GraduationCap,
+  ChevronRight,
+  Flame,
   HistoryIcon,
-  Home,
-  PlayCircle,
-  ShoppingBag,
+  Search,
   Sparkles,
   Trash2,
   TrendingUp,
-  UploadCloud,
-  Video,
-  BarChart3,
-  Clock3,
-  ArrowRight,
-  Star,
-  Divide,
-  CalendarDays,
-  MessageCircle,
-  Newspaper,
-  Bell,
-  Settings,
-  Rocket,
-  RadioTower,
-  Wallet,
-  Youtube,
-  BadgeDollarSign,
-  HelpCircle,
-  Info,
-  PhoneCall,
-  FileWarning,
-  Library,
-  Bookmark,
-  ComputerIcon,
+  TrendingDown,
   Trophy,
-  Flame,
-  Search,
   X,
-  ChevronRight,
 } from "lucide-react";
 
 import {
@@ -62,12 +31,23 @@ import { db } from "../../firebase/config";
 
 import { AuthContext } from "../context/AuthContext";
 
-import AdsBanner from "../components/AdsBanner";
-import DonationPopupSystem from "../components/DonationPopup";
+import PromotionAdsBanner from "../components/PromotionAdsBanner";
 
 import { Link } from "react-router-dom";
-import PromotionAdsBanner, {demoAds} from "../components/PromotionAdsBanner";
 import { toast } from "react-toastify";
+import { Images } from "../data/data";
+import { allFeatures, featuredFeatureItems, featureSections } from "../data/features";
+
+// Cycle of accent gradients used for the Featured Tools shelf so each
+// card reads as distinct without introducing a new brand color.
+const FEATURED_GRADIENTS = [
+  "from-indigo-500 to-violet-500",
+  "from-sky-500 to-indigo-500",
+  "from-emerald-500 to-teal-500",
+  "from-amber-500 to-orange-500",
+  "from-rose-500 to-pink-500",
+  "from-violet-500 to-fuchsia-500",
+];
 
 const Dashboard = ({ dark }) => {
   const { user } = useContext(AuthContext);
@@ -77,6 +57,7 @@ const Dashboard = ({ dark }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showAllRecords, setShowAllRecords] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("All");
 
   /* ------------------------------------------------ */
   /* FETCH CGPA RECORDS */
@@ -120,9 +101,7 @@ const Dashboard = ({ dark }) => {
     try {
       await deleteDoc(doc(db, "cgpaTracker", id));
 
-      setRecords((prev) =>
-        prev.filter((item) => item.id !== id)
-      );
+      setRecords((prev) => prev.filter((item) => item.id !== id));
       toast.success("Record deleted");
     } catch (err) {
       console.log(err);
@@ -147,7 +126,7 @@ const Dashboard = ({ dark }) => {
 
   const visibleRecords = showAllRecords
     ? sortedRecords
-    : sortedRecords.slice(0, 6);
+    : sortedRecords.slice(0, 4);
 
   /* ------------------------------------------------ */
   /* DASHBOARD STATS */
@@ -157,18 +136,13 @@ const Dashboard = ({ dark }) => {
     totalRecords: records.length,
 
     bestCGPA: records.length
-      ? Math.max(
-          ...records.map((r) => Number(r.cgpa) || 0)
-        ).toFixed(2)
+      ? Math.max(...records.map((r) => Number(r.cgpa) || 0)).toFixed(2)
       : "0.00",
 
     avgCGPA: records.length
       ? (
-          records.reduce(
-            (acc, item) =>
-              acc + Number(item.cgpa || 0),
-            0
-          ) / records.length
+          records.reduce((acc, item) => acc + Number(item.cgpa || 0), 0) /
+          records.length
         ).toFixed(2)
       : "0.00",
 
@@ -177,22 +151,28 @@ const Dashboard = ({ dark }) => {
       : "0.00",
   };
 
-  const theme = {
-    bg: dark
-      ? "bg-[#070b14] text-white"
-      : "bg-[#f5f7fb] text-gray-900",
+  // Simple trend: is the most recent record above or below the running average?
+  const cgpaTrend =
+    records.length > 1
+      ? Number(dashboard.latestCGPA) - Number(dashboard.avgCGPA)
+      : 0;
 
+  const theme = {
+    bg: dark ? "bg-[#070b14] text-white" : "bg-[#f6f7fb] text-gray-900",
     card: dark
       ? "bg-white/5 border border-white/10"
-      : "bg-white border border-gray-200 shadow-sm",
-
-    soft: dark
-      ? "bg-white/5"
-      : "bg-gray-100",
-
-    textSoft: dark
-      ? "text-gray-400"
-      : "text-gray-500",
+      : "bg-white border border-gray-200/80 shadow-sm",
+    soft: dark ? "bg-white/5" : "bg-gray-50",
+    input: dark
+      ? "bg-white/5 border border-white/10 focus-within:border-indigo-400/60"
+      : "bg-white border border-gray-200 focus-within:border-indigo-400",
+    iconTint: dark
+      ? "bg-indigo-500/15 text-indigo-300"
+      : "bg-indigo-50 text-indigo-600",
+    textSoft: dark ? "text-gray-400" : "text-gray-500",
+    textFaint: dark ? "text-gray-500" : "text-gray-400",
+    border: dark ? "border-white/10" : "border-gray-200",
+    fadeEdge: dark ? "from-[#070b14]" : "from-[#f6f7fb]",
   };
 
   /* ------------------------------------------------ */
@@ -206,205 +186,174 @@ const Dashboard = ({ dark }) => {
     return "Good evening";
   }, []);
 
-  const featureSections = [
-    {
-      title: "Academic Tools",
-      desc: "Calculators, records, tasks, notes, and study planning.",
-      icon: GraduationCap,
-      items: [
-        { title: "GPA Calculator", desc: "Calculate semester GPA instantly", icon: Calculator, color: "from-indigo-500 to-violet-600", link: "/GPA" },
-        { title: "CGPA Tracker", desc: "Track academic performance", icon: Activity, color: "from-pink-500 to-rose-500", link: "/CGPA" },
-        { title: "Past Questions", desc: "Practice with exam materials", icon: File, color: "from-blue-500 to-cyan-500", link: "/questions" },
-        { title: "Lecture Notes", desc: "Upload and access notes", icon: UploadCloud, color: "from-yellow-500 to-orange-500", link: "/lecturenotesmarketplace" },
-        { title: "CBT Practice", desc: "Practice with exam materials", icon: ComputerIcon, color: "from-blue-500 to-cyan-500", link: "/cbt-practice" },
-        { title: "Task Management", desc: "Plan assignments and deadlines", icon: Clock3, color: "from-teal-500 to-emerald-600", link: "/tasks" },
-        { title: "Smart Timetable", desc: "Generate a balanced weekly schedule", icon: CalendarDays, color: "from-cyan-500 to-indigo-600", link: "/smart-timetable" },
-        { title: "Upload Questions", desc: "Contribute academic materials", icon: UploadCloud, color: "from-orange-500 to-red-500", link: "/uploadquestion" },
-        { title: "Stories", desc: "Read and create student stories", icon: PlayCircle, color: "from-fuchsia-500 to-pink-600", link: "/stories" },
-      ],
-    },
-    {
-      title: "Marketplace",
-      desc: "Student services, hostels, products, and saved listings.",
-      icon: ShoppingBag,
-      items: [
-        { title: "Hostel Marketplace", desc: "Find hostels around campus", icon: Home, color: "from-purple-500 to-indigo-600", link: "/hostelmarketplace" },
-        { title: "Student Marketplace", desc: "Buy and sell student items", icon: ShoppingBag, color: "from-emerald-500 to-green-600", link: "/studentmarketplace" },
-        { title: "My Hostels", desc: "Manage uploaded hostel listings", icon: Home, color: "from-sky-500 to-blue-700", link: "/myhostels" },
-      ],
-    },
-    {
-      title: "Smart Features",
-      desc: "AI, community, alerts, and discovery tools.",
-      icon: Sparkles,
-      items: [
-        { title: "AI Assistance", desc: "Ask for guided academic help", icon: Sparkles, color: "from-indigo-500 to-purple-600", link: "/ai" },
-        { title: "SmartFeeds", desc: "Catch useful education updates", icon: Newspaper, color: "from-blue-500 to-sky-600", link: "/newsfeed" },
-        { title: "Groups", desc: "Join student communities", icon: MessageCircle, color: "from-emerald-500 to-teal-600", link: "/community" },
-        { title: "Messenger", desc: "Chat with classmates directly", icon: MessageCircle, color: "from-cyan-500 to-blue-600", link: "/messages" },
-        { title: "Notifications", desc: "See alerts and requests", icon: Bell, color: "from-amber-500 to-yellow-600", link: "/notifications" },
-        { title: "Privacy Settings", desc: "Control messaging preferences", icon: Settings, color: "from-slate-500 to-gray-700", link: "/community-settings" },
-        { title: "Coming Soon", desc: "Preview upcoming UniHelp tools", icon: Rocket, color: "from-violet-500 to-fuchsia-600", link: "/coming-soon" },
-        { title: "Announcements", desc: "Read campus and app updates", icon: RadioTower, color: "from-rose-500 to-red-600", link: "/announcements" },
-        { title: "Premium", desc: "Unlock premium student features", icon: Star, color: "from-yellow-500 to-amber-600", link: "/premium" },
-      ],
-    },
-    {
-      title: "Formula Hub",
-      desc: "Formulas, subjects, bookmarks, and quick references.",
-      icon: Library,
-      items: [
-        { title: "Formula Hub", desc: "Find formulas by topic", icon: Divide, color: "from-purple-500 to-cyan-500", link: "/formula-hub" },
-        { title: "Formula Subjects", desc: "Browse formulas by subject", icon: Library, color: "from-indigo-500 to-sky-600", link: "/formula-hub/subjects" },
-        { title: "Bookmarks", desc: "Open saved formulas quickly", icon: Bookmark, color: "from-emerald-500 to-green-700", link: "/formula-hub/bookmarks" },
-      ],
-    },
-    {
-      title: "Support",
-      desc: "Help pages, policies, contact, and issue reports.",
-      icon: HelpCircle,
-      items: [
-        { title: "FAQ", desc: "Answers to common questions", icon: HelpCircle, color: "from-indigo-500 to-blue-600", link: "/faq" },
-        { title: "Help Center", desc: "Find guidance for UniHelp", icon: Info, color: "from-sky-500 to-cyan-600", link: "/help-center" },
-        { title: "Contact", desc: "Reach the UniHelp team", icon: PhoneCall, color: "from-emerald-500 to-teal-700", link: "/contact" },
-        { title: "Report", desc: "Report safety or platform issues", icon: FileWarning, color: "from-red-500 to-rose-700", link: "/report" },
-        { title: "About UniHelp", desc: "Learn what UniHelp offers", icon: Info, color: "from-violet-500 to-purple-700", link: "/about" },
-      ],
-    },
-  ];
+  const firstName = (user?.displayName || "Student").split(" ")[0];
 
   /* ------------------------------------------------ */
-  /* SEARCH FILTERING */
+  /* FEATURE DATA */
   /* ------------------------------------------------ */
+
+  const categoryNames = ["All", ...featureSections.map((section) => section.title)];
+
+  const allItems = useMemo(() => allFeatures, []);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const filteredSections = useMemo(() => {
-    if (!normalizedQuery) return featureSections;
+  const filteredItems = useMemo(() => {
+    const matches = allItems.filter((item) => {
+      const matchesCategory =
+        activeCategory === "All" || item.category === activeCategory;
 
-    return featureSections
-      .map((section) => ({
-        ...section,
-        items: section.items.filter(
-          (item) =>
-            item.title.toLowerCase().includes(normalizedQuery) ||
-            item.desc.toLowerCase().includes(normalizedQuery)
-        ),
-      }))
-      .filter((section) => section.items.length > 0);
-  }, [normalizedQuery]);
+      const matchesQuery =
+        !normalizedQuery ||
+        item.title.toLowerCase().includes(normalizedQuery) ||
+        item.desc.toLowerCase().includes(normalizedQuery);
 
-  const totalToolCount = featureSections.reduce(
-    (acc, s) => acc + s.items.length,
-    0
-  );
+      return matchesCategory && matchesQuery;
+    });
 
-  const scrollToSection = (title) => {
-    const el = document.getElementById(
-      `section-${title.replace(/\s+/g, "-").toLowerCase()}`
-    );
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    return matches.slice(0, 6);
+  }, [allItems, activeCategory, normalizedQuery]);
+
+  const totalToolCount = allItems.length;
+  const isFiltering = normalizedQuery.length > 0 || activeCategory !== "All";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setActiveCategory("All");
   };
 
+  /* ------------------------------------------------ */
+  /* STATS STRIP (real data, color-coded per stat) */
+  /* ------------------------------------------------ */
+
+  const statsStrip = [
+    {
+      icon: BarChart3,
+      label: "CGPA Records",
+      value: dashboard.totalRecords,
+      tint: dark ? "bg-indigo-500/15 text-indigo-300" : "bg-indigo-50 text-indigo-600",
+    },
+    {
+      icon: TrendingUp,
+      label: "Best CGPA",
+      value: dashboard.bestCGPA,
+      tint: dark ? "bg-emerald-500/15 text-emerald-300" : "bg-emerald-50 text-emerald-600",
+    },
+    {
+      icon: Activity,
+      label: "Average CGPA",
+      value: dashboard.avgCGPA,
+      tint: dark ? "bg-sky-500/15 text-sky-300" : "bg-sky-50 text-sky-600",
+    },
+    {
+      icon: Sparkles,
+      label: "Tools Available",
+      value: totalToolCount,
+      tint: dark ? "bg-violet-500/15 text-violet-300" : "bg-violet-50 text-violet-600",
+    },
+  ];
+
   return (
-    <div
-      className={`min-h-screen md:pt-20 ${theme.bg} transition-all duration-300`}>
-
-      <div className="px-4 md:px-6 lg:px-8 py-5 md:py-8">
-
+    <div className={`min-h-screen md:mt-20 ${theme.bg} transition-colors duration-300`}>
+      <div className="px-4 md:px-6 lg:px-8 py-6 md:py-10 max-w-[1400px] mx-auto">
         {/* ================================================= */}
-        {/* HERO SECTION */}
+        {/* HERO */}
         {/* ================================================= */}
 
-        <div
-          className={`relative overflow-hidden rounded-4xl p-4 md:p-8 mb-6 border ${
-            dark
-              ? "bg-linear-to-br from-indigo-950 via-[#0f172a] to-black border-white/10"
-              : "bg-linear-to-br from-indigo-500 via-violet-900 to-purple-700 border-indigo-400/20 text-white"
-          }`}>
-          <div className="absolute top-0 right-0 opacity-20 pointer-events-none">
-            <Sparkles size={180} />
-          </div>
-          <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center mb-10 md:mb-14">
+          <div>
+            <span
+              className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full mb-4 ${theme.iconTint}`}>
+              <Sparkles size={12} />
+              {greeting}, {firstName}
+            </span>
 
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            <h1 className="text-3xl md:text-5xl font-black leading-[1.08] tracking-tight">
+              Everything you need
+              <br />
+              to succeed in school,
+              <br />
+              <span className="text-indigo-500">all in one place.</span>
+            </h1>
 
-            <div className="max-w-2xl">
+            <p className={`mt-5 text-sm md:text-base leading-relaxed max-w-lg ${theme.textSoft}`}>
+              Access every academic tool, learning resource, marketplace
+              listing, and CGPA record UniHelp offers &mdash; organized in a
+              single dashboard built for Nigerian university students.
+            </p>
 
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/70 bg-white/10 px-3 py-1 rounded-full mb-3">
-                <Sparkles size={12} />
-                {greeting}
+            <div className="flex flex-wrap items-center gap-3 mt-7">
+              <Link
+                to="/CGPA"
+                className="px-5 py-3 text-sm rounded-2xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
+                Track your CGPA
+                <ArrowRight size={16} />
+              </Link>
+              <a
+                href="#explore-tools"
+                className={`px-5 py-3 text-sm rounded-2xl border font-bold transition hover:border-indigo-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.card}`}>
+                Explore Features
+              </a>
+            </div>
+
+            <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 mt-6 text-xs font-semibold ${theme.textSoft}`}>
+              <span className="inline-flex items-center gap-1.5">
+                <Activity size={13} className="text-emerald-500" />
+                100% Free to Start
               </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles size={13} className="text-indigo-500" />
+                Made for Students
+              </span>
+            </div>
+          </div>
 
-              <h1 className="text-2xl md:text-4xl font-bold leading-tight">
-                Welcome back,
-                <span className="block mt-1">
-                  {user?.displayName ||
-                    "Student"}{" "}
-                  👋
-                </span>
-              </h1>
+          {/* HERO VISUAL PANEL */}
+          <div className="relative pb-6 sm:pb-0">
+            <div
+              className={`relative overflow-hidden rounded-[2rem] border ${
+                dark
+                  ? "bg-gradient-to-br from-indigo-950 via-[#0f172a] to-black border-white/10"
+                  : "bg-gradient-to-br from-indigo-50 via-white to-violet-50 border-indigo-100"
+              }`}
+            >
+              <div className="absolute -top-10 -right-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-56 h-56 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+              <img
+                src={Images.hero_image}
+                className="aspect-[4/5] sm:aspect-[4/5] w-full object-cover object-center"
+                alt="UniHelp platform preview"
+              />
+            </div>
 
-              <p className="mt-4 text-[12px] md:text-base text-white/80 leading-relaxed max-w-xl">
-                Access all your academic tools,
-                learning resources,
-                marketplace services, and CGPA
-                tracking in one organized platform.
-              </p>
+            {/* Floating badges */}
+            <div className={`absolute -top-3 right-2 sm:-top-5 sm:right-2 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg max-w-[62%] sm:max-w-none ${theme.card}`}>
+              <p className="text-[10px] sm:text-[11px] font-semibold truncate">Welcome back,</p>
+              <p className="text-sm font-black text-indigo-500 truncate">{firstName} 👋</p>
+            </div>
 
-              <div className="flex flex-wrap gap-2 mt-6">
-                <Link
-                  to="/questions"
-                  className="px-4 py-3 text-[14px] rounded-2xl bg-white text-black font-semibold hover:scale-105 transition inline-flex items-center gap-2"
-                >
-                  Start Practicing
-                  <ArrowRight size={16} />
-                </Link>
-                <Link
-                  to="/CGPA"
-                  className="px-4 py-3 text-[14px] rounded-2xl bg-white/10 border border-white/20 text-white font-semibold hover:bg-white/20 transition"
-                >
-                  Track CGPA
-                </Link>
+            <div className={`absolute bottom-16 left-1 sm:bottom-6 sm:-left-3 md:-left-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 ${theme.card}`}>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                <Flame size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-black leading-tight">{dashboard.bestCGPA}</p>
+                <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Best CGPA</p>
               </div>
             </div>
 
-            {/* RIGHT STATS */}
-            <div className="grid grid-cols-2 gap-3 w-full lg:w-[440px]">
-
-              <StatCard
-                dark={dark}
-                icon={BarChart3}
-                title="Total Records"
-                value={dashboard.totalRecords}
-              />
-
-              <StatCard
-                dark={dark}
-                icon={TrendingUp}
-                title="Best CGPA"
-                value={dashboard.bestCGPA}
-                valueColor="text-emerald-300"
-              />
-
-              <StatCard
-                dark={dark}
-                icon={Activity}
-                title="Average CGPA"
-                value={dashboard.avgCGPA}
-                valueColor="text-cyan-300"
-              />
-
-              <StatCard
-                dark={dark}
-                icon={Clock3}
-                title="Latest CGPA"
-                value={dashboard.latestCGPA}
-                valueColor="text-amber-300"
-              />
-            </div>
+            <Link
+              to="/ai"
+              className={`absolute bottom-1 right-2 sm:-bottom-5 sm:right-2 md:right-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}
+            >
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                <Bot size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-black leading-tight whitespace-nowrap">AI Tutor</p>
+                <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Ask anything</p>
+              </div>
+            </Link>
           </div>
         </div>
 
@@ -412,336 +361,345 @@ const Dashboard = ({ dark }) => {
         {/* ADS BANNER */}
         {/* ================================================= */}
 
-        <div className="mb-6">
-          <PromotionAdsBanner   dark={dark}   autoSlide={true} interval={5000} />
+        <div className="mb-10">
+          <PromotionAdsBanner dark={dark} autoSlide={true} interval={5000} />
         </div>
 
         {/* ================================================= */}
-        {/* SEARCH + QUICK JUMP NAV */}
-        {/* ================================================= */}
-
-        <div className={`sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 mb-6 backdrop-blur-xl ${dark ? "bg-[#070b14]/80" : "bg-[#f5f7fb]/80"}`}>
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <div className={`relative flex-1 md:max-w-sm rounded-2xl border ${theme.card}`}>
-              <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${totalToolCount} tools...`}
-                className="w-full h-12 pl-11 pr-9 rounded-2xl bg-transparent outline-none text-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition"
-                  aria-label="Clear search"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-
-            {!normalizedQuery && (
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                {featureSections.map((section) => (
-                  <button
-                    key={section.title}
-                    onClick={() => scrollToSection(section.title)}
-                    className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-bold whitespace-nowrap border transition ${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`}
-                  >
-                    {section.title}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ================================================= */}
-        {/* FEATURE DIRECTORY */}
-        {/* ================================================= */}
-
-        <section className="mb-10">
-          {!normalizedQuery && (
-            <>
-              <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
-                    <Sparkles size={22} />
-                  </div>
-
-                  <div>
-                    <h2 className="text-2xl font-black">
-                      All UniHelp Features
-                    </h2>
-
-                    <p className={`text-sm ${theme.textSoft}`}>
-                      Organized tools for learning, campus life, community, and support.
-                    </p>
-                  </div>
-                </div>
-
-                <Link
-                  to="/coming-soon"
-                  className={`inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold ${theme.card}`}
-                >
-                  <Rocket size={17} />
-                  View Upcoming
-                </Link>
-              </div>
-
-              <DailyChallengeBanner dark={dark} />
-            </>
-          )}
-
-          {normalizedQuery && filteredSections.length === 0 && (
-            <div className={`rounded-3xl p-10 text-center ${theme.soft}`}>
-              <Search className="mx-auto mb-4 opacity-40" size={40} />
-              <h3 className="font-bold text-lg mb-1">No tools match "{searchQuery}"</h3>
-              <p className={`text-sm ${theme.textSoft}`}>Try a different keyword or clear the search.</p>
-            </div>
-          )}
-
-          <div className="space-y-7">
-            {(normalizedQuery ? filteredSections : featureSections).map((section) => {
-              const SectionIcon = section.icon;
-              const sectionId = `section-${section.title.replace(/\s+/g, "-").toLowerCase()}`;
-
-              return (
-                <div key={section.title} id={sectionId} className="scroll-mt-24">
-                  <div className="mb-4 flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.card} text-indigo-500`}>
-                        <SectionIcon size={20} />
-                      </div>
-
-                      <div className="min-w-0">
-                        <h3 className="text-xl font-black">
-                          {section.title}
-                        </h3>
-
-                        <p className={`mt-1 text-sm ${theme.textSoft}`}>
-                          {section.desc}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${theme.soft} ${theme.textSoft}`}>
-                      {section.items.length} tools
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {section.items.map((item) => (
-                      <FeatureCard
-                        key={`${section.title}-${item.title}`}
-                        item={item}
-                        theme={theme}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ================================================= */}
-        {/* CGPA HISTORY */}
+        {/* STATS STRIP */}
         {/* ================================================= */}
 
         <section
-          className={`${theme.card} rounded-[30px] p-5 md:p-7`}
+          className={`grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 rounded-3xl border mb-10 md:mb-14 overflow-hidden ${theme.card} ${theme.border}`}
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                <HistoryIcon className="text-red-500" />
+          {statsStrip.map((stat) => (
+            <div key={stat.label} className="flex items-center gap-3 px-4 md:px-6 py-5">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${stat.tint}`}>
+                <stat.icon size={18} />
               </div>
+              <div className="min-w-0">
+                <p className="text-lg md:text-xl font-black leading-tight">{stat.value}</p>
+                <p className={`text-xs truncate ${theme.textSoft}`}>{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </section>
 
+        {/* ================================================= */}
+        {/* FEATURED TOOLS SHELF */}
+        {/* ================================================= */}
+
+        {featuredFeatureItems?.length > 0 && (
+          <section className="mb-10 md:mb-14">
+            <div className="flex items-end justify-between mb-5">
               <div>
-                <h2 className="font-black text-2xl">
-                  CGPA History
+                <h2 className="text-xl md:text-2xl font-black">
+                  Featured <span className="text-indigo-500">Right Now</span>
                 </h2>
-
-                <p
-                  className={`text-sm ${theme.textSoft}`}
-                >
-                  View and manage your saved
-                  academic records.
+                <p className={`text-sm mt-1 ${theme.textSoft}`}>
+                  Hand-picked tools worth trying this week.
                 </p>
               </div>
             </div>
 
-            {!loading && records.length > 0 && (
-              <Link
-                to="/CGPA"
-                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-indigo-500 px-4 text-sm font-bold text-white hover:bg-indigo-600 transition"
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1 snap-x snap-mandatory">
+              {featuredFeatureItems.map((item, i) => {
+                const Icon = item.icon;
+                const gradient = FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length];
+
+                return (
+                  <Link
+                    key={`${item.title}-${i}`}
+                    to={item.link}
+                    className={`group relative shrink-0 w-[240px] sm:w-[260px] snap-start rounded-3xl p-5 text-white bg-gradient-to-br ${gradient} overflow-hidden transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white`}
+                  >
+                    <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/15 rounded-full blur-2xl pointer-events-none" />
+                    {Icon && (
+                      <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center mb-8">
+                        <Icon size={20} />
+                      </div>
+                    )}
+                    <h3 className="font-black text-base leading-tight mb-1.5">{item.title}</h3>
+                    <p className="text-xs leading-5 text-white/85 line-clamp-2">{item.desc}</p>
+                    <div className="flex items-center gap-1 mt-4 text-xs font-bold">
+                      Try it
+                      <ArrowRight size={13} className="transition group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ================================================= */}
+        {/* EXPLORE POWERFUL TOOLS */}
+        {/* ================================================= */}
+
+        <section id="explore-tools" className="mb-10 md:mb-14 scroll-mt-20">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-5">
+            <div>
+              <h2 className="text-xl md:text-2xl font-black">
+                Explore <span className="text-indigo-500">Powerful Tools</span>
+              </h2>
+              <p className={`text-sm mt-1 ${theme.textSoft}`}>
+                {totalToolCount} tools across academics, marketplace, and community.
+              </p>
+            </div>
+
+            <Link
+              to="/features"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-500 hover:text-indigo-400 transition">
+              View All Features
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+
+          {/* SEARCH */}
+          <div
+            className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-4 transition ${theme.input}`}
+          >
+            <Search size={17} className={theme.textFaint} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tools, e.g. CGPA calculator, marketplace..."
+              className={`flex-1 bg-transparent text-sm outline-none placeholder:${theme.textFaint}`}
+              aria-label="Search tools"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 hover:bg-red-500/10 hover:text-red-500 transition ${theme.textFaint}`}
               >
-                Add New Record
-                <ArrowRight size={16} />
-              </Link>
+                <X size={14} />
+              </button>
             )}
           </div>
 
-          {/* LOADING */}
-          {loading && (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className={`rounded-3xl p-5 ${theme.soft} animate-pulse`}>
-                  <div className="h-4 w-20 rounded bg-current opacity-10 mb-3" />
-                  <div className="h-8 w-24 rounded bg-current opacity-10 mb-5" />
-                  <div className="h-14 rounded-2xl bg-current opacity-5 mb-2" />
-                  <div className="h-14 rounded-2xl bg-current opacity-5" />
-                </div>
+          {/* CATEGORY PILLS with fade edges */}
+          <div className="relative mb-5">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+              {categoryNames.map((name) => (
+                <button
+                  key={name}
+                  onClick={() => setActiveCategory(name)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold whitespace-nowrap border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    activeCategory === name
+                      ? "bg-indigo-500 border-indigo-500 text-white"
+                      : `${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            <div className={`pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l ${theme.fadeEdge} to-transparent`} />
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <div className={`rounded-3xl p-10 text-center ${theme.soft}`}>
+              <Search className="mx-auto mb-4 opacity-40" size={36} />
+              <h3 className="font-bold mb-1">
+                {searchQuery ? `No tools match "${searchQuery}"` : "No tools in this category yet"}
+              </h3>
+              <p className={`text-sm mb-4 ${theme.textSoft}`}>
+                Try a different keyword or category.
+              </p>
+              {isFiltering && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredItems.map((item) => (
+                <ToolRow key={`${item.category}-${item.title}`} item={item} theme={theme} />
               ))}
             </div>
           )}
+        </section>
 
-          {/* EMPTY */}
-          {!loading && records.length === 0 && (
-            <div
-              className={`rounded-3xl p-10 text-center ${theme.soft}`}
-            >
-              <BookOpen
-                className="mx-auto mb-4 opacity-50"
-                size={55}
-              />
+        {/* ================================================= */}
+        {/* DAILY CHALLENGE */}
+        {/* ================================================= */}
 
-              <h3 className="font-bold text-xl mb-2">
-                No CGPA Records Yet
-              </h3>
+        <DailyChallengeBanner />
 
-              <p
-                className={`text-sm ${theme.textSoft}`}
-              >
-                Start tracking your CGPA to see
-                your academic history here.
-              </p>
+        {/* ================================================= */}
+        {/* TRENDING TOOLS + CGPA HISTORY (two column split) */}
+        {/* ================================================= */}
 
-              <Link
-                to="/CGPA"
-                className="inline-flex mt-5 px-5 py-3 rounded-2xl bg-indigo-600 text-white font-semibold hover:scale-105 transition"
-              >
-                Start Tracking
-              </Link>
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
+          {/* TRENDING NOW — top tools by category */}
+          <section className={`${theme.card} rounded-[28px] p-5 md:p-6`}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-2xl bg-orange-500/10 flex items-center justify-center shrink-0">
+                <Flame className="text-orange-500" size={20} />
+              </div>
+              <div>
+                <h2 className="font-black text-lg">Trending Now</h2>
+                <p className={`text-xs ${theme.textSoft}`}>Popular tools students use most</p>
+              </div>
             </div>
-          )}
 
-          {/* RECORDS */}
-          {!loading && records.length > 0 && (
-            <>
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-                {visibleRecords.map((record) => (
-                  <div
-                    key={record.id}
-                    className={`rounded-3xl p-5 transition-all hover:-translate-y-1 ${theme.soft}`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-
-                      <div>
-                        <p
-                          className={`text-sm ${theme.textSoft}`}
-                        >
-                          Current CGPA
-                        </p>
-
-                        <h2 className="text-3xl font-black text-indigo-500">
-                          {record.cgpa}
-                        </h2>
-                      </div>
-
-                      {confirmDeleteId === record.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleDelete(record.id)}
-                            className="rounded-xl bg-red-500 px-2.5 py-2 text-xs font-bold text-white hover:bg-red-600 transition"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(null)}
-                            className={`rounded-xl px-2.5 py-2 text-xs font-bold transition ${dark ? "bg-white/10 hover:bg-white/15" : "bg-white hover:bg-gray-100"}`}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setConfirmDeleteId(record.id)}
-                          className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition"
-                          aria-label="Delete record"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-
-                      {record.semesters?.map(
-                        (semester, index) => (
-                          <div
-                            key={index}
-                            className={`rounded-2xl p-3 flex items-center justify-between ${
-                              dark
-                                ? "bg-black/20"
-                                : "bg-white"
-                            }`}
-                          >
-                            <div>
-                              <h4 className="font-semibold text-sm">
-                                {semester.name}
-                              </h4>
-
-                              <p
-                                className={`text-xs ${theme.textSoft}`}
-                              >
-                                {semester.units} Units
-                              </p>
-                            </div>
-
-                            <div className="text-right">
-                              <p className="font-black text-indigo-500">
-                                {semester.gpa}
-                              </p>
-
-                              <p
-                                className={`text-xs ${theme.textSoft}`}
-                              >
-                                GPA
-                              </p>
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
+            <div className="space-y-2.5">
+              {allItems.slice(0, 5).map((item, i) => (
+                <Link
+                  key={item.title}
+                  to={item.link}
+                  className={`flex items-center gap-3 rounded-2xl p-3 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.soft}`}
+                >
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${theme.iconTint}`}>
+                    {i + 1}
+                  </span>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${theme.iconTint}`}>
+                    <item.icon size={17} />
                   </div>
-                ))}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-sm truncate">{item.title}</p>
+                    <p className={`text-xs truncate ${theme.textSoft}`}>{item.category}</p>
+                  </div>
+                  <ChevronRight size={16} className="opacity-40 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* CGPA HISTORY as "Recent Activity" style panel */}
+          <section className={`${theme.card} rounded-[28px] p-5 md:p-6`}>
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0">
+                  <HistoryIcon className="text-red-500" size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="font-black text-lg">CGPA History</h2>
+                  <p className={`text-xs truncate ${theme.textSoft}`}>Your saved academic records</p>
+                </div>
               </div>
 
-              {sortedRecords.length > 6 && (
-                <div className="text-center mt-6">
-                  <button
-                    onClick={() => setShowAllRecords((v) => !v)}
-                    className={`inline-flex items-center gap-1.5 text-sm font-bold text-indigo-500 hover:text-indigo-400 transition`}
-                  >
-                    {showAllRecords
-                      ? "Show fewer records"
-                      : `Show all ${sortedRecords.length} records`}
-                    <ChevronRight
-                      size={15}
-                      className={`transition-transform ${showAllRecords ? "-rotate-90" : "rotate-90"}`}
-                    />
-                  </button>
-                </div>
+              {!loading && records.length > 0 && (
+                <Link
+                  to="/CGPA"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-xs font-bold text-white hover:bg-indigo-600 transition shrink-0"
+                >
+                  Add New
+                  <ArrowRight size={14} />
+                </Link>
               )}
-            </>
-          )}
-        </section>
+            </div>
+
+            {loading && (
+              <div className="space-y-2.5">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className={`rounded-2xl p-4 ${theme.soft} animate-pulse h-16`} />
+                ))}
+              </div>
+            )}
+
+            {!loading && records.length === 0 && (
+              <div className={`rounded-2xl p-8 text-center ${theme.soft}`}>
+                <BookOpen className="mx-auto mb-3 opacity-50" size={34} />
+                <h3 className="font-bold text-sm mb-1">No CGPA Records Yet</h3>
+                <p className={`text-xs mb-4 ${theme.textSoft}`}>
+                  Start tracking your CGPA to see your history here.
+                </p>
+                <Link
+                  to="/CGPA"
+                  className="inline-flex px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
+                >
+                  Start Tracking
+                </Link>
+              </div>
+            )}
+
+            {!loading && records.length > 0 && (
+              <>
+                {cgpaTrend !== 0 && (
+                  <div
+                    className={`flex items-center gap-1.5 text-xs font-bold mb-3 ${
+                      cgpaTrend > 0 ? "text-emerald-500" : "text-red-500"
+                    }`}
+                  >
+                    {cgpaTrend > 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                    {cgpaTrend > 0 ? "+" : ""}
+                    {cgpaTrend.toFixed(2)} vs your average
+                  </div>
+                )}
+
+                <div className="space-y-2.5">
+                  {visibleRecords.map((record) => (
+                    <div key={record.id} className={`rounded-2xl p-4 ${theme.soft}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                            <Activity size={17} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-black text-indigo-500 text-lg leading-tight">
+                              {record.cgpa}
+                            </p>
+                            <p className={`text-xs truncate ${theme.textSoft}`}>
+                              {record.semesters?.length || 0} semester
+                              {record.semesters?.length === 1 ? "" : "s"} recorded
+                            </p>
+                          </div>
+                        </div>
+
+                        {confirmDeleteId === record.id ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={() => handleDelete(record.id)}
+                              className="rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-red-600 transition"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${dark ? "bg-white/10 hover:bg-white/15" : "bg-white hover:bg-gray-100"}`}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(record.id)}
+                            className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition shrink-0"
+                            aria-label="Delete record"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {sortedRecords.length > 4 && (
+                  <div className="text-center mt-4">
+                    <button
+                      onClick={() => setShowAllRecords((v) => !v)}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-400 transition"
+                    >
+                      {showAllRecords ? "Show fewer" : `Show all ${sortedRecords.length}`}
+                      <ChevronRight
+                        size={13}
+                        className={`transition-transform ${showAllRecords ? "-rotate-90" : "rotate-90"}`}
+                      />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
 
         <div className="h-10" />
       </div>
@@ -749,43 +707,38 @@ const Dashboard = ({ dark }) => {
   );
 };
 
+/* ================================================= */
+/* SUB-COMPONENTS */
+/* ================================================= */
 
-const FeatureCard = ({ item, theme }) => {
+const ToolRow = ({ item, theme }) => {
   const Icon = item.icon;
 
   return (
     <Link
       to={item.link}
-      className={`${theme.card} group relative flex min-h-40 flex-col justify-between overflow-hidden rounded-3xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl`}
+      className={`${theme.card} group flex items-start gap-3.5 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
     >
-      <div
-        className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-linear-to-br ${item.color} opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20`}
+      <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${theme.iconTint}`}>
+        <Icon size={19} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <h4 className="font-bold text-sm leading-tight">{item.title}</h4>
+        <p className={`mt-1 text-xs leading-5 ${theme.textSoft}`}>{item.desc}</p>
+      </div>
+
+      <ChevronRight
+        size={16}
+        className="opacity-0 shrink-0 mt-1 transition group-hover:translate-x-0.5 group-hover:opacity-60"
       />
-
-      <div className="relative flex items-start justify-between gap-4">
-        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r ${item.color} text-white shadow-lg`}>
-          <Icon size={24} />
-        </div>
-
-        <ArrowRight size={18} className="opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100" />
-      </div>
-
-      <div className="relative mt-5">
-        <h4 className="text-lg font-black leading-tight">
-          {item.title}
-        </h4>
-
-        <p className={`mt-2 text-sm leading-6 ${theme.textSoft}`}>
-          {item.desc}
-        </p>
-      </div>
     </Link>
   );
 };
 
 const DailyChallengeBanner = () => {
   return (
-    <section className="mb-8 overflow-hidden rounded-[28px] bg-gradient-to-r from-indigo-600 via-sky-600 to-emerald-500 text-white shadow-xl shadow-indigo-500/15">
+    <section className="mb-10 md:mb-14 overflow-hidden rounded-[28px] bg-gradient-to-r from-indigo-600 via-sky-600 to-emerald-500 text-white shadow-xl shadow-indigo-500/15">
       <div className="grid gap-5 px-4 py-5 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 sm:h-14 sm:w-14">
@@ -810,48 +763,18 @@ const DailyChallengeBanner = () => {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85">
               Answer quick mixed questions, earn XP, and climb the leaderboard.
             </p>
-
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-              {["8 Questions", "XP Reward", "Streak Boost"].map((item) => (
-                <span key={item} className="rounded-xl bg-white/10 px-3 py-2 text-center text-[11px] font-bold text-white/90 sm:text-left sm:text-xs">
-                  {item}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
 
         <Link
           to="/challenge"
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950 transition hover:scale-[1.02] md:w-fit"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950 transition hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:w-fit"
         >
           Start Daily
           <ArrowRight size={17} />
         </Link>
       </div>
     </section>
-  );
-};
-
-
-const StatCard = ({
-  icon: Icon,
-  title,
-  value,
-  valueColor,
-  dark,
-}) => {
-  return (
-    <div className={`rounded-2xl p-3.5 flex items-center gap-3 backdrop-blur-xl border transition-all hover:-translate-y-0.5 ${
-        dark ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white/10 border-white/20 hover:bg-white/15"}`}>
-      <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${ dark ? "bg-white/10" : "bg-white/20"}`}>
-        <Icon size={19} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-white/70 truncate">{title}</p>
-        <h2 className={`text-xl font-black mt-0.5 leading-none ${ valueColor || "text-white"}`}>{value}</h2>
-      </div>
-    </div>
   );
 };
 
