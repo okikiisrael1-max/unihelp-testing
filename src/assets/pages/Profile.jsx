@@ -369,7 +369,6 @@ const Profile = ({
                 </button>
               </div>
             </div>
-            </div>
 
             {/* RIGHT - UniHelp Rank */}
             <div className={`w-full lg:w-72 rounded-[20px] border p-5 ${dark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} shadow-sm shrink-0`}>
