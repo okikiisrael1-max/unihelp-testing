@@ -1,6 +1,6 @@
 import logo from '../images/unihelp.png'
 import google_logo from '../images/google_logo.png'
-import hero_image from '../images/hero-image.png'
+import hero_image from '../images/Hero-image.png'
 
 export const Images = {
     logo,
