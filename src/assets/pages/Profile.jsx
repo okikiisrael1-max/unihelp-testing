@@ -343,26 +343,46 @@ const Profile = ({
                 <h1 className="text-xl md:text-3xl font-black tracking-tight">{profile?.username || auth.currentUser?.displayName || "Student Name"}</h1>
                 <p className={`mt-0.5 text-xs font-medium ${muted}`}>@{(profile?.username || auth.currentUser?.displayName || "student").toLowerCase().replace(/\s+/g, '')} • Student</p>
 
-                {/* Academic Pills */}
-                <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start mt-3">
-                  {[profile?.department, profile?.faculty, profile?.school, profile?.level ? `Level ${profile.level}` : ""].filter(Boolean).map((sub, idx) => (
-                    <span key={idx} className={`px-2 py-1 rounded-md text-[10px] font-bold ${dark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>{sub}</span>
-                  ))}
-                  {!profile?.department && !profile?.faculty && (
-                     <span className={`text-[10px] font-medium ${muted}`}>No academic details added yet.</span>
+                <div className={`mt-4 space-y-2 text-sm font-medium ${muted}`}>
+                  {profile?.school && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <School size={14} className="text-indigo-500 shrink-0" />
+                      <span className="text-xs">School: <span className="text-indigo-500 font-semibold">{profile.school}</span></span>
+                    </div>
                   )}
-                </div>
-
-                <div className={`mt-3 space-y-1.5 text-sm font-medium ${muted}`}>
+                  {profile?.faculty && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <Layers size={14} className="text-indigo-500 shrink-0" />
+                      <span className="text-xs">Faculty: <span className="text-indigo-500 font-semibold">{profile.faculty}</span></span>
+                    </div>
+                  )}
+                  {profile?.department && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <Library size={14} className="text-indigo-500 shrink-0" />
+                      <span className="text-xs">Department: <span className="text-indigo-500 font-semibold">{profile.department}</span></span>
+                    </div>
+                  )}
+                  {profile?.level && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <GraduationCap size={14} className="text-indigo-500 shrink-0" />
+                      <span className="text-xs">Level: <span className="text-indigo-500 font-semibold">{profile.level}</span></span>
+                    </div>
+                  )}
+                  {!profile?.department && !profile?.faculty && !profile?.school && (
+                     <div className="flex items-center justify-center sm:justify-start gap-2">
+                       <School size={14} className="text-indigo-500/50 shrink-0" />
+                       <span className="text-xs">No academic details added yet.</span>
+                     </div>
+                  )}
                   {profile?.location && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <MapPin size={14} className="text-indigo-500 shrink-0" />
-                      <span className="text-[11px]">{profile.location}</span>
+                      <span className="text-xs">{profile.location}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Calendar size={14} className="text-indigo-500 shrink-0" />
-                    <span className="text-[11px]">Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
+                    <span className="text-xs">Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
                   </div>
                 </div>
                   <button onClick={() => setEditOpen(true)} className={`mt-3 px-3 py-1.5 rounded-full border font-semibold text-[10px] transition-all flex items-center gap-1 mx-auto sm:mx-0 ${dark ? "border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}>
