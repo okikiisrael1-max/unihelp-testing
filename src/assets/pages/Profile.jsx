@@ -300,7 +300,7 @@ const Profile = ({
   }
 
   return (
-    <div className={`min-h-screen relative overflow-hidden ${bg} transition-all duration-500`}>
+    <div className={`min-h-screen relative overflow-hidden ${bg} transition-all duration-500 md:pt-20`}>
       {/* Ambient BG Effects */}
       <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-500/10 blur-3xl rounded-full animate-pulse" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-500/10 blur-3xl rounded-full animate-pulse" style={{ animationDelay: "1s" }} />
