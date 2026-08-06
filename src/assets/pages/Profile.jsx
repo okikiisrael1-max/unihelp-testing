@@ -347,25 +347,25 @@ const Profile = ({
                   {profile?.school && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <School size={14} className="text-indigo-500 shrink-0" />
-                      <span className="text-xs">School: <span className="text-indigo-500 font-semibold">{profile.school}</span></span>
+                      <span className="text-xs">School: <span className={`${dark ? 'text-slate-200' : 'text-slate-600'} font-semibold`}>{profile.school}</span></span>
                     </div>
                   )}
                   {profile?.faculty && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <Layers size={14} className="text-indigo-500 shrink-0" />
-                      <span className="text-xs">Faculty: <span className="text-indigo-500 font-semibold">{profile.faculty}</span></span>
+                      <span className="text-xs">Faculty: <span className={`${dark ? 'text-slate-200' : 'text-slate-600'} font-semibold`}>{profile.faculty}</span></span>
                     </div>
                   )}
                   {profile?.department && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <Library size={14} className="text-indigo-500 shrink-0" />
-                      <span className="text-xs">Department: <span className="text-indigo-500 font-semibold">{profile.department}</span></span>
+                      <span className="text-xs">Department: <span className={`${dark ? 'text-slate-200' : 'text-slate-600'} font-semibold`}>{profile.department}</span></span>
                     </div>
                   )}
                   {profile?.level && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <GraduationCap size={14} className="text-indigo-500 shrink-0" />
-                      <span className="text-xs">Level: <span className="text-indigo-500 font-semibold">{profile.level}</span></span>
+                      <span className="text-xs">Level: <span className={`${dark ? 'text-slate-200' : 'text-slate-600'} font-semibold`}>{profile.level}</span></span>
                     </div>
                   )}
                   {!profile?.department && !profile?.faculty && !profile?.school && (
