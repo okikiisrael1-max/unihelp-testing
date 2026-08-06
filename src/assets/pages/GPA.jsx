@@ -308,24 +308,24 @@ const GPA = ({ dark }) => {
         </button>
 
         {/* HEADER */}
-        <div className="relative mb-8 overflow-hidden rounded-[32px] p-8 md:p-10 bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 text-white shadow-2xl flex flex-col md:flex-row items-center gap-8 md:gap-10">
+        <div className="relative mb-8 overflow-hidden rounded-[24px] p-6 md:p-8 bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 text-white shadow-2xl flex flex-col md:flex-row items-center gap-6">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500 rounded-full blur-[100px] opacity-40 -translate-y-1/2 translate-x-1/3"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500 rounded-full blur-[100px] opacity-40 translate-y-1/2 -translate-x-1/3"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500 rounded-full blur-[80px] opacity-40 -translate-y-1/2 translate-x-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500 rounded-full blur-[80px] opacity-40 translate-y-1/2 -translate-x-1/3"></div>
 
-          <div className="relative z-10 w-32 h-32 md:w-40 md:h-40 shrink-0 rounded-[28px] overflow-hidden shadow-2xl shadow-purple-500/20 border border-white/20">
+          <div className="relative z-10 w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/20 border border-white/20">
              <img src={gpaIcon} alt="GPA Calculator" className="w-full h-full object-cover scale-110" />
           </div>
 
           <div className="relative z-10 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4">
-              <Sparkles size={14} className="text-purple-300" />
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-100">Live Tracker</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-3">
+              <Sparkles size={12} className="text-purple-300" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-100">Live Tracker</span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-3">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight mb-2">
               GPA Calculator
             </h1>
-            <p className="opacity-80 text-sm md:text-base font-medium max-w-md mx-auto md:mx-0">
+            <p className="opacity-80 text-sm font-medium max-w-sm mx-auto md:mx-0 leading-snug">
               Calculate, analyze and save your semester performance with real-time insights.
             </p>
           </div>
