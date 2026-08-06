@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signOut,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -64,7 +65,15 @@ const Login = ({ dark }) => {
 
     try {
       setIsLoading(true);
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      
+      if (!credential.user.emailVerified) {
+        await signOut(auth);
+        toast.error("Please verify your email before logging in. Check your inbox.");
+        setIsLoading(false);
+        return;
+      }
+
       const role = await getUserRole(credential.user.uid);
 
       toast.success("Login successful");
