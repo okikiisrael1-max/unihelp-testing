@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Lock, Eye, EyeOff, Sparkles, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Lock, KeyRound, Eye, EyeOff, Sparkles, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Images } from "../data/data";
 import { auth } from "../../firebase/config";
@@ -151,16 +151,74 @@ const ResetPassword = ({ dark }) => {
               </Link>
             </div>
           ) : resetSuccess ? (
-            <div className="text-center py-6">
-              <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center relative overflow-hidden rounded-full">
-                <div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-500/10 rounded-full animate-ping opacity-20"></div>
-                <CheckCircle2 size={48} className="text-emerald-500 relative z-10" />
+            /* ------------------------------------------------------------ */
+            /*  PREMIUM SUCCESS CARD — matches Login.jsx's forgot-password    */
+            /*  success state for a consistent "secure action complete" moment */
+            /* ------------------------------------------------------------ */
+            <div className="text-center pt-3 pb-2">
+              <div className="relative w-32 h-32 mx-auto mb-7">
+                {/* ambient glow */}
+                <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-2xl animate-pulse" />
+
+                {/* soft outer ring */}
+                <div className={`absolute inset-2 rounded-full ${dark ? "bg-emerald-500/10" : "bg-emerald-50"}`} />
+
+                {/* 3D badge — layered gradient + inset highlight for depth */}
+                <div
+                  className="absolute inset-5 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "linear-gradient(155deg, #34d399 0%, #10b981 45%, #059669 100%)",
+                    boxShadow:
+                      "0 12px 24px -6px rgba(16,185,129,0.5), 0 4px 8px rgba(16,185,129,0.35), inset 0 2px 3px rgba(255,255,255,0.5), inset 0 -6px 10px rgba(0,0,0,0.18)",
+                  }}
+                >
+                  <Lock size={34} className="text-white drop-shadow-md" strokeWidth={2.25} />
+                </div>
+
+                {/* key badge */}
+                <div
+                  className="absolute bottom-1 right-1 w-11 h-11 rounded-2xl flex items-center justify-center rotate-[12deg]"
+                  style={{
+                    background: "linear-gradient(155deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%)",
+                    boxShadow:
+                      "0 8px 16px -4px rgba(245,158,11,0.55), inset 0 1.5px 2px rgba(255,255,255,0.55), inset 0 -4px 6px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <KeyRound size={18} className="text-white -rotate-[12deg]" strokeWidth={2.5} />
+                </div>
+
+                {/* checkmark badge */}
+                <div
+                  className={`absolute top-0 left-2 w-9 h-9 rounded-full flex items-center justify-center border-4 ${
+                    dark ? "border-slate-800" : "border-white"
+                  }`}
+                  style={{
+                    background: "linear-gradient(155deg, #4ade80 0%, #22c55e 100%)",
+                    boxShadow: "0 4px 10px -2px rgba(34,197,94,0.5)",
+                  }}
+                >
+                  <CheckCircle2 size={18} className="text-white" strokeWidth={2.5} fill="none" />
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-2">Password Reset Successful!</h3>
-              <p className={`text-sm mb-6 ${dark ? "text-slate-300" : "text-slate-600"}`}>
-                You can now login with your new password.
+
+              <div className="inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30">
+                <ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400" />
+                <span className="text-emerald-700 dark:text-emerald-400 text-[11px] font-bold tracking-wide uppercase">
+                  Password updated
+                </span>
+              </div>
+
+              <h3 className="text-2xl font-black mb-2 tracking-tight">All set!</h3>
+              <p className={`text-sm mb-8 leading-relaxed ${dark ? "text-slate-300" : "text-slate-600"}`}>
+                Your password has been reset successfully.
+                <br />
+                You can now log in with your new password.
               </p>
-              <Link to="/login" className="block w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)]">
+
+              <Link
+                to="/login"
+                className="block w-full py-3.5 bg-[#4338ca] hover:bg-[#3730a3] text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-[#4338ca]/30 active:scale-[0.98]"
+              >
                 Login Now
               </Link>
             </div>

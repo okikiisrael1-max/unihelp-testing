@@ -46,13 +46,13 @@ const Login = ({ dark }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
+    if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
+    if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address");
       return;
     }
@@ -64,14 +64,14 @@ const Login = ({ dark }) => {
 
     try {
       setIsLoading(true);
-      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
       const role = await getUserRole(credential.user.uid);
 
       toast.success("Login successful");
       if (role) {
         navigate("/");
       } else {
-        navigate("/select-role");
+        navigate("/complete-profile");
       }
     } catch (error) {
       switch (error.code) {
@@ -105,7 +105,7 @@ const Login = ({ dark }) => {
       if (role) {
         navigate("/");
       } else {
-        navigate("/profile");
+        navigate("/complete-profile");
       }
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
@@ -120,20 +120,20 @@ const Login = ({ dark }) => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!resetEmail.trim()) {
+    if (!resetEmail) {
       toast.error("Please enter your email");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(resetEmail.trim())) {
+    if (!emailRegex.test(resetEmail)) {
       toast.error("Please enter a valid email address");
       return;
     }
 
     try {
       setResetLoading(true);
-      await sendPasswordResetEmail(auth, resetEmail.trim());
+      await sendPasswordResetEmail(auth, resetEmail);
       toast.success("Password reset email sent successfully");
       setResetSent(true);
       setTimeout(() => {
@@ -326,17 +326,6 @@ const Login = ({ dark }) => {
             Don't have an account?{" "}
             <Link to="/register" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
               Sign up
-            </Link>
-          </p>
-
-          <p className={`text-center text-xs mt-4 ${dark ? "text-slate-400" : "text-slate-500"}`}>
-            By logging in, you agree to our{" "}
-            <Link to="/terms" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
-              Terms of Service
-            </Link>
-            {" "}and{" "}
-            <Link to="/privacy" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
-              Privacy Policy
             </Link>
           </p>
 
