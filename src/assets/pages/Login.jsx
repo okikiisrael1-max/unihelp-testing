@@ -46,13 +46,13 @@ const Login = ({ dark }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email.trim())) {
       toast.error("Please enter a valid email address");
       return;
     }
@@ -64,7 +64,7 @@ const Login = ({ dark }) => {
 
     try {
       setIsLoading(true);
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const role = await getUserRole(credential.user.uid);
 
       toast.success("Login successful");
@@ -120,20 +120,20 @@ const Login = ({ dark }) => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!resetEmail) {
+    if (!resetEmail.trim()) {
       toast.error("Please enter your email");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(resetEmail)) {
+    if (!emailRegex.test(resetEmail.trim())) {
       toast.error("Please enter a valid email address");
       return;
     }
 
     try {
       setResetLoading(true);
-      await sendPasswordResetEmail(auth, resetEmail);
+      await sendPasswordResetEmail(auth, resetEmail.trim());
       toast.success("Password reset email sent successfully");
       setResetSent(true);
       setTimeout(() => {
