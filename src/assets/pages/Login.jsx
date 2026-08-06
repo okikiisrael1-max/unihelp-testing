@@ -329,6 +329,17 @@ const Login = ({ dark }) => {
             </Link>
           </p>
 
+          <p className={`text-center text-xs mt-4 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+            By logging in, you agree to our{" "}
+            <Link to="/terms" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+              Terms of Service
+            </Link>
+            {" "}and{" "}
+            <Link to="/privacy" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+              Privacy Policy
+            </Link>
+          </p>
+
           <div className={`hidden lg:flex items-center justify-center gap-1.5 mt-6 pt-6 border-t text-xs font-medium ${
             dark ? "border-slate-700/80 text-slate-500" : "border-gray-100 text-slate-400"
           }`}>
