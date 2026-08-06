@@ -9,6 +9,7 @@ import {
   signInWithPopup,
   updateProfile,
   sendEmailVerification,
+  signOut,
 } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -100,9 +101,10 @@ const SignUp = ({ dark }) => {
         email: email.trim(),
       });
       await sendEmailVerification(credential.user);
+      await signOut(auth);
 
-      toast.success("Account created! Please check your email to verify.");
-      navigate("/complete-profile");
+      toast.success("Account created! Please check your email to verify before logging in.");
+      navigate("/login");
     } catch (error) {
       switch (error.code) {
         case "auth/email-already-in-use":
