@@ -343,47 +343,6 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
               <Newspaper size={18} />
             ),
           },
-
-          {
-            to: "/community",
-
-            label: "Groups",
-
-            icon: (
-              <MessageCircle size={18} />
-            ),
-          },
-
-          {
-            to: "/messages",
-
-            label: "Messenger",
-
-            icon: (
-              <MessageCircle size={18} />
-            ),
-          },
-
-          {
-            to: "/notifications",
-
-            label: "Notifications",
-
-            icon: (
-              <Bell size={18} />
-            ),
-          },
-
-          {
-            to: "/community-settings",
-
-            label: "Privacy Settings",
-
-            icon: (
-              <Settings size={18} />
-            ),
-          },
-
           {
             to: "/coming-soon",
 
@@ -688,15 +647,16 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
             <div className={`rounded-2xl p-4 ${dark ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200"}`}>
               <div className="relative flex items-center">
                 <div onClick={() => navigate('/profile')} className="flex min-w-0 cursor-pointer flex-col gap-2">
-                  <p className="font-medium">Profile</p>
+                  <p className="font-medium">View Profile</p>
                   <div className="flex min-w-0 items-center gap-2 text-sm font-medium">
-                    <ProfilePhoto user={user} /> {user?.displayName ||
+                    <ProfilePhoto user={user} />
+                    <div className="flex min-w-0 flex-col">
+                      {user?.displayName ||
                       "Student"}
+                      <div className={`text-xs break-all ${dark ? "text-zinc-400" : "text-zinc-500"}`}> {user?.email || "No email"} </div>
+                      </div> 
                   </div>
-                  <div
-                    className={`text-xs break-all ${dark ? "text-zinc-400" : "text-zinc-500"}`}>
-                    {user?.email || "No email"}
-                  </div>
+                  
 
                   {isAdmin && (
                     <div className="mt-1 inline-flex items-center gap-1 bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-full w-fit">

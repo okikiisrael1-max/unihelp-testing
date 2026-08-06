@@ -151,7 +151,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
 
               <Link
                 to="/notifications"
-                className={`relative hidden sm:flex w-10 h-10 rounded-xl border items-center justify-center transition ${theme.card}`}
+                className={`relative flex w-10 h-10 rounded-xl border items-center justify-center transition ${theme.card}`}
                 aria-label="Notifications"
               >
                 <Bell size={17} />
