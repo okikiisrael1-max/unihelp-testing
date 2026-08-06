@@ -206,7 +206,9 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <UserRound size={18} />
+                  <span className="text-sm font-bold uppercase">
+                    {user?.displayName ? user.displayName[0] : "U"}
+                  </span>
                 )}
               </Link>
             </>
