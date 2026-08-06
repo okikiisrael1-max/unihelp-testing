@@ -210,23 +210,7 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
             },
           ]
         : [
-            {
-              title: "Dashboard",
-              icon: (
-                <LayoutDashboardIcon size={19} />
-              ),
-
-              links: [
-                {
-                  to: "/",
-                  label: "Dashboard",
-                  icon: (
-                    <LayoutDashboardIcon size={18} />
-                  ),
-                },
-              ],
-            },
-
+           
             {
               title: "Academic",
 
