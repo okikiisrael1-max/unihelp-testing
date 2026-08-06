@@ -53,17 +53,7 @@ export default function ProBtn({
 
   return (
     <button
-      onClick={() =>
-        navigate(
-          "/premium"
-        )
-      }
-      className={`group relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg ${
-        dark
-          ? "bg-linear-to-r from-yellow-400 via-orange-500 to-pink-500 text-white"
-          : "bg-linear-to-r from-indigo-600 to-purple-600 text-white"
-      }`}
-    >
+      onClick={() => navigate("/premium")} className={`group relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg ${ dark ? "bg-linear-to-r from-yellow-400 via-orange-500 to-pink-500 text-white" : "bg-linear-to-r from-indigo-600 to-purple-600 text-white"}`}>
       {/* GLOW */}
 
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-white/10" />
@@ -71,23 +61,20 @@ export default function ProBtn({
       {/* ICON */}
 
       <div className="relative flex items-center justify-center">
-        <Crown
-          size={18}
-          className="animate-pulse"
+        <Crown size={18} className="animate-pulse" fill={dark ? "white" : "yellow"}
         />
       </div>
 
       {/* TEXT */}
 
-      <div className="relative flex items-center gap-1">
+      <div className="relative hidden sm:flex items-center gap-1">
         <span className="text-sm md:text-base">
           Upgrade
         </span>
 
         <Sparkles
-          size={15}
-          className="opacity-90"
-        />
+          size={15} fill="gold"
+          className="opacity-90"/>
       </div>
     </button>
   );

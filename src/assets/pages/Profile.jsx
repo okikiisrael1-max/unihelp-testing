@@ -528,47 +528,81 @@ const Profile = ({
       </div>
 
 
-      {/* ======================== EDIT MODAL ======================== */}
-      {editOpen && (
-        <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-xl flex items-center justify-center p-3 overflow-y-auto">
-          <div className={`${glass} w-full max-w-xl rounded-[20px] p-5 relative max-h-[90vh] overflow-y-auto`}>
-            {/* Close */}
-            <button onClick={() => setEditOpen(false)} className="absolute top-4 right-4 w-8 h-8 rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-all text-red-500 flex items-center justify-center">
+    {editOpen && (
+      <div
+        role="presentation"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setEditOpen(false);
+        }}
+        className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-xl flex items-center justify-center p-3"
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-profile-title"
+          className={`w-full max-w-xl rounded-[20px] relative max-h-[90vh] flex flex-col overflow-hidden border shadow-2xl ${
+            dark ? "bg-slate-950 border-white/10" : "bg-white border-slate-200"
+          }`}
+        >
+          {/* Header — pinned */}
+          <div className={`flex items-center gap-3 px-5 py-4 border-b shrink-0 ${dark ? "border-white/10" : "border-slate-200"}`}>
+            <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shrink-0">
+              <Edit3 size={18} />
+            </div>
+            <div className="min-w-0">
+              <h2 id="edit-profile-title" className="text-xl font-black leading-tight">Edit Profile</h2>
+              <p className={`text-xs ${muted}`}>Update your account information</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              aria-label="Close"
+              className="ml-auto w-8 h-8 rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-all text-red-500 flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            >
               <X size={16} />
             </button>
+          </div>
 
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
-                <Edit3 size={18} />
-              </div>
-              <div>
-                <h2 className="text-xl font-black">Edit Profile</h2>
-                <p className={`text-xs ${muted}`}>Update your account information</p>
-              </div>
-            </div>
-
+          {/* Body — scrolls independently of header/footer */}
+          <div className="overflow-y-auto px-5 py-5">
             <div className="grid md:grid-cols-2 gap-4">
               {/* Username */}
               <div className="md:col-span-2">
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">Username</label>
+                <label htmlFor="edit-username" className="block mb-1.5 text-xs font-semibold opacity-80">Username</label>
                 <div className="relative">
-                  <User2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-                  <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="your_username" className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none transition-all ${inputStyle}`} />
+                  <User2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
+                  <input
+                    id="edit-username"
+                    type="text"
+                    value={form.username}
+                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    placeholder="your_username"
+                    className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                  />
                 </div>
               </div>
 
               {/* School Type */}
               <div className="md:col-span-2">
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">School Type</label>
-                <div className="flex gap-2 flex-wrap">
+                <span className="block mb-1.5 text-xs font-semibold opacity-80">School Type</span>
+                <div className="flex gap-2 flex-wrap" role="group" aria-label="School type">
                   {[
                     { value: "university", label: "University" },
                     { value: "polytechnic", label: "Polytechnic" },
                     { value: "college_of_education", label: "College" },
                   ].map((t) => (
-                    <button key={t.value} type="button" onClick={() => { setForm({ ...form, schoolType: t.value, school: "", department: "", faculty: "" }); setSchoolSearch(""); }}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${form.schoolType === t.value ? "bg-indigo-500 text-white border-indigo-500" : card}`}>
+                    <button
+                      key={t.value}
+                      type="button"
+                      aria-pressed={form.schoolType === t.value}
+                      onClick={() => {
+                        setForm({ ...form, schoolType: t.value, school: "", department: "", faculty: "" });
+                        setSchoolSearch("");
+                      }}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                        form.schoolType === t.value ? "bg-indigo-500 text-white border-indigo-500" : card
+                      }`}
+                    >
                       {t.label}
                     </button>
                   ))}
@@ -577,69 +611,186 @@ const Profile = ({
 
               {/* School */}
               <div className="relative md:col-span-2">
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">School</label>
+                <label htmlFor="edit-school" className="block mb-1.5 text-xs font-semibold opacity-80">School</label>
                 <div className="relative">
-                  <School size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 z-10" />
-                  <input type="text" readOnly value={form.school || ""} placeholder="Select school..." className={`w-full h-10 pl-9 pr-8 rounded-xl text-sm outline-none cursor-pointer ${inputStyle}`}
-                    onClick={() => setShowSchoolDropdown(!showSchoolDropdown)}/>
+                  <School size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 z-10 pointer-events-none" />
+                  <input
+                    id="edit-school"
+                    type="text"
+                    readOnly
+                    role="button"
+                    tabIndex={0}
+                    aria-haspopup="listbox"
+                    aria-expanded={showSchoolDropdown}
+                    value={form.school || ""}
+                    placeholder="Select school..."
+                    className={`w-full h-10 pl-9 pr-8 rounded-xl text-sm outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                    onClick={() => setShowSchoolDropdown(!showSchoolDropdown)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setShowSchoolDropdown(!showSchoolDropdown);
+                      }
+                    }}
+                  />
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
                 </div>
                 {showSchoolDropdown && (
-                  <div className={`absolute z-20 w-full mt-1 rounded-xl border max-h-40 overflow-y-auto ${glass} shadow-xl`}>
-                    <div className="sticky top-0 p-1.5 border-b" style={{ backgroundColor: dark ? "#0f1729" : "#FFFFFF" }}>
-                      <input type="text" value={schoolSearch} onChange={(e) => { setSchoolSearch(e.target.value); setForm({ ...form, school: "", department: "" }); }} placeholder="Search schools..." className={`w-full h-8 px-2.5 rounded-lg border text-xs outline-none ${inputStyle}`} autoFocus />
+                  <>
+                    {/* Invisible layer so clicking anywhere outside the panel closes it */}
+                    <button
+                      type="button"
+                      aria-label="Close school list"
+                      onClick={() => setShowSchoolDropdown(false)}
+                      className="fixed inset-0 z-10 cursor-default"
+                    />
+                    <div
+                      className={`absolute z-20 w-full mt-1 rounded-xl border max-h-40 overflow-y-auto shadow-xl ${
+                        dark ? "bg-slate-950 border-white/10" : "bg-white border-slate-200"
+                      }`}
+                    >
+                      <div className="sticky top-0 p-1.5 border-b" style={{ backgroundColor: dark ? "#0f1729" : "#FFFFFF" }}>
+                        <input
+                          type="text"
+                          value={schoolSearch}
+                          onChange={(e) => {
+                            setSchoolSearch(e.target.value);
+                            setForm({ ...form, school: "", department: "" });
+                          }}
+                          placeholder="Search schools..."
+                          className={`w-full h-8 px-2.5 rounded-lg border text-xs outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                          autoFocus
+                        />
+                      </div>
+                      {filteredSchools.length > 0 ? (
+                        filteredSchools.map((s, i) => (
+                          <button
+                            key={`${s.name}-${i}`}
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, school: s.name, schoolType: s.type || form.schoolType });
+                              setSchoolSearch("");
+                              setShowSchoolDropdown(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-indigo-500/10 transition text-xs focus-visible:outline-none focus-visible:bg-indigo-500/10"
+                          >
+                            <span className="font-medium">{s.name}</span>
+                            {s.shortName && <span className={`${muted} ml-1 text-[10px]`}>({s.shortName})</span>}
+                            <span className={`${mutedLight} text-[10px] ml-2`}>{s.state}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-4 text-center text-xs opacity-60">No schools found</div>
+                      )}
                     </div>
-                    {filteredSchools.length > 0 ? filteredSchools.map((s, i) => (
-                      <button key={`${s.name}-${i}`} type="button" onClick={() => { setForm({ ...form, school: s.name, schoolType: s.type || form.schoolType }); setSchoolSearch(""); setShowSchoolDropdown(false); }}
-                        className="w-full text-left px-3 py-2 hover:bg-indigo-500/10 transition text-xs">
-                        <span className="font-medium">{s.name}</span>
-                        {s.shortName && <span className={`${muted} ml-1 text-[10px]`}>({s.shortName})</span>}
-                        <span className={`${mutedLight} text-[10px] ml-2`}>{s.state}</span>
-                      </button>
-                    )) : (
-                      <div className="px-3 py-4 text-center text-xs opacity-60">No schools found</div>
-                    )}
-                  </div>
+                  </>
                 )}
-                {form.school && <p className="text-emerald-500 text-[10px] mt-1 flex items-center gap-1"><CheckCircle2 size={10} /> {form.school}</p>}
+                {form.school && (
+                  <p className="text-emerald-500 text-[10px] mt-1 flex items-center gap-1">
+                    <CheckCircle2 size={10} /> {form.school}
+                  </p>
+                )}
               </div>
 
               {/* Department */}
               <div className="relative">
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">Department</label>
+                <label htmlFor="edit-department" className="block mb-1.5 text-xs font-semibold opacity-80">Department</label>
                 <div className="relative">
-                  <Library size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 z-10" />
-                  <input type="text" readOnly disabled={!form.school} value={form.department || ""} placeholder="Select dept..." className={`w-full h-10 pl-9 pr-8 rounded-xl text-sm outline-none cursor-pointer ${inputStyle} ${!form.school ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={() => { if (form.school) setShowDeptDropdown(!showDeptDropdown); }}/>
+                  <Library size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 z-10 pointer-events-none" />
+                  <input
+                    id="edit-department"
+                    type="text"
+                    readOnly
+                    disabled={!form.school}
+                    role="button"
+                    tabIndex={form.school ? 0 : -1}
+                    aria-haspopup="listbox"
+                    aria-expanded={showDeptDropdown}
+                    value={form.department || ""}
+                    placeholder="Select dept..."
+                    className={`w-full h-10 pl-9 pr-8 rounded-xl text-sm outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle} ${!form.school ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() => {
+                      if (form.school) setShowDeptDropdown(!showDeptDropdown);
+                    }}
+                    onKeyDown={(e) => {
+                      if (form.school && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setShowDeptDropdown(!showDeptDropdown);
+                      }
+                    }}
+                  />
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
                 </div>
-                {showDeptDropdown && (
-                  <div className={`absolute z-20 w-full mt-1 rounded-xl border max-h-40 overflow-y-auto ${glass} shadow-xl`}>
-                    <div className="sticky top-0 p-1.5 border-b" style={{ backgroundColor: dark ? "#0f1729" : "#FFFFFF" }}>
-                      <input type="text" value={deptSearch} onChange={(e) => setDeptSearch(e.target.value)} placeholder="Search departments..." className={`w-full h-8 px-2.5 rounded-lg border text-xs outline-none ${inputStyle}`} autoFocus />
-                    </div>
-                    {filteredDepartments.length > 0 ? filteredDepartments.map((d, i) => (
-                      <button key={`${d.name}-${i}`} type="button" onClick={() => { setForm({ ...form, department: d.name, faculty: d.faculty }); setDeptSearch(""); setShowDeptDropdown(false); }}
-                        className="w-full text-left px-3 py-2 hover:bg-indigo-500/10 transition text-xs">
-                        <span className="font-medium">{d.name}</span>
-                        <span className={`${mutedLight} text-[10px] block mt-0.5`}>{d.faculty}</span>
-                      </button>
-                    )) : (
-                      <div className="px-3 py-4 text-center text-xs opacity-60">No departments found</div>
-                    )}
-                  </div>
+                {!form.school && (
+                  <p className="text-[10px] mt-1 opacity-50">Select a school first</p>
                 )}
-                {form.department && <p className="text-emerald-500 text-[10px] mt-1 flex items-center gap-1"><CheckCircle2 size={10} /> {form.department}</p>}
+                {showDeptDropdown && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Close department list"
+                      onClick={() => setShowDeptDropdown(false)}
+                      className="fixed inset-0 z-10 cursor-default"
+                    />
+                    <div
+                      className={`absolute z-20 w-full mt-1 rounded-xl border max-h-40 overflow-y-auto shadow-xl ${
+                        dark ? "bg-slate-950 border-white/10" : "bg-white border-slate-200"
+                      }`}
+                    >
+                      <div className="sticky top-0 p-1.5 border-b" style={{ backgroundColor: dark ? "#0f1729" : "#FFFFFF" }}>
+                        <input
+                          type="text"
+                          value={deptSearch}
+                          onChange={(e) => setDeptSearch(e.target.value)}
+                          placeholder="Search departments..."
+                          className={`w-full h-8 px-2.5 rounded-lg border text-xs outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                          autoFocus
+                        />
+                      </div>
+                      {filteredDepartments.length > 0 ? (
+                        filteredDepartments.map((d, i) => (
+                          <button
+                            key={`${d.name}-${i}`}
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, department: d.name, faculty: d.faculty });
+                              setDeptSearch("");
+                              setShowDeptDropdown(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-indigo-500/10 transition text-xs focus-visible:outline-none focus-visible:bg-indigo-500/10"
+                          >
+                            <span className="font-medium">{d.name}</span>
+                            <span className={`${mutedLight} text-[10px] block mt-0.5`}>{d.faculty}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-4 text-center text-xs opacity-60">No departments found</div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {form.department && (
+                  <p className="text-emerald-500 text-[10px] mt-1 flex items-center gap-1">
+                    <CheckCircle2 size={10} /> {form.department}
+                  </p>
+                )}
               </div>
 
               {/* Level */}
               <div>
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">Level</label>
+                <label htmlFor="edit-level" className="block mb-1.5 text-xs font-semibold opacity-80">Level</label>
                 <div className="relative">
-                  <GraduationCap size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-                  <select value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none appearance-none ${inputStyle}`}>
+                  <GraduationCap size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
+                  <select
+                    id="edit-level"
+                    value={form.level}
+                    onChange={(e) => setForm({ ...form, level: e.target.value })}
+                    className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none appearance-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                  >
                     <option value="" disabled>Select level...</option>
-                    {["100", "200", "300", "400", "500", "600"].map(lvl => ( <option key={lvl} value={lvl}>{lvl} Level</option> ))}
+                    {["100", "200", "300", "400", "500", "600"].map((lvl) => (
+                      <option key={lvl} value={lvl}>{lvl} Level</option>
+                    ))}
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
                 </div>
@@ -647,41 +798,82 @@ const Profile = ({
 
               {/* Faculty (readonly, auto-filled from department) */}
               <div>
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">Faculty</label>
+                <label htmlFor="edit-faculty" className="block mb-1.5 text-xs font-semibold opacity-80">Faculty</label>
                 <div className="relative">
-                  <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-                  <input type="text" value={form.faculty} readOnly placeholder="Auto-filled from department" className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none ${inputStyle} opacity-60`} />
+                  <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
+                  <input
+                    id="edit-faculty"
+                    type="text"
+                    value={form.faculty}
+                    readOnly
+                    placeholder="Auto-filled from department"
+                    className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none cursor-not-allowed ${inputStyle} opacity-60`}
+                  />
                 </div>
               </div>
 
               {/* Location */}
               <div className="md:col-span-2">
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">Location (City, State)</label>
+                <label htmlFor="edit-location" className="block mb-1.5 text-xs font-semibold opacity-80">Location (City, State)</label>
                 <div className="relative">
-                  <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" />
-                  <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Lagos, Nigeria" className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none transition-all ${inputStyle}`} />
+                  <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
+                  <input
+                    id="edit-location"
+                    type="text"
+                    value={form.location}
+                    onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    placeholder="e.g. Lagos, Nigeria"
+                    className={`w-full h-10 pl-9 pr-3 rounded-xl text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                  />
                 </div>
               </div>
 
               {/* Bio */}
               <div className="md:col-span-2">
-                <label className="block mb-1.5 text-xs font-semibold opacity-80">Bio</label>
-                <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Tell us a bit about yourself..." rows={3} className={`w-full p-3 rounded-xl text-sm outline-none transition-all resize-none ${inputStyle}`} />
+                <label htmlFor="edit-bio" className="block mb-1.5 text-xs font-semibold opacity-80">Bio</label>
+                <textarea
+                  id="edit-bio"
+                  value={form.bio}
+                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                  placeholder="Tell us a bit about yourself..."
+                  rows={3}
+                  className={`w-full p-3 rounded-xl text-sm outline-none transition-all resize-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${inputStyle}`}
+                />
               </div>
             </div>
+          </div>
 
-            {/* Buttons */}
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setEditOpen(false)} className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-all ${dark ? "border-white/10 text-white hover:bg-white/5" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
-                Cancel
-              </button>
-              <button onClick={handleSave} disabled={saving} className="flex-[2] h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold flex items-center justify-center gap-2 text-sm transition-all disabled:opacity-70 shadow-lg shadow-indigo-500/25">
-                {saving ? <><Loader2 className="animate-spin" size={16} /> Saving...</> : <><Save size={16} /> Save Changes</>}
-              </button>
-            </div>
+          {/* Footer — pinned, always reachable regardless of form length */}
+          <div className={`flex gap-3 px-5 py-4 border-t shrink-0 ${dark ? "border-white/10" : "border-slate-200"}`}>
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              className={`flex-1 h-10 rounded-xl border text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                dark ? "border-white/10 text-white hover:bg-white/5" : "border-slate-200 text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-[2] h-10 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold flex items-center justify-center gap-2 text-sm transition-all disabled:opacity-70 shadow-lg shadow-indigo-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} /> Saving...
+                </>
+              ) : (
+                <>
+                  <Save size={16} /> Save Changes
+                </>
+              )}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 };
