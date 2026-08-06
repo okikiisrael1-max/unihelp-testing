@@ -6,6 +6,9 @@ import {
   MessageCircle,
   Sparkles,
   Trophy,
+  MessageCircleDashedIcon,
+  Users,
+  MessageCircleMore,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -19,20 +22,20 @@ const BottomBar = ({ dark }) => {
     },
 
     {
+      name: "Chat",
+      icon: MessageCircleMore,
+      path: "/messages",
+    },
+
+    {
       name: "Questions",
       icon: FileQuestion,
       path: "/questions",
     },
 
     {
-      name: "Challenge",
-      icon: Trophy,
-      path: "/challenge",
-    },
-
-    {
       name: "Groups",
-      icon: MessageCircle,
+      icon: Users,
       path: "/community",
     },
 
@@ -45,21 +48,13 @@ const BottomBar = ({ dark }) => {
 
   return (
     <>
-      {/* =========================================================
-         SAFE SPACING FOR MOBILE
-      ========================================================= */}
-
       <div className="h-28 md:hidden" />
 
-      {/* =========================================================
-         MOBILE BOTTOM NAV
-      ========================================================= */}
-
-      <div className="md:hidden fixed bottom-0 left-0 z-50 w-full px-3 pb-3">
+      <div className="md:hidden fixed bottom-0 left-0 z-50 w-full">
         <div
           className={`
             relative overflow-hidden
-            rounded-[30px]
+            rounded-t-3xl
             border
             shadow-[0_20px_80px_rgba(0,0,0,0.35)]
             backdrop-blur-3xl
