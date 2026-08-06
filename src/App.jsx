@@ -341,7 +341,7 @@ const App = () => {
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <Profile dark={dark} />
+                  <Profile dark={dark} toggleTheme={() => setDark(!dark)} />
                 </ProtectedRoute>
               }
             />

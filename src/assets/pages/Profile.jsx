@@ -65,6 +65,8 @@ import {
   X,
   Library,
   Layers,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import {
@@ -75,6 +77,7 @@ import { NIGERIAN_UNIVERSITIES, NIGERIAN_POLYTECHNICS, NIGERIAN_COLLEGES_OF_EDUC
 
 const Profile = ({
   dark = false,
+  toggleTheme,
 }) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -340,28 +343,26 @@ const Profile = ({
                 <h1 className="text-xl md:text-3xl font-black tracking-tight">{profile?.username || auth.currentUser?.displayName || "Student Name"}</h1>
                 <p className={`mt-0.5 text-xs font-medium ${muted}`}>@{(profile?.username || auth.currentUser?.displayName || "student").toLowerCase().replace(/\s+/g, '')} • Student</p>
 
+                {/* Academic Pills */}
+                <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start mt-3">
+                  {[profile?.department, profile?.faculty, profile?.school, profile?.level ? `Level ${profile.level}` : ""].filter(Boolean).map((sub, idx) => (
+                    <span key={idx} className={`px-2 py-1 rounded-md text-[10px] font-bold ${dark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>{sub}</span>
+                  ))}
+                  {!profile?.department && !profile?.faculty && (
+                     <span className={`text-[10px] font-medium ${muted}`}>No academic details added yet.</span>
+                  )}
+                </div>
+
                 <div className={`mt-3 space-y-1.5 text-sm font-medium ${muted}`}>
-                  {profile?.school && (
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
-                      <GraduationCap size={16} className="text-indigo-500 shrink-0" />
-                      <span>{profile.school}</span>
-                    </div>
-                  )}
-                  {profile?.department && (
-                    <div className="flex items-center justify-center sm:justify-start gap-2 sm:ml-0">
-                      <Library size={16} className="text-slate-400 shrink-0 opacity-0 hidden sm:block" />
-                      <span className="text-slate-400">{profile.department}</span>
-                    </div>
-                  )}
                   {profile?.location && (
                     <div className="flex items-center justify-center sm:justify-start gap-2">
-                      <MapPin size={16} className="text-indigo-500 shrink-0" />
-                      <span>{profile.location}</span>
+                      <MapPin size={14} className="text-indigo-500 shrink-0" />
+                      <span className="text-[11px]">{profile.location}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Calendar size={14} className="text-indigo-500 shrink-0" />
-                    <span className="text-xs">Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
+                    <span className="text-[11px]">Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
                   </div>
                 </div>
                   <button onClick={() => setEditOpen(true)} className={`mt-3 px-3 py-1.5 rounded-full border font-semibold text-[10px] transition-all flex items-center gap-1 mx-auto sm:mx-0 ${dark ? "border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}>
@@ -370,23 +371,42 @@ const Profile = ({
               </div>
             </div>
 
-            {/* RIGHT - UniHelp Rank */}
-            <div className={`w-full lg:w-72 rounded-[20px] border p-5 ${dark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} shadow-sm shrink-0`}>
-              <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${muted}`}>UniHelp Rank</p>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
-                  <Star size={20} fill="currentColor" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black">{challengeStats?.rank || "Novice"}</h3>
-                </div>
-              </div>
-              <p className={`text-xs ${muted} mb-3 leading-tight`}>Keep learning to unlock more rewards!</p>
+            {/* RIGHT - Rank & Theme */}
+            <div className="flex flex-col gap-3 w-full lg:w-72 shrink-0">
               
-              <div className={`w-full h-1.5 rounded-full overflow-hidden mb-1.5 ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${Math.min(((challengeStats?.xp || 0) % 500) / 500 * 100, 100)}%` }}></div>
+              {/* Theme Toggle */}
+              {toggleTheme && (
+                <div onClick={toggleTheme} className={`cursor-pointer rounded-[16px] border p-3 flex items-center justify-between ${dark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-slate-100 hover:bg-slate-50'} shadow-sm transition-all`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${dark ? 'bg-indigo-500/20 text-yellow-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                      {dark ? <Sun size={14} /> : <Moon size={14} />}
+                    </div>
+                    <span className="text-xs font-bold">{dark ? "Dark Mode" : "Light Mode"}</span>
+                  </div>
+                  <div className={`w-8 h-4 rounded-full p-0.5 flex transition-all ${dark ? 'bg-indigo-500 justify-end' : 'bg-slate-300 justify-start'}`}>
+                    <div className="w-3 h-3 bg-white rounded-full shadow-sm"></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Rank Card */}
+              <div className={`rounded-[20px] border p-5 flex-1 ${dark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} shadow-sm`}>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${muted}`}>UniHelp Rank</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                    <Star size={20} fill="currentColor" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black">{challengeStats?.rank || "Novice"}</h3>
+                  </div>
+                </div>
+                <p className={`text-xs ${muted} mb-3 leading-tight`}>Keep learning to unlock more rewards!</p>
+                
+                <div className={`w-full h-1.5 rounded-full overflow-hidden mb-1.5 ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${Math.min(((challengeStats?.xp || 0) % 500) / 500 * 100, 100)}%` }}></div>
+                </div>
+                <p className={`text-[10px] font-bold text-right ${muted}`}>{((challengeStats?.xp || 0) % 500).toLocaleString()} / 500 XP to next</p>
               </div>
-              <p className={`text-[10px] font-bold text-right ${muted}`}>{((challengeStats?.xp || 0) % 500).toLocaleString()} / 500 XP to next</p>
             </div>
           </div>
         </div>
@@ -449,21 +469,7 @@ const Profile = ({
               </div>
             </div>
 
-            {/* My Academic Info */}
-            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-black text-lg">Academic Focus</h3>
-                <Pencil size={16} className="text-indigo-500 cursor-pointer" onClick={() => setEditOpen(true)} />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[profile?.department, profile?.faculty, profile?.school, profile?.level ? `Level ${profile.level}` : ""].filter(Boolean).map((sub, idx) => (
-                  <span key={idx} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${dark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>{sub}</span>
-                ))}
-                {!profile?.department && !profile?.faculty && (
-                   <span className={`text-sm font-medium ${muted}`}>No academic details added yet.</span>
-                )}
-              </div>
-            </div>
+
 
             {/* Account Settings */}
             <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
