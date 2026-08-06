@@ -11,6 +11,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  sendEmailVerification,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -68,8 +69,17 @@ const Login = ({ dark }) => {
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
       
       if (!credential.user.emailVerified) {
+        try {
+          await sendEmailVerification(credential.user);
+          toast.success("A verification link has been sent to your email. Please verify before logging in.");
+        } catch (verifyErr) {
+          if (verifyErr.code === 'auth/too-many-requests') {
+            toast.error("Too many attempts. Please check your inbox for an existing verification link.");
+          } else {
+            toast.error("Please verify your email before logging in. Check your inbox.");
+          }
+        }
         await signOut(auth);
-        toast.error("Please verify your email before logging in. Check your inbox.");
         setIsLoading(false);
         return;
       }

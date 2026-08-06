@@ -246,14 +246,7 @@ const App = () => {
           <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
           {/* ================= PROFILE ================= */}
 
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile dark={dark} />
-                </ProtectedRoute>
-              }
-            />
+
              <Route
               path="/announcements"
               element={
@@ -341,6 +334,15 @@ const App = () => {
               path="/"
               element={
                   <Dashboard dark={dark} />
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile dark={dark} />
+                </ProtectedRoute>
               }
             />
 

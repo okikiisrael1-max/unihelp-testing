@@ -305,22 +305,7 @@ const Profile = ({
 
       {/* CONTENT */}
       <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-8">
-        {/* TOP BAR */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <button onClick={() => navigate(-1)} className={`${glass} h-10 md:h-12 px-4 md:px-5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] hover:shadow-lg transition-all text-sm md:text-base`}>
-            <ArrowLeft size={18} /> <span className="hidden sm:inline">Back</span>
-          </button>
-
-          <div className="flex gap-2">
-            <button onClick={() => setEditOpen(true)} className="h-10 md:h-12 px-4 md:px-5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all text-white flex items-center gap-2 font-semibold text-sm md:text-base shadow-lg shadow-indigo-500/25">
-              <Edit3 size={16} /> <span className="hidden sm:inline">Edit</span> Profile
-            </button>
-            <button onClick={() => navigate("/messages")} className={`${glass} h-10 md:h-12 px-4 md:px-5 rounded-2xl flex items-center gap-2 hover:scale-[1.02] hover:shadow-lg transition-all text-sm md:text-base`}>
-              <MessageCircle size={18} />
-            </button>
-          </div>
-        </div>
-
+        
         {/* MESSAGE TOAST */}
         {message && (
           <div className="mb-4 animate-slideDown">
@@ -330,323 +315,239 @@ const Profile = ({
           </div>
         )}
 
-        {/* HERO CARD */}
-        <div className={`relative overflow-hidden rounded-[32px] md:rounded-[40px] p-5 md:p-8 lg:p-10 ${glass} mb-6`}>
-          <div className={`absolute inset-0 bg-gradient-to-br ${activeRole.gradient} opacity-[0.07]`} />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-3xl rounded-full" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
+        {/* HERO SECTION */}
+        <div className={`relative overflow-hidden rounded-[24px] md:rounded-[32px] p-6 md:p-8 lg:p-10 ${glass} mb-6 shadow-sm`}>
+          <div className="flex flex-col lg:flex-row gap-8 lg:items-start lg:justify-between">
             {/* LEFT - Avatar & Info */}
-            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+            <div className="flex flex-col sm:flex-row gap-6 lg:gap-8 items-center sm:items-start">
               {/* Avatar */}
               <div className="relative shrink-0">
-                <div className={`w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br ${activeRole.gradient} p-[3px] shadow-2xl`}>
-                  <div className="w-full h-full rounded-full overflow-hidden bg-[#0f172a] flex items-center justify-center text-4xl md:text-5xl font-black text-white">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full p-1 bg-gradient-to-br from-indigo-500 to-purple-500">
+                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center text-4xl font-black text-white" style={{ backgroundColor: dark ? "#0f172a" : "#1e293b" }}>
                     {profile?.photo ? (
                       <img src={profile.photo} alt="profile" className="w-full h-full object-cover" />
-                    ) : initial}
+                    ) : (profile?.username ? profile.username[0].toUpperCase() : "U")}
                   </div>
                 </div>
-                <label className="absolute bottom-1 right-1 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center justify-center cursor-pointer text-white shadow-xl shadow-indigo-500/30">
+                <label className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 transition-all flex items-center justify-center cursor-pointer shadow-lg">
                   {uploading ? <Loader2 className="animate-spin" size={16} /> : <Camera size={16} />}
                   <input type="file" hidden accept="image/*" onChange={handlePhoto} />
                 </label>
               </div>
 
               {/* Info */}
-              <div className="text-center sm:text-left flex-1">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 md:gap-3">
-                  <h1 className="text-3xl md:text-5xl font-black tracking-tight">{profile?.username || "Student"}</h1>
-                  <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center gap-1.5 text-xs font-semibold">
-                    <BadgeCheck size={14} /> Verified
-                  </div>
-                </div>
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl md:text-4xl font-black tracking-tight">{profile?.username || "Student Name"}</h1>
+                <p className={`mt-1 text-sm font-medium ${muted}`}>@{profile?.username?.toLowerCase().replace(/\s+/g, '') || "student"} • Student</p>
 
-                <div className={`flex items-center justify-center sm:justify-start gap-2 mt-2 md:mt-3 ${muted} text-sm`}>
-                  <Mail size={14} />
-                  <span className="break-all">{user?.email}</span>
-                </div>
-
-                {(profile?.school || profile?.department || profile?.level) && (
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
-                    {profile?.school && (
-                      <span className={`px-3 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-500 text-xs font-medium flex items-center gap-1.5`}>
-                        <School size={12} /> {profile.school}
-                      </span>
-                    )}
-                    {profile?.department && (
-                      <span className={`px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-500 text-xs font-medium flex items-center gap-1.5`}>
-                        <Library size={12} /> {profile.department}
-                      </span>
-                    )}
-                    {profile?.level && (
-                      <span className={`px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-500 text-xs font-medium flex items-center gap-1.5`}>
-                        <Layers size={12} /> {profile.level}L
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {profile?.bio && (
-                  <p className={`mt-3 text-sm ${muted} max-w-xl leading-relaxed`}>{profile.bio}</p>
-                )}
-              </div>
-            </div>
-
-            {/* RIGHT - Role Badge */}
-            <div className={`flex items-center gap-3 px-4 md:px-5 py-3 md:py-4 rounded-2xl md:rounded-3xl bg-gradient-to-r ${activeRole.gradient} text-white shadow-xl shrink-0`}>
-              {activeRole.icon}
-              <div className="text-left">
-                <p className="text-[10px] md:text-xs opacity-80">Active Role</p>
-                <h3 className="font-black text-sm md:text-base">{activeRole.label}</h3>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* STATS GRID */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6">
-          {profileStats.map((stat) => (
-            <div key={stat.title} className={`${glass} rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-3 md:gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300`}>
-              <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white shrink-0`}>
-                {React.cloneElement(stat.icon, { size: 20 })}
-              </div>
-              <div className="min-w-0">
-                <p className={`text-[10px] md:text-xs ${muted} truncate`}>{stat.title}</p>
-                <h3 className="text-lg md:text-3xl font-black truncate">{stat.value}</h3>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* TABS */}
-        <div className="flex gap-1.5 md:gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25"
-                  : glass + " hover:scale-[1.02]"
-              }`}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* MAIN CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          {/* LEFT - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* ABOUT SECTION */}
-            {activeTab === "overview" && (
-              <>
-                <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-8`}>
-                  <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-                    <div>
-                      <h2 className="text-2xl md:text-3xl font-black">Account Details</h2>
-                      <p className={`mt-1 text-sm ${muted}`}>Your profile information</p>
+                <div className={`mt-4 space-y-2 text-sm font-medium ${muted}`}>
+                  {profile?.school && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <GraduationCap size={16} className="text-indigo-500 shrink-0" />
+                      <span>{profile.school}</span>
                     </div>
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                      <User2 size={24} />
+                  )}
+                  {profile?.department && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2 sm:ml-0">
+                      <Library size={16} className="text-slate-400 shrink-0 opacity-0 hidden sm:block" />
+                      <span className="text-slate-400">{profile.department}</span>
                     </div>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-3 md:gap-4">
-                    {[
-                      { title: "Username", value: profile?.username || "Not Added", icon: <User2 size={18} />, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-                      { title: "School", value: profile?.school || "Not Added", icon: <School size={18} />, color: "text-green-500", bg: "bg-green-500/10" },
-                      { title: "Department", value: profile?.department || profile?.departmentName || "Not Added", icon: <Library size={18} />, color: "text-orange-500", bg: "bg-orange-500/10" },
-                      { title: "Level", value: profile?.level ? `${profile.level}L` : "Not Added", icon: <Layers size={18} />, color: "text-pink-500", bg: "bg-pink-500/10" },
-                      { title: "Location", value: profile?.location || "Not Added", icon: <MapPin size={18} />, color: "text-cyan-500", bg: "bg-cyan-500/10" },
-                      { title: "Joined", value: auth.currentUser?.metadata?.creationTime?.slice(4, 16) || "2026", icon: <Calendar size={18} />, color: "text-purple-500", bg: "bg-purple-500/10" },
-                    ].map((item, index) => (
-                      <div key={index} className={`${card} rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-3 hover:shadow-lg transition-all`}>
-                        <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color}`}>{item.icon}</div>
-                        <div className="min-w-0">
-                          <p className={`text-xs ${muted}`}>{item.title}</p>
-                          <h3 className="font-bold text-sm md:text-xl mt-0.5 break-words truncate">{item.value}</h3>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </>
-            )}
-
-            {/* ABOUT TAB */}
-            {activeTab === "about" && (
-              <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-8`}>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                    <Pencil size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-black">Bio</h2>
-                    <p className={`text-sm ${muted}`}>Your personal description</p>
-                  </div>
-                </div>
-                <div className={`${card} rounded-2xl md:rounded-3xl p-5 md:p-7`}>
-                  <p className={`leading-relaxed ${profile?.bio ? "" : muted} italic`}>
-                    {profile?.bio || "No bio added yet. Click 'Edit Profile' to add one."}
-                  </p>
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {[
-                    { label: "Groups Created", value: communityStats.created },
-                    { label: "Groups Joined", value: communityStats.joined },
-                    { label: "Community", value: "Active" },
-                  ].map((item, i) => (
-                    <div key={i} className={`${card} rounded-2xl p-4 text-center hover:shadow-lg transition-all`}>
-                      <p className="text-2xl md:text-3xl font-black text-indigo-500">{item.value}</p>
-                      <p className={`text-xs ${muted} mt-1`}>{item.label}</p>
+                  )}
+                  {profile?.location && (
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <MapPin size={16} className="text-indigo-500 shrink-0" />
+                      <span>{profile.location}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ACHIEVEMENTS TAB */}
-            {activeTab === "achievements" && (
-              <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-8`}>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center text-white shadow-lg">
-                    <Trophy size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-black">Achievements</h2>
-                    <p className={`text-sm ${muted}`}>Your learning milestones</p>
+                  )}
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <Calendar size={16} className="text-indigo-500 shrink-0" />
+                    <span>Joined {auth.currentUser?.metadata?.creationTime?.slice(8, 16) || "May 2024"}</span>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {[
-                    { title: "Challenges Done", value: challengeStats?.attempts || 0, icon: <BrainCircuit size={20} />, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-                    { title: "Questions Answered", value: challengeStats?.questionsAnswered || 0, icon: <CheckCircle2 size={20} />, color: "text-green-500", bg: "bg-green-500/10" },
-                    { title: "Accuracy", value: challengeStats?.accuracy ? `${challengeStats.accuracy}%` : "0%", icon: <Star size={20} />, color: "text-yellow-500", bg: "bg-yellow-500/10" },
-                    { title: "Perfect Scores", value: challengeStats?.perfectScores || 0, icon: <Trophy size={20} />, color: "text-orange-500", bg: "bg-orange-500/10" },
-                  ].map((item, i) => (
-                    <div key={i} className={`${card} rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-3 hover:shadow-lg transition-all`}>
-                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color}`}>{item.icon}</div>
-                      <div>
-                        <p className="text-lg md:text-2xl font-black">{item.value}</p>
-                        <p className={`text-xs ${muted}`}>{item.title}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {challengeStats?.rank && (
-                  <div className={`mt-6 ${card} rounded-2xl md:rounded-3xl p-5 flex items-center justify-between`}>
-                    <span className="font-semibold">Current Rank</span>
-                    <span className="text-2xl font-black" style={{ color: getRankColor(challengeStats.rank) }}>{challengeStats.rank}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* SECURITY TAB */}
-            {activeTab === "security" && (
-              <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-8`}>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500">
-                    <ShieldCheck size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-black">Security</h2>
-                    <p className={`text-sm ${muted}`}>Account safety & settings</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    "Email verified",
-                    "Secure authentication",
-                    "Protected account",
-                    "Firebase security rules active",
-                  ].map((item, index) => (
-                    <div key={index} className={`${card} rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg transition-all`}>
-                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-                      <span className="font-medium text-sm md:text-base">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <button onClick={handleLogout} className="mt-6 w-full h-12 md:h-14 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 transition-all text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-500/25">
-                  <LogOut size={18} /> Logout
+                <button onClick={() => setEditOpen(true)} className={`mt-5 px-5 py-2.5 rounded-full border font-semibold text-sm transition-all flex items-center gap-2 mx-auto sm:mx-0 ${dark ? "border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}>
+                  <Edit3 size={16} /> Edit Profile
                 </button>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* RIGHT - Sidebar */}
-          <div className="space-y-6">
-            {/* Premium Card */}
-            <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-6`}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center text-white shadow-lg">
-                  <WalletCards size={24} />
+            {/* RIGHT - UniHelp Rank */}
+            <div className={`w-full lg:w-80 rounded-3xl border p-6 ${dark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'} shadow-sm shrink-0`}>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-4 ${muted}`}>UniHelp Rank</p>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                  <Star size={24} fill="currentColor" />
                 </div>
                 <div>
-                  <h3 className="text-xl md:text-2xl font-black">Premium</h3>
-                  <p className={`text-xs ${muted}`}>Upgrade your experience</p>
+                  <h3 className="text-2xl font-black">{challengeStats?.rank || "Novice"}</h3>
                 </div>
               </div>
-              <div className={`${card} rounded-2xl p-4 md:p-5`}>
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm ${muted}`}>Current Plan</span>
-                  <span className="text-yellow-500 font-bold bg-yellow-500/10 px-3 py-1 rounded-full text-xs">FREE</span>
+              <p className={`text-sm ${muted} mb-4`}>Keep learning to unlock more rewards!</p>
+              
+              <div className={`w-full h-2 rounded-full overflow-hidden mb-2 ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${Math.min(((challengeStats?.xp || 0) % 500) / 500 * 100, 100)}%` }}></div>
+              </div>
+              <p className={`text-xs font-bold text-right ${muted}`}>{((challengeStats?.xp || 0) % 500).toLocaleString()} / 500 XP to next</p>
+            </div>
+          </div>
+        </div>
+
+        {/* STATS STRIP */}
+        <div className={`flex flex-wrap md:flex-nowrap items-center gap-4 md:gap-6 rounded-[24px] p-4 md:p-6 ${glass} mb-6 shadow-sm overflow-x-auto`}>
+          {[
+            { icon: <BookOpen size={20} className="text-indigo-500" />, bg: "bg-indigo-500/10", label: "Uploads", value: profile?.uploadCount || profile?.uploads || profile?.files || "0" },
+            { icon: <CheckCircle2 size={20} className="text-emerald-500" />, bg: "bg-emerald-500/10", label: "Questions Practiced", value: challengeStats?.questionsAnswered?.toLocaleString() || "0" },
+            { icon: <Library size={20} className="text-rose-500" />, bg: "bg-rose-500/10", label: "Accuracy", value: challengeStats?.accuracy ? `${challengeStats.accuracy}%` : "0%" },
+            { icon: <Flame size={20} className="text-orange-500" />, bg: "bg-orange-500/10", label: "Streak", value: challengeStats?.currentStreak ? `${challengeStats.currentStreak}d` : "0d" },
+            { icon: <Layers size={20} className="text-blue-500" />, bg: "bg-blue-500/10", label: "XP Points", value: challengeStats?.xp?.toLocaleString() || "0" },
+          ].map((stat, i) => (
+            <div key={i} className="flex items-center gap-3 min-w-[140px]">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${stat.bg}`}>
+                {stat.icon}
+              </div>
+              <div>
+                <p className={`text-[10px] font-semibold uppercase ${muted}`}>{stat.label}</p>
+                <p className="text-lg font-black">{stat.value}</p>
+              </div>
+            </div>
+          ))}
+          
+          <div className={`ml-auto pl-4 border-l ${dark ? 'border-white/10' : 'border-slate-200'}`}>
+            <button className={`whitespace-nowrap px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${dark ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              View Analytics
+            </button>
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION (2 COLUMNS) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* LEFT COLUMN */}
+          <div className="space-y-6">
+            
+            {/* About Me */}
+            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-black text-lg">About Me</h3>
+                <Pencil size={16} className="text-indigo-500 cursor-pointer" onClick={() => setEditOpen(true)} />
+              </div>
+              <p className={`text-sm ${muted} leading-relaxed mb-6 whitespace-pre-wrap`}>
+                {profile?.bio || "No bio provided. Click the pencil icon to tell us about yourself."}
+              </p>
+              <div className={`space-y-3 text-sm font-medium ${muted}`}>
+                <div className="flex items-center gap-3">
+                  <Mail size={16} className={mutedLight} /> <span>{user?.email || "student@unihelp.com"}</span>
                 </div>
-                <button onClick={() => navigate("/subscription")} className="mt-4 w-full h-11 md:h-13 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-indigo-500/25 text-sm md:text-base">
-                  <Star size={16} /> Upgrade Now
-                </button>
+                {profile?.location && (
+                  <div className="flex items-center gap-3">
+                    <MapPin size={16} className={mutedLight} /> <span>{profile.location}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <Calendar size={16} className={mutedLight} /> <span>Joined {auth.currentUser?.metadata?.creationTime?.slice(4, 16) || "May 12, 2024"}</span>
+                </div>
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-6`}>
-              <h3 className="font-black text-lg md:text-xl mb-4">Quick Stats</h3>
-              <div className="space-y-3">
+            {/* My Academic Info */}
+            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-black text-lg">Academic Focus</h3>
+                <Pencil size={16} className="text-indigo-500 cursor-pointer" onClick={() => setEditOpen(true)} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[profile?.department, profile?.faculty, profile?.school, profile?.level ? `Level ${profile.level}` : ""].filter(Boolean).map((sub, idx) => (
+                  <span key={idx} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${dark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>{sub}</span>
+                ))}
+                {!profile?.department && !profile?.faculty && (
+                   <span className={`text-sm font-medium ${muted}`}>No academic details added yet.</span>
+                )}
+              </div>
+            </div>
+
+            {/* Account Settings */}
+            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
+              <h3 className="font-black text-lg mb-4">Account Settings</h3>
+              <div className="space-y-1">
                 {[
-                  { label: "Role", value: activeRole.label, gradient: activeRole.gradient },
-                  { label: "School Type", value: profile?.schoolType || profile?.universityType || "Not Set" },
-                  { label: "Faculty", value: profile?.faculty || "Not Set" },
+                  { label: "Edit Profile", action: () => setEditOpen(true) },
+                  { label: "Change Password", action: () => {} },
+                  { label: "Notification Preferences", action: () => {} },
+                  { label: "Privacy Settings", action: () => {} },
+                  { label: "Logout", action: handleLogout, color: "text-red-500" },
                 ].map((item, i) => (
-                  <div key={i} className={`${card} rounded-xl md:rounded-2xl p-3 md:p-4 flex items-center justify-between`}>
-                    <span className={`text-xs ${muted}`}>{item.label}</span>
-                    {item.gradient ? (
-                      <span className={`text-xs md:text-sm font-bold bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent`}>{item.value}</span>
-                    ) : (
-                      <span className="text-xs md:text-sm font-bold">{item.value}</span>
-                    )}
+                  <div key={i} onClick={item.action} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'} ${item.color || (dark ? 'text-slate-300' : 'text-slate-700')}`}>
+                    <span className="font-semibold text-sm">{item.label}</span>
+                    <ChevronDown size={16} className="opacity-40 -rotate-90" />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Activity */}
-            <div className={`${glass} rounded-[24px] md:rounded-[36px] p-5 md:p-6`}>
-              <h3 className="font-black text-lg md:text-xl mb-4">Activity</h3>
-              <div className="space-y-2">
+          </div>
+
+          {/* RIGHT COLUMN */}
+          <div className="space-y-6">
+            
+            {/* My Recent Activity */}
+            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-black text-lg">My Recent Activity</h3>
+                <span className="text-indigo-500 text-sm font-bold cursor-pointer hover:text-indigo-600 transition">View All</span>
+              </div>
+              <div className="space-y-5">
                 {[
-                  { label: "Posts", value: "—" },
-                  { label: "Comments", value: "—" },
-                  { label: "Likes", value: "—" },
-                ].map((item, i) => (
-                  <div key={i} className={`${card} rounded-xl p-3 flex items-center justify-between`}>
-                    <span className={`text-xs ${muted}`}>{item.label}</span>
-                    <span className="font-bold text-sm">{item.value}</span>
+                  { icon: <BookOpen size={16} />, bg: "bg-emerald-500/10 text-emerald-500", title: "Saved \"Thermodynamics - Complete Notes.pdf\"", sub: "Lecture Notes", time: "2 hours ago" },
+                  { icon: <Library size={16} />, bg: "bg-rose-500/10 text-rose-500", title: "Watched \"Engineering Mechanics - Full Course\"", sub: "Tutorial Videos", time: "1 day ago" },
+                  { icon: <CheckCircle2 size={16} />, bg: "bg-indigo-500/10 text-indigo-500", title: "Practiced 20 questions on Physics", sub: "Past Questions", time: "2 days ago" },
+                  { icon: <MessageCircle size={16} />, bg: "bg-blue-500/10 text-blue-500", title: "Asked a question to AI Tutor", sub: "AI Tutor", time: "3 days ago" },
+                ].map((act, i) => (
+                  <div key={i} className="flex items-start gap-4 hover:scale-[1.01] transition-transform cursor-default">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${act.bg}`}>
+                      {act.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-slate-800'}`}>{act.title}</p>
+                      <p className={`text-[11px] font-medium ${mutedLight}`}>{act.sub}</p>
+                    </div>
+                    <span className={`text-[11px] font-semibold whitespace-nowrap mt-0.5 ${muted}`}>{act.time}</span>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Badges Earned */}
+            <div className={`rounded-[24px] p-6 md:p-8 ${glass} shadow-sm`}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-black text-lg">Badges Earned</h3>
+                <span className="text-indigo-500 text-sm font-bold cursor-pointer hover:text-indigo-600 transition">View All</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-center">
+                {[
+                  { icon: <Star fill="currentColor" />, bg: "bg-indigo-500/10 text-indigo-500", title: "Consistent", sub: "7-Day Streak" },
+                  { icon: <BookOpen fill="currentColor" />, bg: "bg-cyan-500/10 text-cyan-500", title: "Scholar", sub: "100 Notes" },
+                  { icon: <CheckCircle2 fill="currentColor" />, bg: "bg-purple-500/10 text-purple-500", title: "Quiz Master", sub: "500 Questions" },
+                  { icon: <Library fill="currentColor" />, bg: "bg-rose-500/10 text-rose-500", title: "Video Learner", sub: "50 Videos" },
+                  { icon: <Trophy fill="currentColor" />, bg: "bg-amber-500/10 text-amber-500", title: "Top Contributor", sub: "10 Posts" },
+                ].map((badge, i) => (
+                  <div key={i} className="flex flex-col items-center group cursor-default">
+                    <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center rotate-45 group-hover:rotate-0 transition-all duration-300 mb-4 ${badge.bg} shadow-md`}>
+                      <div className="-rotate-45 group-hover:rotate-0 transition-all duration-300">
+                        {React.cloneElement(badge.icon, { size: 20 })}
+                      </div>
+                    </div>
+                    <p className={`text-[11px] font-bold leading-tight ${dark ? 'text-slate-200' : 'text-slate-800'}`}>{badge.title}</p>
+                    <p className={`text-[9px] font-medium mt-0.5 ${muted}`}>{badge.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
+
 
       {/* ======================== EDIT MODAL ======================== */}
       {editOpen && (
