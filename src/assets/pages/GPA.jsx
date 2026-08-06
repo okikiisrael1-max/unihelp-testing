@@ -29,6 +29,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import gpaIcon from "../images/gpa-icon.jpg";
 
 const GPA = ({ dark }) => {
   const navigate = useNavigate();
@@ -287,10 +288,10 @@ const GPA = ({ dark }) => {
     ? "bg-[#111827] border border-white/10"
     : "bg-white border border-gray-200 shadow-sm";
 
-  const inputClass = `w-full p-3 rounded-xl border outline-none transition text-sm md:text-base ${
+  const inputClass = `w-full p-3.5 rounded-xl border outline-none transition-all text-sm md:text-base font-medium ${
     dark
-      ? "bg-gray-900 border-gray-700 focus:border-indigo-500"
-      : "bg-gray-50 border-gray-300 focus:border-indigo-500"
+      ? "bg-[#1f2937]/50 border-white/10 focus:border-indigo-500 focus:bg-[#1f2937]"
+      : "bg-gray-50 border-gray-200 focus:border-indigo-500 focus:bg-white focus:shadow-md focus:shadow-indigo-500/10"
   }`;
 
   return (
@@ -307,19 +308,25 @@ const GPA = ({ dark }) => {
         </button>
 
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+        <div className="relative mb-8 overflow-hidden rounded-[32px] p-8 md:p-10 bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 text-white shadow-2xl flex flex-col md:flex-row items-center gap-8 md:gap-10">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500 rounded-full blur-[100px] opacity-40 -translate-y-1/2 translate-x-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500 rounded-full blur-[100px] opacity-40 translate-y-1/2 -translate-x-1/3"></div>
 
-          <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-lg text-white">
-            <Calculator size={30} />
+          <div className="relative z-10 w-32 h-32 md:w-40 md:h-40 shrink-0 rounded-[28px] overflow-hidden shadow-2xl shadow-purple-500/20 border border-white/20">
+             <img src={gpaIcon} alt="GPA Calculator" className="w-full h-full object-cover scale-110" />
           </div>
 
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black">
+          <div className="relative z-10 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4">
+              <Sparkles size={14} className="text-purple-300" />
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-100">Live Tracker</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-3">
               GPA Calculator
             </h1>
-
-            <p className="opacity-70 mt-1 text-sm md:text-base">
-              Calculate, analyze and save your GPA
+            <p className="opacity-80 text-sm md:text-base font-medium max-w-md mx-auto md:mx-0">
+              Calculate, analyze and save your semester performance with real-time insights.
             </p>
           </div>
         </div>
@@ -464,7 +471,7 @@ const GPA = ({ dark }) => {
                             onClick={() =>
                               removeCourse(index)
                             }
-                            className="w-12 rounded-xl bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition"
+                            className="w-12 md:w-14 shrink-0 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white hover:shadow-lg hover:shadow-red-500/20 transition-all active:scale-90"
                           >
                             <Trash2Icon size={18} />
                           </button>
@@ -480,15 +487,15 @@ const GPA = ({ dark }) => {
 
                 <button
                   onClick={handleResult}
-                  className="flex-1 px-6 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition"
+                  className="flex-1 px-6 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center justify-center gap-2 transition-all hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98]"
                 >
-                  <Calculator size={18} />
+                  <Calculator size={20} />
                   Calculate GPA
                 </button>
 
                 <button
                   onClick={handleClearAll}
-                  className="flex-1 px-6 py-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold transition"
+                  className="px-6 py-4 rounded-2xl bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 text-red-500 font-bold transition-all active:scale-[0.98]"
                 >
                   Clear All
                 </button>
@@ -526,50 +533,73 @@ const GPA = ({ dark }) => {
           <div className="space-y-5">
 
             {/* SUMMARY */}
-            <div className={`${card} rounded-3xl p-6`}>
-
-              <h2 className="font-bold text-xl flex items-center gap-2 mb-6">
-                <BarChart3 size={20} />
-                Summary
+            <div className={`${card} rounded-3xl p-6 relative overflow-hidden`}>
+              <div className="absolute top-0 right-0 p-32 bg-indigo-500/10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
+              
+              <h2 className="font-bold text-xl flex items-center gap-2 mb-6 relative z-10">
+                <BarChart3 size={20} className="text-indigo-500" />
+                Live Summary
               </h2>
 
-              <div className="space-y-5">
+              <div className="flex items-center justify-center mb-8 relative z-10">
+                <div className="relative w-40 h-40 group">
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-full blur-xl group-hover:bg-indigo-500/10 transition-colors"></div>
+                  <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90 drop-shadow-md">
+                    <path
+                      className={dark ? "text-white/10" : "text-gray-200"}
+                      strokeWidth="3.5"
+                      stroke="currentColor"
+                      fill="none"
+                      strokeLinecap="round"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-indigo-500 transition-all duration-1000 ease-out"
+                      strokeDasharray={`${(gpaValue / 5) * 100}, 100`}
+                      strokeLinecap="round"
+                      strokeWidth="3.5"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-4xl font-black text-indigo-500">{gpaValue}</span>
+                    <span className="text-xs font-bold opacity-50 uppercase tracking-[0.2em] mt-1">GPA</span>
+                  </div>
+                </div>
+              </div>
 
-                <div className="flex justify-between items-center">
-                  <p className="opacity-70">
+              <div className="space-y-3 relative z-10 bg-black/5 dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/5">
+
+                <div className="flex justify-between items-center px-2">
+                  <p className="opacity-70 text-sm font-medium">
                     Total Courses
                   </p>
-
-                  <h3 className="font-black text-2xl">
+                  <h3 className="font-bold text-lg text-indigo-500">
                     {summary.totalCourses}
                   </h3>
                 </div>
+                
+                <div className="h-px w-full bg-black/5 dark:bg-white/5"></div>
 
-                <div className="flex justify-between items-center">
-                  <p className="opacity-70">
+                <div className="flex justify-between items-center px-2">
+                  <p className="opacity-70 text-sm font-medium">
                     Total Units
                   </p>
-
-                  <h3 className="font-black text-2xl">
+                  <h3 className="font-bold text-lg text-indigo-500">
                     {summary.totalUnits}
                   </h3>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <p className="opacity-70">
+                <div className="h-px w-full bg-black/5 dark:bg-white/5"></div>
+
+                <div className="flex justify-between items-center px-2">
+                  <p className="opacity-70 text-sm font-medium">
                     Grade Points
                   </p>
-
-                  <h3 className="font-black text-2xl">
+                  <h3 className="font-bold text-lg text-indigo-500">
                     {summary.totalPoints}
-                  </h3>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <p className="opacity-70">GPA</p>
-
-                  <h3 className="font-black text-3xl text-indigo-500">
-                    {gpaValue}
                   </h3>
                 </div>
               </div>
