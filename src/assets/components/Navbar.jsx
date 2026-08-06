@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Images } from "./../data/data";
 import {
   Bell,
@@ -8,6 +8,8 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import { AuthContext } from "../context/AuthContext";
 import { Link, NavLink } from "react-router-dom";
 import ProBtn from "./ProBtn";
@@ -16,8 +18,36 @@ import ThemeToggle from "./ThemeToggle";
 const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
   const { user } = useContext(AuthContext);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const toggleTheme = () => setDark(!dark);
+
+  /* ------------------------------------------------ */
+  /* LIVE UNREAD NOTIFICATION COUNT */
+  /* ------------------------------------------------ */
+  // Mirrors the "notifications/{uid}/items" + `read` field convention used
+  // in NotificationsCenter.jsx. onSnapshot keeps this live: reading a
+  // notification anywhere in the app (or a new one arriving) updates the
+  // badge immediately, no refresh needed.
+  useEffect(() => {
+    if (!user?.uid) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const unreadQuery = query(
+      collection(db, "notifications", user.uid, "items"),
+      where("read", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(
+      unreadQuery,
+      (snap) => setUnreadCount(snap.size),
+      (err) => console.log(err)
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   const desktopNavItems = useMemo(
     () => [
@@ -152,12 +182,18 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
               <Link
                 to="/notifications"
                 className={`relative flex w-10 h-10 rounded-xl border items-center justify-center transition ${theme.card}`}
-                aria-label="Notifications"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notifications, ${unreadCount} unread`
+                    : "Notifications"
+                }
               >
                 <Bell size={17} />
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  3
-                </span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-indigo-500 px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
               <Link
                 to="/profile"
