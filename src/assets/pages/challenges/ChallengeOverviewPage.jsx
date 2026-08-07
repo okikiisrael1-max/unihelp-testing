@@ -1,103 +1,145 @@
-import React from 'react';
-import { Activity, Flame, Sparkles, ArrowRight } from 'lucide-react';
+import React from "react";
+import {
+  Calendar,
+  Trophy,
+  Library,
+  Layers,
+  Users,
+  Timer,
+  Lightbulb,
+  Globe,
+  Sparkles,
+  ArrowUpRight,
+  Flame,
+  Clock,
+} from "lucide-react";
+import { CATEGORY_TONES } from "../../data/theme";
 
-const ChallengeOverviewPage = ({
-  theme,
-  stats,
-  history,
-  handleStartQuiz,
-  getRankColor,
-  getStatusColor,
-  getCategoryIcon,
-  dark,
-  challengeCategories,
-}) => {
+const ICONS = {
+  calendar: Calendar,
+  trophy: Trophy,
+  library: Library,
+  layers: Layers,
+  users: Users,
+  timer: Timer,
+  lightbulb: Lightbulb,
+  globe: Globe,
+};
+
+const FEATURED_IDS = ["daily", "speed-quiz", "weekly"];
+
+export default function ChallengeOverviewPage({ theme, stats, history, handleStartQuiz, getRankColor, getStatusColor, dark, challengeCategories }) {
+  const featured = challengeCategories.filter((c) => FEATURED_IDS.includes(c.id));
+  const recent = (history || []).slice(0, 5);
+
   return (
-    <>
-      <div className={`relative overflow-hidden rounded-[2rem] p-6 md:p-8 mb-8 border ${
-        dark
-          ? 'bg-linear-to-br from-indigo-950 via-[#0f172a] to-black border-white/10'
-          : 'bg-linear-to-br from-indigo-600 via-violet-600 to-purple-700 border-indigo-400/20 text-white'
-      }`}>
-        <div className="absolute top-0 right-0 opacity-20"><Sparkles size={180} /></div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-4">
-            <Flame size={24} className="text-orange-400" />
-            <span className="text-2xl font-black">{stats?.currentStreak || 0} Day Streak</span>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold uppercase tracking-widest flex items-center gap-2">
+              <Sparkles size={14} className="text-[#6C5CE7]" /> Start a challenge
+            </h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-              <p className="text-xs text-white/70">Total XP</p>
-              <p className="text-2xl font-black">{stats?.xp || 0}</p>
-            </div>
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-              <p className="text-xs text-white/70">Rank</p>
-              <p className="text-2xl font-black" style={{ color: getRankColor(stats?.rank) }}>{stats?.rank || 'Bronze'}</p>
-            </div>
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-              <p className="text-xs text-white/70">Questions</p>
-              <p className="text-2xl font-black">{stats?.questionsAnswered || 0}</p>
-            </div>
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-              <p className="text-xs text-white/70">Accuracy</p>
-              <p className="text-2xl font-black">{stats?.accuracy || 0}%</p>
-            </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {featured.map((cat) => {
+              const Icon = ICONS[cat.icon] || Sparkles;
+              const tone = CATEGORY_TONES[cat.id]?.accent || "#6C5CE7";
+              const tint = CATEGORY_TONES[cat.id]?.tint || "rgba(108,92,231,0.12)";
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => handleStartQuiz(cat)}
+                  className={`text-left ${theme.card} ${theme.cardHover} rounded-3xl p-5 transition-all group relative overflow-hidden`}
+                >
+                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-60 blur-xl" style={{ background: tint }} />
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-4" style={{ background: tint, color: tone }}>
+                      <Icon size={18} />
+                    </div>
+                    <h3 className="font-semibold text-[15px] mb-1">
+                      {cat.title}
+                    </h3>
+                    <p className={`text-xs ${theme.textSoft} mb-4`}>{cat.subtitle}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: tone }}>
+                        Begin
+                      </span>
+                      <ArrowUpRight size={15} className="opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" style={{ color: tone }} />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="mb-8">
-        <h3 className="text-lg font-black mb-4">Quick Challenge</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {challengeCategories.slice(0, 4).map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleStartQuiz(cat)}
-              className={`${theme.card} rounded-[1.5rem] p-4 text-left transition-all hover:-translate-y-1 hover:shadow-lg`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${cat.tone}20`, color: cat.tone }}>
-                  {getCategoryIcon(cat.icon)}
-                </div>
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Clock size={14} className="text-[#6C5CE7]" /> Recent activity
+          </h2>
+          <div className={`${theme.card} rounded-3xl divide-y ${theme.ledgerLine}`}>
+            {recent.length === 0 && (
+              <div className="p-6 text-center">
+                <p className={`text-sm ${theme.textSoft}`}>No attempts yet. Your first entry starts the ledger.</p>
               </div>
-              <h4 className="font-bold text-sm">{cat.title}</h4>
-              <p className={`text-xs ${theme.textSoft} mt-1`}>{cat.subtitle}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={`${theme.card} rounded-[2rem] p-6`}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-lg">Recent Activity</h3>
-          <span className={`text-sm ${theme.textSoft}`}>Latest attempts</span>
-        </div>
-        {history.length === 0 ? (
-          <div className={`${theme.soft} rounded-2xl p-8 text-center`}>
-            <Activity size={40} className="mx-auto mb-3 opacity-50" />
-            <p className={`text-sm ${theme.textSoft}`}>No activity yet. Start a challenge!</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {history.slice(0, 5).map((item) => (
-              <div key={item.id} className={`${theme.soft} rounded-2xl p-3 flex items-center justify-between`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${getStatusColor(item.accuracy)} bg-current/10`}>
-                    {item.accuracy}%
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm capitalize">{item.category} Challenge</p>
-                    <p className={`text-xs ${theme.textSoft}`}>{item.score}/{item.totalQuestions} correct · +{item.xpEarned} XP</p>
-                  </div>
+            )}
+            {recent.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium capitalize truncate">{(item.category || "daily").replace("-", " ")}</p>
+                  <p className={`text-xs ${theme.textSoft}`}>{item.score}/{item.totalQuestions} correct</p>
                 </div>
-                <span className={`text-xs font-bold ${getStatusColor(item.accuracy)}`}>{item.status}</span>
+                <span className={`text-xs font-bold shrink-0 ${getStatusColor(item.accuracy || 0)}`}>
+                  {item.accuracy || 0}%
+                </span>
               </div>
             ))}
           </div>
-        )}
+        </section>
       </div>
-    </>
-  );
-};
 
-export default ChallengeOverviewPage;
+      <aside className="space-y-6">
+        <div className={`${theme.card} rounded-3xl p-6`}>
+          <h3 className="text-sm font-semibold uppercase tracking-widest mb-4">
+            Standing
+          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <span className={`text-xs ${theme.textSoft}`}>Rank</span>
+            <span
+              className="px-3 py-1 rounded-full text-xs font-bold text-[#12182B]"
+              style={{ background: getRankColor(stats?.rank) }}
+            >
+              {stats?.rank || "Bronze"}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: "Longest streak", value: stats?.longestStreak || 0, icon: Flame },
+              { label: "Questions answered", value: stats?.questionsAnswered || 0 },
+              { label: "Total points", value: stats?.totalPoints || 0 },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between">
+                <span className={`text-xs ${theme.textSoft}`}>{row.label}</span>
+                <span className="text-sm font-bold tabular-nums">
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={`${theme.card} rounded-3xl p-6`}>
+          <h3 className="text-sm font-semibold uppercase tracking-widest mb-2">
+            Today
+          </h3>
+          <p className={`text-xs ${theme.textSoft}`}>
+            {stats?.streakDates?.includes(new Date().toISOString().slice(0, 10))
+              ? "You've already logged a challenge today — come back tomorrow to keep the streak alive."
+              : "No entry yet today. One challenge keeps the streak going."}
+          </p>
+        </div>
+      </aside>
+    </div>
+  );
+}

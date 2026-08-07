@@ -1,33 +1,56 @@
-import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import React from "react";
+import { Calendar, Trophy, Library, Layers, Users, Timer, Lightbulb, Globe, Sparkles, ArrowUpRight } from "lucide-react";
+import { CATEGORY_TONES, getTimeLimit } from "../../data/theme";
 
-const ChallengeCategoriesPage = ({ theme, stats, handleStartQuiz, getCategoryIcon, challengeCategories }) => {
+const ICONS = {
+  calendar: Calendar,
+  trophy: Trophy,
+  library: Library,
+  layers: Layers,
+  users: Users,
+  timer: Timer,
+  lightbulb: Lightbulb,
+  globe: Globe,
+};
+
+export default function ChallengeCategoriesPage({ theme, stats, handleStartQuiz, challengeCategories }) {
   return (
     <div>
-      <h2 className="text-2xl font-black mb-2">Challenge Categories</h2>
-      <p className={`${theme.textSoft} mb-6`}>Choose a category to start answering questions</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <p className={`text-sm ${theme.textSoft} mb-5`}>
+        Eight boards, eight disciplines. Each one runs eight questions on its own clock.
+      </p>
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {challengeCategories.map((cat) => {
-          const catStats = stats?.categoryStats?.[cat.id] || {};
+          const Icon = ICONS[cat.icon] || Sparkles;
+          const tone = CATEGORY_TONES[cat.id]?.accent || "#6C5CE7";
+          const tint = CATEGORY_TONES[cat.id]?.tint || "rgba(108,92,231,0.12)";
+          const attempted = stats?.categoryStats?.[cat.id]?.attempted || 0;
+          const correct = stats?.categoryStats?.[cat.id]?.correct || 0;
+          const catAccuracy = attempted ? Math.round((correct / attempted) * 100) : null;
           return (
             <button
               key={cat.id}
               onClick={() => handleStartQuiz(cat)}
-              className={`${theme.card} rounded-[2rem] p-5 text-left transition-all hover:-translate-y-1 hover:shadow-lg`}
+              className={`text-left ${theme.card} ${theme.cardHover} rounded-3xl p-5 transition-all group relative overflow-hidden`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${cat.tone}20`, color: cat.tone }}>
-                  {getCategoryIcon(cat.icon, 24)}
+              <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-60 blur-2xl" style={{ background: tint }} />
+              <div className="relative flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: tint, color: tone }}>
+                  <Icon size={18} />
                 </div>
-                <ArrowRight size={18} className={`${theme.textSoft}`} />
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full" style={{ background: tint, color: tone }}>
+                  {getTimeLimit(cat.id)}s / q
+                </span>
               </div>
-              <h3 className="font-bold text-lg">{cat.title}</h3>
-              <p className={`text-sm ${theme.textSoft} mb-3`}>{cat.subtitle}</p>
-              <div className="flex items-center justify-between">
-                <span className={`text-xs ${theme.textSoft}`}>{cat.questionCount.toLocaleString()} questions</span>
-                {catStats.attempted > 0 && (
-                  <span className="text-xs font-bold text-indigo-500">{catStats.correct}/{catStats.attempted}</span>
-                )}
+              <h3 className="relative font-semibold text-[15px] mb-1">
+                {cat.title}
+              </h3>
+              <p className={`relative text-xs ${theme.textSoft} mb-4`}>{cat.subtitle}</p>
+              <div className="relative flex items-center justify-between">
+                <span className={`text-[11px] ${theme.textFaint}`}>
+                  {catAccuracy !== null ? `${catAccuracy}% best` : "Not attempted"}
+                </span>
+                <ArrowUpRight size={15} className="opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" style={{ color: tone }} />
               </div>
             </button>
           );
@@ -35,6 +58,4 @@ const ChallengeCategoriesPage = ({ theme, stats, handleStartQuiz, getCategoryIco
       </div>
     </div>
   );
-};
-
-export default ChallengeCategoriesPage;
+}
