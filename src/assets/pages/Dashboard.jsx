@@ -731,43 +731,44 @@ const ToolRow = ({ item, theme }) => {
 
 const DailyChallengeBanner = () => {
   return (
-    <section className="mb-10 md:mb-14 overflow-hidden rounded-[28px] bg-gradient-to-r from-indigo-600 via-sky-600 to-emerald-500 text-white shadow-xl shadow-indigo-500/15">
-      <div className="grid gap-5 px-4 py-5 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
-        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 sm:h-14 sm:w-14">
-            <Trophy size={24} />
-          </div>
+    <section className="relative mb-8 md:mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20">
+  <div className="relative z-10 grid gap-6 px-5 pt-7 sm:px-8 sm:pt-9 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
+    <div className="min-w-0">
+      <h2 className=" text-2xl font-bold leading-tight sm:text-4xl">
+        Complete today's challenge, earn XP, and climb the leaderboard.
+      </h2>
 
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold sm:text-xs">
-                <Flame size={13} />
-                Daily Challenge
-              </span>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/85 sm:text-xs">
-                Fresh questions today
-              </span>
-            </div>
+      <p className="mt-2 max-w-sm text-sm leading-6 text-white/80">
+        Keep your streak alive with quick mixed questions, fresh every day.
+      </p>
 
-            <h2 className="max-w-3xl text-xl font-black leading-tight sm:text-2xl lg:text-3xl">
-              Keep your streak alive with today's challenge.
-            </h2>
-
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85">
-              Answer quick mixed questions, earn XP, and climb the leaderboard.
-            </p>
-          </div>
-        </div>
-
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <Link
           to="/challenge"
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950 transition hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:w-fit"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
         >
-          Start Daily
+          Start Today's Challenge
           <ArrowRight size={17} />
         </Link>
+
+        <Link
+          to="/leaderboard"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
+        >
+          <Trophy size={17} />
+          View Leaderboard
+        </Link>
       </div>
-    </section>
+    </div>
+
+    <img
+      src={Images.challengeBannerImage}
+      alt=""
+      aria-hidden="true"
+      className="hidden h-80 w-80 shrink-0 object-contain sm:block md:h-auto md:w-80 lg:h-auto lg:w-90"
+    />
+  </div>
+</section>
   );
 };
 
