@@ -5,7 +5,10 @@ import {
   CalendarDays,
   Clock,
   Download,
+  EllipsisVertical,
   Eraser,
+  Loader2,
+  Menu,
   Plus,
   RefreshCw,
   Save,
@@ -36,6 +39,7 @@ const createEmptyCourse = (index = 0) => ({
 });
 
 const STORAGE_KEY = "unihelp-smart-timetable";
+const SAVED_TIMETABLES_KEY = "unihelp-smart-timetable-saved";
 
 const baseInput = "w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-indigo-500/30";
 
@@ -149,8 +153,8 @@ const drawText = (page, text, options) => {
 function StatCard({ dark, label, value, tone }) {
   const t = themeClasses(dark);
   return (
-    <div className={`rounded-3xl border p-4 ${t.soft}`}>
-      <p className={`text-xs font-bold uppercase ${t.muted}`}>{label}</p>
+    <div className={`rounded-3xl border p-3 ${t.soft}`}>
+      <p className={`text-[10px] font-bold uppercase ${t.muted}`}>{label}</p>
       <p className={`mt-2 text-2xl font-black ${tone || ""}`}>{value}</p>
     </div>
   );
@@ -171,7 +175,7 @@ function CourseEditor({ dark, course, onChange, onRemove }) {
         </button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 grid-cols-2">
         <input className={t.input} value={course.code} onChange={(e) => onChange({ code: e.target.value })} placeholder="Course code" />
         <input className={t.input} value={course.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Course title" />
         <label className="space-y-2">
@@ -256,10 +260,28 @@ export default function SmartTimetableBuilder({ dark = false }) {
   const [courses, setCourses] = useState(getDefaultCourses);
   const [settings, setSettings] = useState(getDefaultSettings);
   const [generated, setGenerated] = useState(() => generateTimetable(getDefaultCourses(), getDefaultSettings()));
+  const [openOptions, setOpenOptions] = useState(false);
   const [notice, setNotice] = useState("");
+  const [hasGenerated, setHasGenerated] = useState(false);
+  const [loadingAction, setLoadingAction] = useState("");
+  const [activeTab, setActiveTab] = useState("Builder");
+  const [savedTimetables, setSavedTimetables] = useState([]);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    const savedPlans = localStorage.getItem(SAVED_TIMETABLES_KEY);
+
+    if (savedPlans) {
+      try {
+        const parsedPlans = JSON.parse(savedPlans);
+        if (Array.isArray(parsedPlans)) {
+          setSavedTimetables(parsedPlans);
+        }
+      } catch {
+        localStorage.removeItem(SAVED_TIMETABLES_KEY);
+      }
+    }
+
     if (!saved) return;
 
     try {
@@ -282,6 +304,11 @@ export default function SmartTimetableBuilder({ dark = false }) {
     return { totalCourses, totalHours, scheduledHours };
   }, [courses, generated]);
 
+  const hasScheduledSessions = useMemo(
+    () => Object.values(generated.grid).some((items) => items.length > 0),
+    [generated.grid]
+  );
+
   const updateCourse = (id, patch) => {
     setCourses((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
   };
@@ -295,14 +322,96 @@ export default function SmartTimetableBuilder({ dark = false }) {
     ]);
   };
 
+  const validatePlan = (planCourses, planSettings) => {
+    const errors = [];
+
+    const validCourses = planCourses.filter(
+      (course) => course.code.trim() && Number(course.lectures) > 0 && Number(course.duration) > 0
+    );
+
+    if (!validCourses.length) {
+      errors.push("Add at least one course with a valid code, lecture count, and duration.");
+    }
+
+    if (Number(planSettings.startHour) >= Number(planSettings.endHour)) {
+      errors.push("Start time must be earlier than the end time.");
+    }
+
+    if (planSettings.useBreak) {
+      const breakStart = Number(planSettings.breakStart);
+      const breakEnd = Number(planSettings.breakEnd);
+
+      if (breakStart >= breakEnd) {
+        errors.push("Break end must be later than the break start.");
+      }
+
+      if (breakStart < Number(planSettings.startHour) || breakEnd > Number(planSettings.endHour)) {
+        errors.push("The break window must fit inside the selected school day.");
+      }
+    }
+
+    return errors;
+  };
+
   const buildTimetable = () => {
-    setGenerated(generateTimetable(courses, settings));
-    setNotice("Timetable generated.");
+    setLoadingAction("generate");
+    try {
+      const errors = validatePlan(courses, settings);
+      if (errors.length > 0) {
+        setHasGenerated(false);
+        setGenerated(generateTimetable([], settings));
+        setNotice(errors[0]);
+        return;
+      }
+
+      const nextGenerated = generateTimetable(courses, settings);
+      setGenerated(nextGenerated);
+      setHasGenerated(true);
+      setNotice(nextGenerated.warnings.length > 0 ? "Timetable generated with warnings." : "Timetable generated.");
+    } catch {
+      setHasGenerated(false);
+      setNotice("Could not generate a timetable. Please try again.");
+    } finally {
+      setLoadingAction("");
+    }
   };
 
   const savePlan = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ courses, settings }));
-    setNotice("Timetable plan saved on this device.");
+    setLoadingAction("save");
+    try {
+      const nextEntry = {
+        id: makeId(),
+        name: `Timetable ${savedTimetables.length + 1}`,
+        courses,
+        settings,
+        createdAt: new Date().toISOString(),
+      };
+      const nextSaved = [nextEntry, ...savedTimetables].slice(0, 8);
+      setSavedTimetables(nextSaved);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ courses, settings }));
+      localStorage.setItem(SAVED_TIMETABLES_KEY, JSON.stringify(nextSaved));
+      setNotice("Timetable saved to your saved list.");
+    } finally {
+      setLoadingAction("");
+    }
+  };
+
+  const loadSavedPlan = (entry) => {
+    const nextCourses = entry.courses || [];
+    const nextSettings = entry.settings || getDefaultSettings();
+    setCourses(nextCourses);
+    setSettings(nextSettings);
+    setGenerated(generateTimetable(nextCourses, nextSettings));
+    setHasGenerated(true);
+    setActiveTab("Builder");
+    setNotice("Saved timetable loaded.");
+  };
+
+  const deleteSavedPlan = (id) => {
+    const nextSaved = savedTimetables.filter((entry) => entry.id !== id);
+    setSavedTimetables(nextSaved);
+    localStorage.setItem(SAVED_TIMETABLES_KEY, JSON.stringify(nextSaved));
+    setNotice("Saved timetable removed.");
   };
 
   const resetPlan = () => {
@@ -311,146 +420,176 @@ export default function SmartTimetableBuilder({ dark = false }) {
     setCourses(nextCourses);
     setSettings(nextSettings);
     setGenerated(generateTimetable(nextCourses, nextSettings));
+    setHasGenerated(false);
     localStorage.removeItem(STORAGE_KEY);
     setNotice("Timetable reset.");
   };
 
   const exportPlan = () => {
-    const rows = ["Day,Start,End,Course,Title,Venue"];
-    DAYS.forEach((day) => {
-      generated.grid[day].forEach((item) => {
-        rows.push(`${day},${formatHour(item.start)},${formatHour(item.end)},${item.code},${item.title},${item.location}`);
+    setLoadingAction("csv");
+    try {
+      const rows = ["Day,Start,End,Course,Title,Venue"];
+      DAYS.forEach((day) => {
+        generated.grid[day].forEach((item) => {
+          rows.push(`${day},${formatHour(item.start)},${formatHour(item.end)},${item.code},${item.title},${item.location}`);
+        });
       });
-    });
 
-    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
-    downloadBlob(blob, "unihelp-timetable.csv");
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+      downloadBlob(blob, "unihelp-timetable.csv");
+      setNotice("Timetable exported as CSV.");
+    } finally {
+      setLoadingAction("");
+    }
   };
 
   const exportPdf = async () => {
-    const pdfDoc = await PDFDocument.create();
-    const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const sessions = DAYS.flatMap((day) => generated.grid[day].map((item) => ({ ...item, day })));
-    let page = pdfDoc.addPage([842, 595]);
-    let y = 545;
+    setLoadingAction("pdf");
+    try {
+      const pdfDoc = await PDFDocument.create();
+      const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const sessions = DAYS.flatMap((day) => generated.grid[day].map((item) => ({ ...item, day })));
+      let page = pdfDoc.addPage([842, 595]);
+      let y = 545;
 
-    drawText(page, "UniHelp Smart Timetable", {
-      x: 40,
-      y,
-      size: 22,
-      font: bold,
-      color: rgb(0.12, 0.16, 0.28),
-    });
-    y -= 28;
-    drawText(page, `School day: ${formatHour(settings.startHour)} - ${formatHour(settings.endHour)}`, {
-      x: 40,
-      y,
-      size: 11,
-      font: regular,
-      color: rgb(0.32, 0.37, 0.46),
-    });
-    y -= 28;
-    drawText(page, `Courses: ${stats.totalCourses}   Needed hours: ${stats.totalHours}   Scheduled hours: ${stats.scheduledHours}`, {
-      x: 40,
-      y,
-      size: 11,
-      font: bold,
-      color: rgb(0.12, 0.16, 0.28),
-    });
-    y -= 34;
-
-    const headers = ["Day", "Time", "Course", "Title", "Venue"];
-    const widths = [110, 120, 90, 320, 130];
-    const xStart = 40;
-    const rowHeight = 24;
-
-    const drawHeader = () => {
-      let x = xStart;
-      headers.forEach((header, index) => {
-        page.drawRectangle({
-          x,
-          y: y - 6,
-          width: widths[index],
-          height: rowHeight,
-          color: rgb(0.93, 0.95, 0.99),
-        });
-        drawText(page, header, { x: x + 8, y: y + 2, size: 10, font: bold, color: rgb(0.12, 0.16, 0.28) });
-        x += widths[index];
+      drawText(page, "UniHelp Smart Timetable", {
+        x: 40,
+        y,
+        size: 22,
+        font: bold,
+        color: rgb(0.12, 0.16, 0.28),
       });
-      y -= rowHeight;
-    };
-
-    drawHeader();
-
-    if (sessions.length === 0) {
-      drawText(page, "No scheduled sessions yet. Add courses and generate a timetable first.", {
-        x: xStart,
-        y: y - 4,
+      y -= 28;
+      drawText(page, `School day: ${formatHour(settings.startHour)} - ${formatHour(settings.endHour)}`, {
+        x: 40,
+        y,
         size: 11,
         font: regular,
-        color: rgb(0.42, 0.47, 0.56),
+        color: rgb(0.32, 0.37, 0.46),
       });
-    } else {
-      sessions.forEach((item) => {
-        if (y < 50) {
-          page = pdfDoc.addPage([842, 595]);
-          y = 545;
-          drawHeader();
-        }
+      y -= 28;
+      drawText(page, `Courses: ${stats.totalCourses}   Needed hours: ${stats.totalHours}   Scheduled hours: ${stats.scheduledHours}`, {
+        x: 40,
+        y,
+        size: 11,
+        font: bold,
+        color: rgb(0.12, 0.16, 0.28),
+      });
+      y -= 34;
 
-        const row = [
-          item.day,
-          `${formatHour(item.start)} - ${formatHour(item.end)}`,
-          item.code,
-          item.title,
-          item.location,
-        ];
+      const headers = ["Day", "Time", "Course", "Title", "Venue"];
+      const widths = [110, 120, 90, 320, 130];
+      const xStart = 40;
+      const rowHeight = 24;
+
+      const drawHeader = () => {
         let x = xStart;
-        row.forEach((value, index) => {
-          const text = String(value || "").slice(0, index === 3 ? 54 : 22);
-          drawText(page, text, { x: x + 8, y: y + 2, size: 9, font: regular, color: rgb(0.18, 0.23, 0.33) });
+        headers.forEach((header, index) => {
+          page.drawRectangle({
+            x,
+            y: y - 6,
+            width: widths[index],
+            height: rowHeight,
+            color: rgb(0.93, 0.95, 0.99),
+          });
+          drawText(page, header, { x: x + 8, y: y + 2, size: 10, font: bold, color: rgb(0.12, 0.16, 0.28) });
           x += widths[index];
         });
         y -= rowHeight;
-      });
-    }
+      };
 
-    const bytes = await pdfDoc.save();
-    downloadBlob(new Blob([bytes], { type: "application/pdf" }), "unihelp-timetable.pdf");
+      drawHeader();
+
+      if (sessions.length === 0) {
+        drawText(page, "No scheduled sessions yet. Add courses and generate a timetable first.", {
+          x: xStart,
+          y: y - 4,
+          size: 11,
+          font: regular,
+          color: rgb(0.42, 0.47, 0.56),
+        });
+      } else {
+        sessions.forEach((item) => {
+          if (y < 50) {
+            page = pdfDoc.addPage([842, 595]);
+            y = 545;
+            drawHeader();
+          }
+
+          const row = [
+            item.day,
+            `${formatHour(item.start)} - ${formatHour(item.end)}`,
+            item.code,
+            item.title,
+            item.location,
+          ];
+          let x = xStart;
+          row.forEach((value, index) => {
+            const text = String(value || "").slice(0, index === 3 ? 54 : 22);
+            drawText(page, text, { x: x + 8, y: y + 2, size: 9, font: regular, color: rgb(0.18, 0.23, 0.33) });
+            x += widths[index];
+          });
+          y -= rowHeight;
+        });
+      }
+
+      const bytes = await pdfDoc.save();
+      downloadBlob(new Blob([bytes], { type: "application/pdf" }), "unihelp-timetable.pdf");
+      setNotice("Timetable exported as PDF.");
+    } catch {
+      setNotice("Could not export the PDF timetable.");
+    } finally {
+      setLoadingAction("");
+    }
   };
 
   return (
     <div className={`min-h-screen md:mt-13 ${t.page}`}>
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
-        <div className={`rounded-3xl border p-5 md:p-8 ${t.panel}`}>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className={`rounded-3xl border relative p-5 md:p-8 ${t.panel}`}>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between ">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-400">
-                <Sparkles size={14} /> Smart Timetable Builder
-              </div>
-              <h1 className="mt-4 text-3xl font-black md:text-5xl">Build a Cleaner Week</h1>
+              <h1 className="mt-4 text-3xl font-black md:text-5xl">Build a <span className="text-indigo-500">Cleaner Week</span></h1>
               <p className={`mt-3 max-w-2xl text-sm leading-7 md:text-base ${t.muted}`}>
                 Add your courses, set simple constraints, and generate a balanced lecture timetable without clashes.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button onClick={buildTimetable} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white">
-                <RefreshCw size={18} /> Generate
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setActiveTab("Builder")}
+                className={`rounded-2xl px-4 py-2 text-sm font-bold ${activeTab === "Builder" ? "bg-indigo-600 text-white" : `${t.soft}`}`}
+              >
+                Builder
               </button>
-              <button onClick={savePlan} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
-                <Save size={18} /> Save
-              </button>
-              <button onClick={exportPlan} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
-                <Download size={18} /> CSV
-              </button>
-              <button onClick={exportPdf} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
-                <Download size={18} /> PDF
+              <button
+                onClick={() => setActiveTab("Saved")}
+                className={`rounded-2xl px-4 py-2 text-sm font-bold ${activeTab === "Saved" ? "bg-indigo-600 text-white" : `${t.soft}`}`}
+              >
+                Saved Timetables
               </button>
             </div>
+            <div className="flex absolute top-2 right-2  items-center gap-3   transition">
+              <span onClick={()=>setOpenOptions(!openOptions)} className="hover:bg-indigo-500/20 rounded-full absolute bg-indigo-500/10 top-2 right-2 w-10 h-10 flex items-center justify-center text-sm font-bold text-slate-400 hover:text-slate-500 cursor-pointer">
+                <EllipsisVertical size={30} className="inline-block" />
+              </span>
+              
+            <div className={`${openOptions ? 'flex' : 'hidden'} flex-col ${dark ? 'bg-slate-800' : 'bg-white'} w-60 gap-3 mt-12 p-4 rounded-2xl shadow-lg absolute right-0 top-0 z-10`}>
+              <button onClick={savePlan} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold  ${t.soft}`}>
+                {loadingAction === "save" ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Timetable
+              </button>
+              <button onClick={exportPlan} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold text-green-500 ${t.soft}`}>
+                {loadingAction === "csv" ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />} Download CSV
+              </button>
+              <button onClick={exportPdf} className={`inline-flex h-12 items-center gap-2 rounded-2xl border px-4 font-bold text-blue-500 ${t.soft}`}>
+                {loadingAction === "pdf" ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />} Download PDF
+              </button>
+            </div>
+            </div>
+            
           </div>
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+          <div className="mt-7 grid gap-2 sm:gap-3 grid-cols-3 justify-center items-center text-center">
             <StatCard dark={dark} label="Courses" value={stats.totalCourses} />
             <StatCard dark={dark} label="Needed hours" value={stats.totalHours} tone="text-sky-400" />
             <StatCard dark={dark} label="Scheduled hours" value={stats.scheduledHours} tone="text-emerald-400" />
@@ -459,6 +598,46 @@ export default function SmartTimetableBuilder({ dark = false }) {
 
         {notice && <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-400">{notice}</div>}
 
+        {activeTab === "Saved" ? (
+          <div className={`mt-6 rounded-3xl border p-5 md:p-6 ${t.panel}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black">Saved Timetables</h2>
+                <p className={`mt-1 text-sm ${t.muted}`}>Reopen any timetable you saved earlier.</p>
+              </div>
+              <Save className="text-indigo-400" size={20} />
+            </div>
+
+            {savedTimetables.length === 0 ? (
+              <div className={`mt-5 rounded-2xl border p-5 text-sm ${t.soft}`}>
+                <p className={t.muted}>You have no saved timetables yet. Save one from the builder to see it here.</p>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {savedTimetables.map((entry) => (
+                  <div key={entry.id} className={`rounded-2xl border p-4 ${t.soft}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black">{entry.name}</p>
+                        <p className={`mt-1 text-xs ${t.muted}`}>
+                          {entry.courses?.filter((course) => course.code?.trim()).length || 0} courses • {entry.settings?.startHour ? formatHour(entry.settings.startHour) : "?"} - {entry.settings?.endHour ? formatHour(entry.settings.endHour) : "?"}
+                        </p>
+                      </div>
+                      <button onClick={() => deleteSavedPlan(entry.id)} className="rounded-xl p-2 text-red-400 hover:bg-red-500/10" aria-label="Delete saved timetable">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <button onClick={() => loadSavedPlan(entry)} className="flex-1 rounded-2xl bg-indigo-600 px-3 py-2 text-sm font-bold text-white">
+                        Load
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="mt-6 grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
           <aside className="space-y-5">
             <div className={`rounded-3xl border p-5 ${t.panel}`}>
@@ -470,7 +649,7 @@ export default function SmartTimetableBuilder({ dark = false }) {
                 <CalendarDays className="text-indigo-400" />
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-5 grid gap-3 grid-cols-2">
                 <label className="space-y-2">
                   <span className={`text-xs font-bold uppercase ${t.muted}`}>Start</span>
                   <select className={t.input} value={settings.startHour} onChange={(e) => setSettings({ ...settings, startHour: e.target.value })}>
@@ -483,7 +662,7 @@ export default function SmartTimetableBuilder({ dark = false }) {
                     {hoursBetween(13, 22).map((hour) => <option key={hour} value={hour}>{formatHour(hour)}</option>)}
                   </select>
                 </label>
-                <label className={`flex items-center justify-between gap-3 rounded-2xl border p-4 sm:col-span-2 ${t.soft}`}>
+                <label className={`flex items-center justify-between gap-3 rounded-2xl border p-4 col-span-2 ${t.soft}`}>
                   <span className="text-sm font-bold">Protect lunch break</span>
                   <input type="checkbox" checked={settings.useBreak} onChange={(e) => setSettings({ ...settings, useBreak: e.target.checked })} />
                 </label>
@@ -501,16 +680,6 @@ export default function SmartTimetableBuilder({ dark = false }) {
                 </label>
               </div>
             </div>
-
-            <div className="flex gap-3">
-              <button onClick={addCourse} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white">
-                <Plus size={18} /> Add Course
-              </button>
-              <button onClick={resetPlan} className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
-                <Eraser size={18} /> Reset
-              </button>
-            </div>
-
             <div className="space-y-4">
               {courses.map((course) => (
                 <CourseEditor
@@ -522,6 +691,21 @@ export default function SmartTimetableBuilder({ dark = false }) {
                 />
               ))}
             </div>
+            <div className="flex gap-3">
+              <button onClick={resetPlan} className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 font-bold ${t.soft}`}>
+                <Eraser size={18}  className={"text-red-500"}/>
+              </button>
+
+              <button onClick={addCourse} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 font-bold text-white">
+                <Plus size={18} /> Add Course
+              </button>
+              
+              <button onClick={buildTimetable} className="inline-flex justify-center flex-1 h-12 items-center gap-2 rounded-2xl bg-green-600 px-4 font-bold text-white">
+                {loadingAction === "generate" ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />} Generate
+              </button>
+            </div>
+
+            
           </aside>
 
           <main className="space-y-5 min-w-0">
@@ -543,14 +727,20 @@ export default function SmartTimetableBuilder({ dark = false }) {
                   <p className={`mt-1 text-sm ${t.muted}`}>Use Generate after changing courses or constraints.</p>
                 </div>
                 <div className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${t.soft}`}>
-                  <Clock size={17} /> {formatHour(settings.startHour)} - {formatHour(settings.endHour)}
+                  <Clock size={20} className="text-green-500"/> {formatHour(settings.startHour)} - {formatHour(settings.endHour)}
                 </div>
               </div>
             </div>
-
-            <TimetableGrid dark={dark} grid={generated.grid} settings={settings} />
+            {hasGenerated && hasScheduledSessions ? (
+              <TimetableGrid dark={dark} grid={generated.grid} settings={settings} />
+            ) : (
+              <div className={`rounded-3xl border p-5 ${t.panel}`}>
+                <p className={`text-sm ${t.muted}`}>No timetable generated yet. Add courses and click Generate.</p>
+              </div>
+            )}
           </main>
         </div>
+        )}
       </div>
     </div>
   );
