@@ -39,7 +39,8 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "../../firebase/config";
-import taskBanner from "../images/task_banner.jpg";
+
+const taskBanner = "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=1000&auto=format&fit=crop";
 
 export default function Tasks({ dark = false }) {
   /* ======================================================

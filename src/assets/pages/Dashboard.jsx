@@ -38,15 +38,14 @@ import { toast } from "react-toastify";
 import { Images } from "../data/data";
 import { allFeatures, featuredFeatureItems, featureSections } from "../data/features";
 
-// Cycle of accent gradients used for the Featured Tools shelf so each
-// card reads as distinct without introducing a new brand color.
-const FEATURED_GRADIENTS = [
-  "from-indigo-500 to-violet-500",
-  "from-sky-500 to-indigo-500",
-  "from-emerald-500 to-teal-500",
-  "from-amber-500 to-orange-500",
-  "from-rose-500 to-pink-500",
-  "from-violet-500 to-fuchsia-500",
+// Array of Unsplash images used for the Featured Tools shelf
+const FEATURED_IMAGES = [
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1501504905252-473c47e087f8?q=80&w=1000&auto=format&fit=crop",
 ];
 
 const Dashboard = ({ dark }) => {
@@ -398,25 +397,35 @@ const Dashboard = ({ dark }) => {
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1 snap-x snap-mandatory">
               {featuredFeatureItems.map((item, i) => {
                 const Icon = item.icon;
-                const gradient = FEATURED_GRADIENTS[i % FEATURED_GRADIENTS.length];
+                const image = FEATURED_IMAGES[i % FEATURED_IMAGES.length];
 
                 return (
                   <Link
                     key={`${item.title}-${i}`}
                     to={item.link}
-                    className={`group relative shrink-0 w-[240px] sm:w-[260px] snap-start rounded-3xl p-5 text-white bg-gradient-to-br ${gradient} overflow-hidden transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white`}
+                    className={`group relative shrink-0 w-[240px] sm:w-[260px] snap-start rounded-3xl p-5 text-white overflow-hidden transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
                   >
-                    <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/15 rounded-full blur-2xl pointer-events-none" />
-                    {Icon && (
-                      <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center mb-8">
-                        <Icon size={20} />
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
+                      style={{ backgroundImage: `url(${image})` }} 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 group-hover:bg-black/50 transition-colors duration-500" />
+                    
+                    <div className="relative z-10 h-full flex flex-col justify-between min-h-[160px]">
+                      <div>
+                        {Icon && (
+                          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-6 border border-white/20 shadow-sm">
+                            <Icon size={18} className="text-white drop-shadow" />
+                          </div>
+                        )}
+                        <h3 className="font-black text-lg leading-tight mb-1.5 drop-shadow-md">{item.title}</h3>
+                        <p className="text-xs leading-5 text-gray-200 line-clamp-2 drop-shadow-md">{item.desc}</p>
                       </div>
-                    )}
-                    <h3 className="font-black text-base leading-tight mb-1.5">{item.title}</h3>
-                    <p className="text-xs leading-5 text-white/85 line-clamp-2">{item.desc}</p>
-                    <div className="flex items-center gap-1 mt-4 text-xs font-bold">
-                      Try it
-                      <ArrowRight size={13} className="transition group-hover:translate-x-1" />
+                      
+                      <div className="flex items-center gap-1 mt-6 text-xs font-bold text-white drop-shadow-md">
+                        Try it
+                        <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+                      </div>
                     </div>
                   </Link>
                 );
