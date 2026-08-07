@@ -1,38 +1,35 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  Calculator,
   Plus,
   Trash2,
   AlertTriangle,
   Save,
   TrendingUp,
+  TrendingDown,
+  Minus,
   Sparkles,
   Target,
   BookOpen,
   BarChart3,
-  ClipboardList,
   History,
-  LineChart as LineChartIcon,
   X,
   Award,
-  ArrowUpRight,
-  GraduationCap,
-  Flame,
   Brain,
-  ChevronRight,
+  Info,
+  CheckCircle2,
+  XCircle,
+  Loader2,
 } from "lucide-react";
 
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
-  AreaChart,
-  Area,
 } from "recharts";
 
 import {
@@ -47,1479 +44,822 @@ import {
 } from "firebase/firestore";
 
 import { auth, db } from "../../firebase/config";
-
 import { onAuthStateChanged } from "firebase/auth";
 
+/* =====================================================
+   PRIMITIVES — one source of truth for every input,
+   button, and field so the tool feels consistent
+   instead of hand-styled per section.
+===================================================== */
+
+const cx = (...args) => args.filter(Boolean).join(" ");
+
+const inputClass = (dark, hasError) =>
+  cx(
+    "w-full h-11 rounded-xl px-3.5 text-sm outline-none border transition-colors",
+    "focus:ring-2 focus:ring-indigo-500/30",
+    dark
+      ? "bg-[#0b1220] border-white/10 placeholder:text-white/25 text-white focus:border-indigo-500"
+      : "bg-white border-gray-200 placeholder:text-gray-400 text-gray-900 focus:border-indigo-500",
+    hasError && "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
+  );
+
+const buttonClass = (dark, variant, size) => {
+  const sizes = {
+    md: "h-11 px-4 text-sm",
+    sm: "h-9 px-3 text-xs",
+    icon: "h-11 w-11 p-0",
+    iconSm: "h-9 w-9 p-0",
+  };
+  const ringOffset = dark ? "focus-visible:ring-offset-[#050816]" : "focus-visible:ring-offset-white";
+  const variants = {
+    primary: "bg-indigo-600 hover:bg-indigo-700 text-white focus-visible:ring-indigo-500",
+    purple: "bg-purple-600 hover:bg-purple-700 text-white focus-visible:ring-purple-500",
+    danger: "bg-rose-600 hover:bg-rose-700 text-white focus-visible:ring-rose-500",
+    dangerGhost: "bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white focus-visible:ring-rose-500",
+    secondary: dark
+      ? "bg-white/[0.06] hover:bg-white/10 text-white focus-visible:ring-white/30"
+      : "bg-gray-100 hover:bg-gray-200 text-gray-900 focus-visible:ring-gray-300",
+    ghost: dark
+      ? "text-white/60 hover:text-white hover:bg-white/5 focus-visible:ring-white/20"
+      : "text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-gray-300",
+  };
+  return cx(
+    "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors",
+    "disabled:opacity-40 disabled:cursor-not-allowed",
+    "focus:outline-none focus-visible:ring-2",
+    ringOffset,
+    sizes[size],
+    variants[variant]
+  );
+};
+
+function Button({ dark, variant = "primary", size = "md", icon: Icon, loading, className, children, ...props }) {
+  return (
+    <button className={cx(buttonClass(dark, variant, size), className)} disabled={loading || props.disabled} {...props}>
+      {loading ? <Loader2 size={16} className="animate-spin shrink-0" /> : Icon ? <Icon size={16} className="shrink-0" /> : null}
+      {children}
+    </button>
+  );
+}
+
+function IconButton({ dark, variant = "ghost", size = "icon", icon: Icon, label, className, ...props }) {
+  return (
+    <button aria-label={label} className={cx(buttonClass(dark, variant, size), className)} {...props}>
+      <Icon size={16} />
+    </button>
+  );
+}
+
+function Field({ dark, label, htmlFor, hideLabel, hint, children }) {
+  return (
+    <div>
+      {label && (
+        <label
+          htmlFor={htmlFor}
+          className={cx(
+            "block text-[11px] font-semibold uppercase tracking-wide mb-1.5",
+            dark ? "text-white/45" : "text-gray-500",
+            hideLabel && "sr-only"
+          )}
+        >
+          {label}
+        </label>
+      )}
+      {children}
+      {hint && <p className={cx("text-xs mt-1.5", dark ? "text-white/35" : "text-gray-400")}>{hint}</p>}
+    </div>
+  );
+}
+
+function TextInput({ dark, error, className, ...props }) {
+  return <input className={cx(inputClass(dark, error), className)} {...props} />;
+}
+
+function NumberInput({ dark, error, suffix, className, ...props }) {
+  return (
+    <div className="relative">
+      <input type="number" aria-invalid={!!error} className={cx(inputClass(dark, error), suffix && "pr-14", className)} {...props} />
+      {suffix && (
+        <span
+          className={cx(
+            "absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-wide pointer-events-none",
+            dark ? "text-white/25" : "text-gray-400"
+          )}
+        >
+          {suffix}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Card({ dark, className, children }) {
+  return (
+    <div
+      className={cx(
+        "rounded-2xl",
+        dark ? "bg-white/[0.04] border border-white/10" : "bg-white border border-gray-200 shadow-sm",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SoftCard({ dark, className, children }) {
+  return (
+    <div
+      className={cx(
+        "rounded-xl",
+        dark ? "bg-white/[0.03] border border-white/5" : "bg-gray-50 border border-gray-100",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHeading({ dark, icon: Icon, tone = "indigo", title, subtitle, action }) {
+  const toneBg = { indigo: "bg-indigo-500/10 text-indigo-500", purple: "bg-purple-500/10 text-purple-500" }[tone];
+  return (
+    <div className="flex items-start justify-between gap-3 mb-5">
+      <div className="flex items-center gap-3 min-w-0">
+        {Icon && <div className={cx("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", toneBg)}><Icon size={18} /></div>}
+        <div className="min-w-0">
+          <h2 className="font-bold text-lg leading-tight truncate">{title}</h2>
+          {subtitle && <p className={cx("text-xs mt-0.5", dark ? "text-white/45" : "text-gray-500")}>{subtitle}</p>}
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+/* =====================================================
+   DATA HELPERS
+===================================================== */
+
+let idSeed = 0;
+const makeId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${idSeed++}`;
+
+const createSemester = () => ({ id: makeId(), name: "", units: "", gpa: "" });
+const createTargetCourse = () => ({ id: makeId(), title: "", unit: "" });
+
+const CLASS_BANDS = [
+  { min: 4.5, label: "First Class", tone: "amber" },
+  { min: 3.5, label: "Second Class Upper", tone: "emerald" },
+  { min: 2.4, label: "Second Class Lower", tone: "sky" },
+  { min: 1.5, label: "Third Class", tone: "orange" },
+  { min: 0, label: "Pass", tone: "rose" },
+];
+
+const TONE = {
+  amber: { text: "text-amber-500", bg: "bg-amber-500/10", bar: "bg-amber-500" },
+  emerald: { text: "text-emerald-500", bg: "bg-emerald-500/10", bar: "bg-emerald-500" },
+  sky: { text: "text-sky-500", bg: "bg-sky-500/10", bar: "bg-sky-500" },
+  orange: { text: "text-orange-500", bg: "bg-orange-500/10", bar: "bg-orange-500" },
+  rose: { text: "text-rose-500", bg: "bg-rose-500/10", bar: "bg-rose-500" },
+};
+
+const getBand = (cgpa) => CLASS_BANDS.find((b) => cgpa >= b.min) ?? CLASS_BANDS[CLASS_BANDS.length - 1];
+const getNextBand = (cgpa) => {
+  const idx = CLASS_BANDS.findIndex((b) => cgpa >= b.min);
+  return idx > 0 ? CLASS_BANDS[idx - 1] : null;
+};
+
+const parseUnits = (v) => {
+  const n = Number(v);
+  return v !== "" && Number.isFinite(n) && n > 0 && n <= 30 ? n : null;
+};
+const parseGpa = (v) => {
+  const n = Number(v);
+  return v !== "" && Number.isFinite(n) && n >= 0 && n <= 5 ? n : null;
+};
+const fmt2 = (n) => (Number.isFinite(n) ? n.toFixed(2) : "0.00");
+
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 const CGPATracker = ({ dark }) => {
-  /* =====================================================
-     STATES
-  ===================================================== */
-
-  const [semesters, setSemesters] =
-    useState([
-      {
-        name: "",
-        units: "",
-        gpa: "",
-      },
-    ]);
-
+  const [semesters, setSemesters] = useState([createSemester()]);
   const [records, setRecords] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
-  const [warning, setWarning] = useState("");
-
-  const [msg, setMsg] = useState("");
-
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
-  const [showSaveModal, setShowSaveModal] =   useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const [predictedGPA, setPredictedGPA] = useState("");
-
   const [predictedUnits, setPredictedUnits] = useState("");
-
-  const [predictedResult, setPredictedResult] = useState("");
+  const [predictedResult, setPredictedResult] = useState(null);
+  const [predictError, setPredictError] = useState("");
 
   const [targetCGPA, setTargetCGPA] = useState("");
+  const [targetCourses, setTargetCourses] = useState([createTargetCourse()]);
+  const [gradeAdvice, setGradeAdvice] = useState(null);
+  const [targetError, setTargetError] = useState("");
 
-  const [targetCourses, setTargetCourses] =  useState([
-      {
-        title: "",
-        unit: "",
-      },
-    ]);
+  const [toasts, setToasts] = useState([]);
 
-  const [gradeAdvice, setGradeAdvice] =   useState([]);
+  const isMounted = useRef(true);
+  useEffect(() => () => { isMounted.current = false; }, []);
 
-  /* =====================================================
-     THEME
-  ===================================================== */
+  const bg = dark ? "bg-[#050816] text-white" : "bg-[#f5f7ff] text-gray-900";
+  const subtle = dark ? "text-white/50" : "text-gray-500";
+  const faint = dark ? "text-white/35" : "text-gray-400";
+  const divider = dark ? "border-white/10" : "border-gray-200";
 
-  const bg = dark
-    ? "bg-[#050816] text-white"
-    : "bg-[#f5f7ff] text-gray-900";
+  /* ---------------- TOASTS ---------------- */
 
-  const card = dark
-    ? "bg-white/[0.04] border border-white/10 backdrop-blur-2xl"
-    : "bg-white border border-gray-200 shadow-sm";
+  const pushToast = useCallback((type, message) => {
+    const id = makeId();
+    setToasts((t) => [...t, { id, type, message }]);
+    setTimeout(() => { if (isMounted.current) setToasts((t) => t.filter((x) => x.id !== id)); }, 3500);
+  }, []);
+  const dismissToast = (id) => setToasts((t) => t.filter((x) => x.id !== id));
 
-  const softCard = dark
-    ? "bg-white/[0.03]"
-    : "bg-gray-50";
+  /* ---------------- SEMESTERS ---------------- */
 
-  const inputClass = `
-  w-full rounded-2xl px-4 py-3.5 outline-none transition-all duration-300 border text-sm
-  ${
-    dark
-      ? "bg-[#0b1220] border-white/10 focus:border-indigo-500 focus:bg-[#101827]"
-      : "bg-white border-gray-200 focus:border-indigo-500"
-  }
-`;
-
-  /* =====================================================
-     SEMESTERS
-  ===================================================== */
-
-  const addSemester = () => {
-    setSemesters([
-      ...semesters,
-      {
-        name: "",
-        units: "",
-        gpa: "",
-      },
-    ]);
-  };
-
-  const removeSemester = (i) => {
-    const updated =
-      semesters.filter(
-        (_, index) =>
-          index !== i
-      );
-
-    setSemesters(
-      updated.length
-        ? updated
-        : [
-            {
-              name: "",
-              units: "",
-              gpa: "",
-            },
-          ]
-    );
-  };
-
-  const updateSemester = (
-    i,
-    field,
-    value
-  ) => {
-    const updated = [
-      ...semesters,
-    ];
-
-    updated[i][field] =
-      value;
-
-    setSemesters(updated);
-  };
-
-  /* =====================================================
-     CALCULATIONS
-  ===================================================== */
-
-  const getTotals = () => {
-    let totalUnits = 0;
-
-    let totalPoints = 0;
-
-    semesters.forEach((s) => {
-      const units =
-        Number(s.units) ||
-        0;
-
-      const gpa =
-        Number(s.gpa) || 0;
-
-      totalUnits += units;
-
-      totalPoints +=
-        units * gpa;
+  const addSemester = () => setSemesters((prev) => [...prev, createSemester()]);
+  const removeSemester = (id) =>
+    setSemesters((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      return updated.length ? updated : [createSemester()];
     });
+  const updateSemester = (id, field, value) =>
+    setSemesters((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
 
-    return {
-      totalUnits,
-      totalPoints,
-    };
-  };
+  /* ---------------- CALCULATIONS ---------------- */
 
-  const calculateCGPA =
-    () => {
-      const {
-        totalUnits,
-        totalPoints,
-      } = getTotals();
+  const validSemesters = useMemo(
+    () => semesters.filter((s) => parseUnits(s.units) != null && parseGpa(s.gpa) != null),
+    [semesters]
+  );
 
-      return totalUnits
-        ? (
-            totalPoints /
-            totalUnits
-          ).toFixed(2)
-        : "0.00";
-    };
+  const totals = useMemo(
+    () =>
+      validSemesters.reduce(
+        (acc, s) => {
+          const units = parseUnits(s.units);
+          const gpa = parseGpa(s.gpa);
+          return { totalUnits: acc.totalUnits + units, totalPoints: acc.totalPoints + units * gpa };
+        },
+        { totalUnits: 0, totalPoints: 0 }
+      ),
+    [validSemesters]
+  );
 
-  /* =====================================================
-     CLASSIFICATION
-  ===================================================== */
+  const cgpa = totals.totalUnits ? totals.totalPoints / totals.totalUnits : 0;
+  const cgpaLabel = fmt2(cgpa);
+  const band = getBand(cgpa);
+  const nextBand = getNextBand(cgpa);
+  const bandTone = TONE[band.tone];
+  const pointsToNext = nextBand ? nextBand.min - cgpa : null;
 
-  const getClassification =
-    (cgpa) => {
-      const value =
-        Number(cgpa);
+  const bestSemesterGpa = useMemo(
+    () => (validSemesters.length ? Math.max(...validSemesters.map((s) => parseGpa(s.gpa))) : null),
+    [validSemesters]
+  );
 
-      if (value >= 4.5)
-        return {
-          text: "First Class",
-          color:
-            "text-yellow-500",
-          emoji: "🏆",
-        };
+  const declineWarning = useMemo(() => {
+    if (validSemesters.length < 2) return "";
+    const last = validSemesters[validSemesters.length - 1];
+    const prev = validSemesters[validSemesters.length - 2];
+    return parseGpa(last.gpa) < parseGpa(prev.gpa) ? "Your most recent semester GPA is lower than the one before it." : "";
+  }, [validSemesters]);
 
-      if (value >= 3.5)
-        return {
-          text: "Second Class Upper",
-          color:
-            "text-green-500",
-          emoji: "🔥",
-        };
+  const canSave = validSemesters.length > 0;
 
-      if (value >= 2.4)
-        return {
-          text: "Second Class Lower",
-          color:
-            "text-blue-500",
-          emoji: "💪",
-        };
+  /* ---------------- PREDICTOR ---------------- */
 
-      if (value >= 1.5)
-        return {
-          text: "Third Class",
-          color:
-            "text-orange-500",
-          emoji: "🙂",
-        };
-
-      return {
-        text: "Pass",
-        color:
-          "text-red-500",
-        emoji: "⚠️",
-      };
-    };
-
-  const classification =
-    getClassification(
-      calculateCGPA()
-    );
-
-  /* =====================================================
-     WARNING
-  ===================================================== */
-
-  useEffect(() => {
-    if (
-      semesters.length < 2
-    ) {
-      setWarning("");
-
+  const predictNextCGPA = () => {
+    setPredictError("");
+    const gpa = parseGpa(predictedGPA);
+    const units = parseUnits(predictedUnits);
+    if (gpa == null || units == null) {
+      setPredictError("Enter a GPA between 0–5 and units between 1–30.");
+      setPredictedResult(null);
       return;
     }
+    setPredictedResult((totals.totalPoints + units * gpa) / (totals.totalUnits + units));
+  };
 
-    const last =
-      semesters[
-        semesters.length -
-          1
-      ];
+  /* ---------------- TARGET PLANNER ---------------- */
 
-    const prev =
-      semesters[
-        semesters.length -
-          2
-      ];
+  const addTargetCourse = () => setTargetCourses((prev) => [...prev, createTargetCourse()]);
+  const removeTargetCourse = (id) =>
+    setTargetCourses((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      return updated.length ? updated : [createTargetCourse()];
+    });
+  const updateTargetCourse = (id, field, value) =>
+    setTargetCourses((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
 
-    if (
-      Number(last.gpa) <
-      Number(prev.gpa)
-    ) {
-      setWarning(
-        "Your GPA dropped compared to the previous semester."
-      );
-    } else {
-      setWarning("");
-    }
-  }, [semesters]);
+  const calculateRequiredGrades = () => {
+    setTargetError("");
+    setGradeAdvice(null);
 
-  /* =====================================================
-     PREDICTOR
-  ===================================================== */
+    const target = parseGpa(targetCGPA);
+    const totalNewUnits = targetCourses.reduce((sum, c) => sum + (parseUnits(c.unit) || 0), 0);
 
-  const predictNextCGPA =
-    () => {
-      const {
-        totalUnits,
-        totalPoints,
-      } = getTotals();
+    if (target == null) return setTargetError("Enter a target CGPA between 0–5.");
+    if (!totalNewUnits) return setTargetError("Add at least one course with a valid unit load.");
 
-      if (
-        !predictedGPA ||
-        !predictedUnits
-      )
-        return;
+    const neededPoints = target * (totals.totalUnits + totalNewUnits);
+    const avg = (neededPoints - totals.totalPoints) / totalNewUnits;
 
-      const gpa =
-        Number(
-          predictedGPA
-        );
+    if (avg > 5) return setTargetError("Not reachable with these units — add more units or lower the target.");
+    if (avg <= 0) return setTargetError("You've already secured this target with your current record.");
 
-      const units =
-        Number(
-          predictedUnits
-        );
+    const getGrade = (gpa) => (gpa >= 4.5 ? "A" : gpa >= 3.5 ? "B" : gpa >= 2.5 ? "C" : gpa >= 1.5 ? "D" : "E");
 
-      const result =
-        (
-          (totalPoints +
-            units * gpa) /
-          (totalUnits +
-            units)
-        ).toFixed(2);
+    setGradeAdvice({
+      avg,
+      courses: targetCourses.filter((c) => parseUnits(c.unit) != null).map((c) => ({ ...c, required: getGrade(avg) })),
+    });
+  };
 
-      setPredictedResult(
-        result
-      );
-    };
+  /* ---------------- FETCH / SAVE / DELETE ---------------- */
 
-  /* =====================================================
-     TARGET PLANNER
-  ===================================================== */
-
-  const addTargetCourse =
-    () => {
-      setTargetCourses([
-        ...targetCourses,
-        {
-          title: "",
-          unit: "",
-        },
-      ]);
-    };
-
-  const removeTargetCourse =
-    (i) => {
-      const updated =
-        targetCourses.filter(
-          (
-            _,
-            index
-          ) =>
-            index !== i
-        );
-
-      setTargetCourses(
-        updated.length
-          ? updated
-          : [
-              {
-                title: "",
-                unit: "",
-              },
-            ]
-      );
-    };
-
-  const updateTargetCourse =
-    (
-      i,
-      field,
-      value
-    ) => {
-      const updated = [
-        ...targetCourses,
-      ];
-
-      updated[i][field] =
-        value;
-
-      setTargetCourses(
-        updated
-      );
-    };
-
-  const calculateRequiredGrades =
-    () => {
-      const {
-        totalUnits,
-        totalPoints,
-      } = getTotals();
-
-      const totalNewUnits =
-        targetCourses.reduce(
-          (sum, c) =>
-            sum +
-            (Number(
-              c.unit
-            ) || 0),
-          0
-        );
-
-      if (
-        !targetCGPA ||
-        !totalNewUnits
-      )
-        return;
-
-      const neededPoints =
-        Number(
-          targetCGPA
-        ) *
-        (totalUnits +
-          totalNewUnits);
-
-      const remaining =
-        neededPoints -
-        totalPoints;
-
-      const avg =
-        remaining /
-        totalNewUnits;
-
-      const getGrade =
-        (gpa) => {
-          if (gpa >= 4.5)
-            return "A";
-
-          if (gpa >= 3.5)
-            return "B";
-
-          if (gpa >= 2.5)
-            return "C";
-
-          if (gpa >= 1.5)
-            return "D";
-
-          return "E";
-        };
-
-      const advice =
-        targetCourses.map(
-          (c) => ({
-            ...c,
-            required:
-              getGrade(avg),
-          })
-        );
-
-      setGradeAdvice(
-        advice
-      );
-    };
-
-  /* =====================================================
-     SAVE
-  ===================================================== */
-
-  const handleSave =
-    async () => {
-      if (
-        !auth.currentUser
-      ) {
-        setMsg(
-          "Login required"
-        );
-
-        return;
-      }
-
-      setSaving(true);
-
-      try {
-        await addDoc(
-          collection(
-            db,
-            "cgpaTracker"
-          ),
-          {
-            userId:
-              auth
-                .currentUser
-                .uid,
-
-            semesters,
-
-            cgpa:
-              calculateCGPA(),
-
-            createdAt:
-              serverTimestamp(),
-          }
-        );
-
-        setMsg(
-          "Saved successfully 🚀"
-        );
-
-        fetchRecords(
-          auth.currentUser
-        );
-      } catch (err) {
-        setMsg(
-          "Error saving"
-        );
-      }
-
-      setSaving(false);
-    };
-
-  /* =====================================================
-     FETCH
-  ===================================================== */
-
-  const fetchRecords =
+  const fetchRecords = useCallback(
     async (user) => {
-      const q = query(
-        collection(
-          db,
-          "cgpaTracker"
-        ),
-
-        where(
-          "userId",
-          "==",
-          user.uid
-        )
-      );
-
-      const snap =
-        await getDocs(q);
-
-      const data =
-        snap.docs.map(
-          (d) => ({
-            id: d.id,
-            ...d.data(),
-          })
-        );
-
-      setRecords(data);
-
-      setLoading(false);
-    };
-
-  /* =====================================================
-     DELETE
-  ===================================================== */
-
-  const handleDelete =
-    async (id) => {
-      await deleteDoc(
-        doc(
-          db,
-          "cgpaTracker",
-          id
-        )
-      );
-
-      setRecords(
-        (
-          prev
-        ) =>
-          prev.filter(
-            (r) =>
-              r.id !== id
-          )
-      );
-    };
-
-  /* =====================================================
-     AUTH
-  ===================================================== */
+      try {
+        const q = query(collection(db, "cgpaTracker"), where("userId", "==", user.uid));
+        const snap = await getDocs(q);
+        const data = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
+        if (isMounted.current) setRecords(data);
+      } catch {
+        if (isMounted.current) pushToast("error", "Couldn't load your saved records.");
+      } finally {
+        if (isMounted.current) setLoading(false);
+      }
+    },
+    [pushToast]
+  );
 
   useEffect(() => {
-    const unsub =
-      onAuthStateChanged(
-        auth,
-        (user) => {
-          if (user)
-            fetchRecords(
-              user
-            );
-          else
-            setLoading(
-              false
-            );
-        }
-      );
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) fetchRecords(user);
+      else setLoading(false);
+    });
+    return () => unsub();
+  }, [fetchRecords]);
 
-    return () =>
-      unsub();
-  }, []);
+  const handleSave = async () => {
+    if (!auth.currentUser) return pushToast("error", "Log in to save your CGPA record.");
+    if (!canSave) return pushToast("error", "Add at least one complete semester before saving.");
+
+    setSaving(true);
+    try {
+      await addDoc(collection(db, "cgpaTracker"), {
+        userId: auth.currentUser.uid,
+        semesters: validSemesters.map(({ name, units, gpa }, i) => ({
+          name: name.trim() || `Semester ${i + 1}`,
+          units: parseUnits(units),
+          gpa: parseGpa(gpa),
+        })),
+        cgpa: cgpaLabel,
+        createdAt: serverTimestamp(),
+      });
+      pushToast("success", "CGPA record saved.");
+      await fetchRecords(auth.currentUser);
+      if (isMounted.current) setShowSaveModal(false);
+    } catch {
+      pushToast("error", "Something went wrong while saving. Try again.");
+    } finally {
+      if (isMounted.current) setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setDeleting(id);
+    try {
+      await deleteDoc(doc(db, "cgpaTracker", id));
+      if (isMounted.current) {
+        setRecords((prev) => prev.filter((r) => r.id !== id));
+        pushToast("success", "Record deleted.");
+      }
+    } catch {
+      pushToast("error", "Couldn't delete this record.");
+    } finally {
+      if (isMounted.current) {
+        setDeleting(null);
+        setConfirmDeleteId(null);
+      }
+    }
+  };
+
+  const chartData = useMemo(() => records.map((r, i) => ({ name: `#${i + 1}`, cgpa: Number(r.cgpa) })), [records]);
+  const trend = useMemo(() => {
+    if (records.length < 2) return null;
+    return Number(records[records.length - 1].cgpa) - Number(records[records.length - 2].cgpa);
+  }, [records]);
+
+  useEffect(() => {
+    if (!showSaveModal && !confirmDeleteId) return;
+    const onKey = (e) => { if (e.key === "Escape") { setShowSaveModal(false); setConfirmDeleteId(null); } };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prevOverflow; };
+  }, [showSaveModal, confirmDeleteId]);
 
   /* =====================================================
-     CHART DATA
-  ===================================================== */
-
-  const chartData =
-    records.map(
-      (
-        item,
-        index
-      ) => ({
-        name: `#${index + 1}`,
-        cgpa: Number(
-          item.cgpa
-        ),
-      })
-    );
-
-  /* =====================================================
-     UI
+     RENDER
   ===================================================== */
 
   return (
-    <div
-      className={`min-h-screen md:pt-20 w-full ${bg}`}
-    >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10">
+    <div className={`min-h-screen md:mb-20 w-full ${bg}`}>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-28 lg:pb-8 space-y-5 md:space-y-6">
 
-        {/* HERO */}
+        {/* TOOLBAR */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight truncate">CGPA Tracker</h1>
+            <p className={cx("text-sm mt-0.5", subtle)}>Log semesters, track trend, plan target grades</p>
+          </div>
+          <Button dark={dark} variant="primary" icon={Save} disabled={!canSave} onClick={() => setShowSaveModal(true)} className="hidden lg:inline-flex shrink-0">
+            Save Record
+          </Button>
+        </div>
 
-        <div
-          className={`${card} overflow-hidden rounded-4xl p-6 md:p-10 relative`}
-        >
-          <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-transparent to-purple-500/10" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-
-            <div className="max-w-2xl">
-
-              <h1 className="text-4xl md:text-6xl font-black leading-tight">
-                Track Your
-                <span className="text-indigo-500">
-                  {" "} CGPA </span>{" "}  Like a Pro
-              </h1>
-
-              <p className="opacity-70 mt-5 text-base md:text-lg leading-relaxed">
-                Predict future results, monitor academic growth, plan target grades, and save your progress beautifully.
-              </p>
-
-              <div className="flex flex-wrap gap-3 mt-7">
-
-                <button onClick={() =>setShowSaveModal(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center gap-2 transition">
-                  <Save size={18} />
-                  Save Record
-                </button>
-
-                <button className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5 font-semibold flex items-center gap-2">
-                  <Sparkles size={18}/> AI Insights
-                </button>
+        {/* SUMMARY */}
+        <Card dark={dark} className="p-5 md:p-6">
+          <div className="grid lg:grid-cols-[auto_1fr] gap-6 lg:gap-10 lg:items-center">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div>
+                <p className={cx("text-[11px] font-semibold uppercase tracking-wide", faint)}>Current CGPA</p>
+                <p className="text-5xl sm:text-6xl font-black mt-1 tabular-nums text-indigo-500 leading-none">{cgpaLabel}</p>
+              </div>
+              <div className={cx("h-12 w-px hidden sm:block", dark ? "bg-white/10" : "bg-gray-200")} />
+              <div className="space-y-2">
+                <span className={cx("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold", bandTone.bg, bandTone.text)}>
+                  {band.label}
+                </span>
+                {trend != null && (
+                  <div className={cx("flex items-center gap-1 text-xs font-medium", trend > 0 ? "text-emerald-500" : trend < 0 ? "text-rose-500" : faint)}>
+                    {trend > 0 ? <TrendingUp size={14} /> : trend < 0 ? <TrendingDown size={14} /> : <Minus size={14} />}
+                    {trend === 0 ? "No change" : `${trend > 0 ? "+" : ""}${trend.toFixed(2)} since last save`}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* CGPA CIRCLE */}
-
-            <div className="relative flex justify-center">
-
-              <div className="w-52 h-52 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 p-3 shadow-[0_0_80px_rgba(99,102,241,0.4)]">
-
+            <div>
+              <div className="flex justify-between items-baseline mb-2 gap-2">
+                <p className={cx("text-[11px] font-semibold uppercase tracking-wide", faint)}>Classification scale</p>
+                {nextBand && <p className="text-xs font-medium text-indigo-500 whitespace-nowrap">{pointsToNext.toFixed(2)} to {nextBand.label}</p>}
+              </div>
+              <div className="relative h-2.5 rounded-full overflow-hidden flex">
+                {[...CLASS_BANDS].reverse().map((b, i, arr) => {
+                  const upper = i === arr.length - 1 ? 5 : arr[i + 1].min;
+                  return <div key={b.label} className={cx(TONE[b.tone].bar, "opacity-70")} style={{ width: `${((upper - b.min) / 5) * 100}%` }} />;
+                })}
                 <div
-                  className={`w-full h-full rounded-full flex flex-col items-center justify-center ${
-                    dark
-                      ? "bg-[#050816]"
-                      : "bg-white"
-                  }`}
-                >
-                  <p className="text-sm opacity-60">
-                    Current CGPA
-                  </p>
-
-                  <h1 className="text-7xl font-black mt-2 text-indigo-500">
-                    {calculateCGPA()}
-                  </h1>
-
-                  <div
-                    className={`mt-4 px-5 py-2 rounded-full text-sm font-semibold ${classification.color} bg-white/5`}
-                  >
-                    {
-                      classification.emoji
-                    }{" "}
-                    {
-                      classification.text
-                    }
-                  </div>
-                </div>
+                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-indigo-600 shadow"
+                  style={{ left: `calc(${Math.min(100, (cgpa / 5) * 100)}% - 7px)` }}
+                  aria-hidden
+                />
+              </div>
+              <div className="grid grid-cols-5 mt-2 text-center text-[10px] font-medium uppercase tracking-wide">
+                {["Pass", "3rd", "2:2", "2:1", "1st"].map((l) => <span key={l} className={faint}>{l}</span>)}
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* STATS */}
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
           {[
-            {
-              label:
-                "Semesters",
-              value:
-                semesters.length,
-              icon: BookOpen,
-            },
-
-            {
-              label:
-                "Total Units",
-              value:
-                getTotals()
-                  .totalUnits,
-              icon: Award,
-            },
-
-            {
-              label:
-                "Classification",
-              value:
-                classification.text,
-              icon: Flame,
-            },
-
-            {
-              label:
-                "Performance",
-              value:
-                calculateCGPA(),
-              icon:
-                TrendingUp,
-            },
-          ].map(
-            (
-              item,
-              index
-            ) => (
-              <div
-                key={index}
-                className={`${card} rounded-[1.7rem] p-5`}
-              >
-                <div className="flex justify-between items-start">
-
-                  <div>
-                    <p className="text-sm opacity-60">
-                      {
-                        item.label
-                      }
-                    </p>
-
-                    <h2 className="text-2xl font-black mt-3">
-                      {
-                        item.value
-                      }
-                    </h2>
-                  </div>
-
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                    <item.icon
-                      size={22}
-                    />
-                  </div>
+            { label: "Total Units", value: totals.totalUnits || "—", icon: Award },
+            { label: "Semesters Logged", value: validSemesters.length, icon: BookOpen },
+            { label: "Best Semester GPA", value: bestSemesterGpa != null ? fmt2(bestSemesterGpa) : "—", icon: TrendingUp },
+            { label: "Saved Records", value: records.length, icon: History },
+          ].map((item) => (
+            <Card key={item.label} dark={dark} className="p-4">
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0">
+                  <p className={cx("text-xs truncate", subtle)}>{item.label}</p>
+                  <h2 className="text-xl font-bold mt-1.5 tabular-nums">{item.value}</h2>
+                </div>
+                <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                  <item.icon size={16} />
                 </div>
               </div>
-            )
-          )}
+            </Card>
+          ))}
         </div>
 
-        {/* MAIN */}
-
-        <div className="grid xl:grid-cols-3 gap-6 mt-6">
+        {/* MAIN GRID */}
+        <div className="grid lg:grid-cols-3 gap-5 md:gap-6">
 
           {/* LEFT */}
-
-          <div className="xl:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-5 md:space-y-6">
 
             {/* SEMESTERS */}
+            <Card dark={dark} className="p-4 sm:p-5 md:p-6">
+              <SectionHeading
+                dark={dark}
+                title="Semester Records"
+                subtitle="Units 1–30 · GPA 0.00–5.00"
+                action={<Button dark={dark} variant="primary" size="sm" icon={Plus} onClick={addSemester}>Add</Button>}
+              />
 
-            <div
-              className={`${card} rounded-4xl p-5 md:p-7`}
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-
-                <div>
-                  <h2 className="text-2xl font-black">
-                    Semester Records
-                  </h2>
-
-                  <p className="opacity-60 mt-1">
-                    Add all semester
-                    GPA records
-                  </p>
-                </div>
-
-                <button
-                  onClick={
-                    addSemester
-                  }
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl flex items-center gap-2 font-semibold"
-                >
-                  <Plus
-                    size={18}
-                  />
-                  Add Semester
-                </button>
+              {/* column headers — desktop only, mirrors the row grid exactly */}
+              <div className={cx("hidden md:grid grid-cols-[1fr_104px_112px_44px] gap-3 px-1 mb-2 text-[11px] font-semibold uppercase tracking-wide", faint)}>
+                <span>Semester</span>
+                <span>Units</span>
+                <span>GPA</span>
+                <span aria-hidden />
               </div>
 
-              <div className="space-y-4">
-
-                {semesters.map(
-                  (
-                    s,
-                    i
-                  ) => (
-                    <div
-                      key={i}
-                      className={`${softCard} rounded-[1.7rem] p-5 border ${
-                        dark
-                          ? "border-white/5"
-                          : "border-gray-200"
-                      }`}
-                    >
-                      <div className="grid md:grid-cols-12 gap-4">
-
-                        <div className="md:col-span-5">
-                          <p className="text-xs opacity-60 mb-2">
-                            Semester
-                          </p>
-
-                          <input
-                            value={
-                              s.name
-                            }
-                            onChange={(
-                              e
-                            ) =>
-                              updateSemester(
-                                i,
-                                "name",
-                                e
-                                  .target
-                                  .value
-                              )
-                            }
-                            placeholder="First Semester"
-                            className={
-                              inputClass
-                            }
+              <div className="space-y-2.5">
+                {semesters.map((s, i) => {
+                  const unitsInvalid = s.units !== "" && parseUnits(s.units) == null;
+                  const gpaInvalid = s.gpa !== "" && parseGpa(s.gpa) == null;
+                  return (
+                    <SoftCard key={s.id} dark={dark} className="p-3.5">
+                      <div className="grid md:grid-cols-[1fr_104px_112px_44px] gap-3 md:items-start">
+                        <Field dark={dark} label="Semester" htmlFor={`sem-name-${s.id}`} hideLabel={true}>
+                          <TextInput
+                            dark={dark}
+                            id={`sem-name-${s.id}`}
+                            value={s.name}
+                            onChange={(e) => updateSemester(s.id, "name", e.target.value)}
+                            placeholder={`Semester ${i + 1}`}
                           />
-                        </div>
+                        </Field>
 
-                        <div className="md:col-span-3">
-                          <p className="text-xs opacity-60 mb-2">
-                            Units
-                          </p>
-
-                          <input
-                            type="number"
-                            value={
-                              s.units
-                            }
-                            onChange={(
-                              e
-                            ) =>
-                              updateSemester(
-                                i,
-                                "units",
-                                e
-                                  .target
-                                  .value
-                              )
-                            }
+                        <Field dark={dark} label="Units" htmlFor={`sem-units-${s.id}`} hideLabel={true}>
+                          <NumberInput
+                            dark={dark}
+                            id={`sem-units-${s.id}`}
+                            min="1" max="30"
+                            value={s.units}
+                            onChange={(e) => updateSemester(s.id, "units", e.target.value)}
                             placeholder="24"
-                            className={
-                              inputClass
-                            }
+                            suffix="UNITS"
+                            error={unitsInvalid}
                           />
-                        </div>
+                        </Field>
 
-                        <div className="md:col-span-3">
-                          <p className="text-xs opacity-60 mb-2">
-                            GPA
-                          </p>
-
-                          <input
-                            type="number"
-                            value={
-                              s.gpa
-                            }
-                            onChange={(
-                              e
-                            ) =>
-                              updateSemester(
-                                i,
-                                "gpa",
-                                e
-                                  .target
-                                  .value
-                              )
-                            }
+                        <Field dark={dark} label="GPA" htmlFor={`sem-gpa-${s.id}`} hideLabel={true}>
+                          <NumberInput
+                            dark={dark}
+                            id={`sem-gpa-${s.id}`}
+                            min="0" max="5" step="0.01"
+                            value={s.gpa}
+                            onChange={(e) => updateSemester(s.id, "gpa", e.target.value)}
                             placeholder="4.50"
-                            className={
-                              inputClass
-                            }
+                            error={gpaInvalid}
                           />
-                        </div>
+                        </Field>
 
-                        <div className="md:col-span-1 flex items-end">
-                          <button
-                            onClick={() =>
-                              removeSemester(
-                                i
-                              )
-                            }
-                            className="w-full h-13 rounded-2xl bg-red-500 hover:bg-red-600 text-white flex items-center justify-center"
-                          >
-                            <Trash2
-                              size={
-                                18
-                              }
-                            />
-                          </button>
-                        </div>
+                        <IconButton dark={dark} variant="dangerGhost" icon={Trash2} label="Remove semester" onClick={() => removeSemester(s.id)} className="w-full md:w-11" />
                       </div>
-                    </div>
-                  )
-                )}
+
+                      {(unitsInvalid || gpaInvalid) && (
+                        <p className="text-xs text-rose-500 mt-2.5 flex items-center gap-1.5">
+                          <AlertTriangle size={12} className="shrink-0" />
+                          {unitsInvalid ? "Units must be 1–30. " : ""}{gpaInvalid ? "GPA must be 0.00–5.00." : ""}
+                        </p>
+                      )}
+                    </SoftCard>
+                  );
+                })}
               </div>
 
-              {warning && (
-                <div className="mt-6 p-4 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-400 flex items-center gap-2">
-                  <AlertTriangle
-                    size={18}
-                  />
-                  {warning}
+              {declineWarning && (
+                <div className="mt-4 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-500 flex items-center gap-2 text-sm">
+                  <AlertTriangle size={16} className="shrink-0" />
+                  {declineWarning}
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* CHART */}
+            <Card dark={dark} className="p-4 sm:p-5 md:p-6">
+              <SectionHeading dark={dark} title="Performance Trend" subtitle="CGPA across your saved records" />
 
-            <div
-              className={`${card} rounded-4xl p-6`}
-            >
-              <div className="flex items-center justify-between mb-6">
-
-                <div>
-                  <h2 className="text-2xl font-black">
-                    Performance Trend
-                  </h2>
-
-                  <p className="opacity-60 text-sm mt-1">
-                    Your academic
-                    progress over
-                    time
-                  </p>
-                </div>
-
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                  <LineChartIcon
-                    size={22}
-                  />
-                </div>
-              </div>
-
-              {chartData.length ===
-              0 ? (
-                <div className="h-72 flex items-center justify-center opacity-50">
-                  No chart data
+              {loading ? (
+                <div className={cx("h-64 rounded-xl animate-pulse", dark ? "bg-white/5" : "bg-gray-100")} />
+              ) : chartData.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center gap-2 text-center">
+                  <History className={faint} size={26} />
+                  <p className={cx("text-sm", subtle)}>Save a record to start tracking your trend.</p>
                 </div>
               ) : (
-                <div className="w-full h-80">
-
-                  <ResponsiveContainer
-                    width="100%"
-                    height="100%"
-                  >
-                    <AreaChart
-                      data={
-                        chartData
-                      }
-                    >
+                <div className="w-full h-64 sm:h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                       <defs>
-                        <linearLinear
-                          id="color"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="#6366f1"
-                            stopOpacity={
-                              0.5
-                            }
-                          />
-
-                          <stop
-                            offset="95%"
-                            stopColor="#6366f1"
-                            stopOpacity={
-                              0
-                            }
-                          />
-                        </linearLinear>
+                        <linearGradient id="cgpaFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.45} />
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        </linearGradient>
                       </defs>
-
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke={
-                          dark
-                            ? "#374151"
-                            : "#e5e7eb"
-                        }
+                      <CartesianGrid strokeDasharray="3 3" stroke={dark ? "#252b3b" : "#e5e7eb"} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 12, opacity: 0.6 }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0, 5]} tick={{ fontSize: 12, opacity: 0.6 }} axisLine={false} tickLine={false} width={30} />
+                      <Tooltip
+                        formatter={(v) => [Number(v).toFixed(2), "CGPA"]}
+                        contentStyle={{ background: dark ? "#0b1220" : "#fff", border: dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e5e7eb", borderRadius: 12, fontSize: 13 }}
                       />
-
-                      <XAxis dataKey="name" />
-
-                      <YAxis
-                        domain={[
-                          0,
-                          5,
-                        ]}
-                      />
-
-                      <Tooltip />
-
-                      <Area
-                        type="monotone"
-                        dataKey="cgpa"
-                        stroke="#6366f1"
-                        fillOpacity={
-                          1
-                        }
-                        fill="url(#color)"
-                        strokeWidth={
-                          4
-                        }
-                      />
+                      <Area type="monotone" dataKey="cgpa" stroke="#6366f1" strokeWidth={3} fill="url(#cgpaFill)" dot={{ r: 3, fill: "#6366f1" }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* RIGHT */}
-
-          <div className="space-y-6">
+          <div className="space-y-5 md:space-y-6">
 
             {/* PREDICTOR */}
+            <Card dark={dark} className="p-4 sm:p-5 md:p-6">
+              <SectionHeading dark={dark} icon={Brain} title="Predictor" subtitle="CGPA after next semester" />
 
-            <div
-              className={`${card} rounded-4xl p-6`}
-            >
-              <div className="flex items-center gap-3 mb-6">
-
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                  <Brain
-                    size={22}
-                  />
-                </div>
-
-                <div>
-                  <h2 className="font-black text-xl">
-                    Predictor
-                  </h2>
-
-                  <p className="text-sm opacity-60">
-                    Predict future
-                    CGPA
-                  </p>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field dark={dark} label="Expected GPA" htmlFor="pred-gpa">
+                  <NumberInput dark={dark} id="pred-gpa" min="0" max="5" step="0.01" value={predictedGPA} onChange={(e) => setPredictedGPA(e.target.value)} placeholder="4.20" />
+                </Field>
+                <Field dark={dark} label="Expected Units" htmlFor="pred-units">
+                  <NumberInput dark={dark} id="pred-units" min="1" max="30" value={predictedUnits} onChange={(e) => setPredictedUnits(e.target.value)} placeholder="21" suffix="UNITS" />
+                </Field>
               </div>
 
-              <div className="space-y-4">
+              {predictError && <p className="text-xs text-rose-500 flex items-center gap-1.5 mt-3"><AlertTriangle size={12} className="shrink-0" />{predictError}</p>}
 
-                <input
-                  type="number"
-                  value={
-                    predictedGPA
-                  }
-                  onChange={(e) =>
-                    setPredictedGPA(
-                      e.target
-                        .value
-                    )
-                  }
-                  placeholder="Expected GPA"
-                  className={
-                    inputClass
-                  }
-                />
+              <Button dark={dark} variant="primary" icon={Sparkles} onClick={predictNextCGPA} className="w-full mt-4">Predict</Button>
 
-                <input
-                  type="number"
-                  value={
-                    predictedUnits
-                  }
-                  onChange={(e) =>
-                    setPredictedUnits(
-                      e.target
-                        .value
-                    )
-                  }
-                  placeholder="Expected Units"
-                  className={
-                    inputClass
-                  }
-                />
-
-                <button
-                  onClick={
-                    predictNextCGPA
-                  }
-                  className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2"
-                >
-                  <Sparkles
-                    size={18}
-                  />
-                  Predict Now
-                </button>
-              </div>
-
-              {predictedResult && (
-                <div className="mt-6 rounded-3xl bg-linear-to-br from-indigo-500 to-purple-600 p-6 text-center text-white">
-
-                  <p className="opacity-80 text-sm">
-                    Predicted CGPA
-                  </p>
-
-                  <h1 className="text-5xl font-black mt-2">
-                    {
-                      predictedResult
-                    }
-                  </h1>
-                </div>
+              {predictedResult != null && (
+                <SoftCard dark={dark} className="mt-4 p-5 text-center">
+                  <p className={cx("text-xs", faint)}>Projected CGPA</p>
+                  <h1 className="text-4xl font-black mt-1 text-indigo-500 tabular-nums">{fmt2(predictedResult)}</h1>
+                  <p className={cx("text-xs mt-2", subtle)}>{getBand(predictedResult).label}</p>
+                </SoftCard>
               )}
-            </div>
+            </Card>
 
-            {/* TARGET */}
+            {/* TARGET PLANNER */}
+            <Card dark={dark} className="p-4 sm:p-5 md:p-6">
+              <SectionHeading dark={dark} icon={Target} tone="purple" title="Target Planner" subtitle="Grades needed to hit a target" />
 
-            <div
-              className={`${card} rounded-4xl p-6`}
-            >
-              <div className="flex items-center gap-3 mb-6">
+              <Field dark={dark} label="Target CGPA" htmlFor="target-cgpa">
+                <NumberInput dark={dark} id="target-cgpa" min="0" max="5" step="0.01" value={targetCGPA} onChange={(e) => setTargetCGPA(e.target.value)} placeholder="4.50" />
+              </Field>
 
-                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
-                  <Target
-                    size={22}
-                  />
+              <div className="mt-4">
+                <div className={cx("hidden sm:grid grid-cols-[1fr_88px_36px] gap-2 px-1 mb-1.5 text-[11px] font-semibold uppercase tracking-wide", faint)}>
+                  <span>Course</span>
+                  <span>Units</span>
+                  <span aria-hidden />
                 </div>
-
-                <div>
-                  <h2 className="font-black text-xl">
-                    Target Planner
-                  </h2>
-
-                  <p className="text-sm opacity-60">
-                    Plan your grades
-                  </p>
-                </div>
-              </div>
-
-              <input
-                type="number"
-                value={
-                  targetCGPA
-                }
-                onChange={(e) =>
-                  setTargetCGPA(
-                    e.target
-                      .value
-                  )
-                }
-                placeholder="Target CGPA"
-                className={`${inputClass} mb-4`}
-              />
-
-              <div className="space-y-3">
-
-                {targetCourses.map(
-                  (
-                    c,
-                    i
-                  ) => (
-                    <div
-                      key={i}
-                      className="grid grid-cols-12 gap-2"
-                    >
-                      <input
-                        value={
-                          c.title
-                        }
-                        onChange={(
-                          e
-                        ) =>
-                          updateTargetCourse(
-                            i,
-                            "title",
-                            e
-                              .target
-                              .value
-                          )
-                        }
-                        placeholder="Course"
-                        className={`${inputClass} col-span-7`}
-                      />
-
-                      <input
-                        type="number"
-                        value={
-                          c.unit
-                        }
-                        onChange={(
-                          e
-                        ) =>
-                          updateTargetCourse(
-                            i,
-                            "unit",
-                            e
-                              .target
-                              .value
-                          )
-                        }
-                        placeholder="Unit"
-                        className={`${inputClass} col-span-4`}
-                      />
-
-                      <button
-                        onClick={() =>
-                          removeTargetCourse(
-                            i
-                          )
-                        }
-                        className="col-span-1 text-red-500"
-                      >
-                        <X
-                          size={
-                            18
-                          }
-                        />
-                      </button>
+                <div className="space-y-2">
+                  {targetCourses.map((c) => (
+                    <div key={c.id} className="grid grid-cols-[1fr_72px_36px] sm:grid-cols-[1fr_88px_36px] gap-2">
+                      <TextInput dark={dark} value={c.title} onChange={(e) => updateTargetCourse(c.id, "title", e.target.value)} placeholder="Course title" />
+                      <NumberInput dark={dark} min="1" max="30" value={c.unit} onChange={(e) => updateTargetCourse(c.id, "unit", e.target.value)} placeholder="Units" />
+                      <IconButton dark={dark} variant="dangerGhost" icon={X} label="Remove course" onClick={() => removeTargetCourse(c.id)} className="w-9 h-11" />
                     </div>
-                  )
-                )}
+                  ))}
+                </div>
               </div>
 
-              <button
-                onClick={
-                  addTargetCourse
-                }
-                className="mt-4 text-sm font-semibold flex items-center gap-2 text-indigo-500"
-              >
-                <Plus size={16} />
+              <Button dark={dark} variant="ghost" size="sm" icon={Plus} onClick={addTargetCourse} className="mt-3 !px-0 !justify-start text-indigo-500 hover:!bg-transparent hover:!text-indigo-400">
                 Add Course
-              </button>
+              </Button>
 
-              <button
-                onClick={
-                  calculateRequiredGrades
-                }
-                className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2"
-              >
-                <BarChart3
-                  size={18}
-                />
-                Calculate Advice
-              </button>
+              {targetError && <p className="text-xs text-rose-500 flex items-center gap-1.5 mt-2"><AlertTriangle size={12} className="shrink-0" />{targetError}</p>}
 
-              {gradeAdvice.length >
-                0 && (
-                <div className="mt-6 space-y-3">
+              <Button dark={dark} variant="purple" icon={BarChart3} onClick={calculateRequiredGrades} className="w-full mt-4">Calculate Required Grades</Button>
 
-                  {gradeAdvice.map(
-                    (
-                      c,
-                      i
-                    ) => (
-                      <div
-                        key={i}
-                        className={`${softCard} rounded-2xl p-4 flex items-center justify-between`}
-                      >
-                        <div>
-                          <p className="font-semibold">
-                            {
-                              c.title
-                            }
-                          </p>
-
-                          <p className="text-xs opacity-60 mt-1">
-                            {
-                              c.unit
-                            }{" "}
-                            Units
-                          </p>
-                        </div>
-
-                        <div className="text-green-500 font-black text-2xl">
-                          {
-                            c.required
-                          }
-                        </div>
+              {gradeAdvice && (
+                <div className="mt-4 space-y-2">
+                  <p className={cx("text-xs flex items-center gap-1.5", subtle)}>
+                    <Info size={13} className="shrink-0" />
+                    Average of {fmt2(gradeAdvice.avg)} points needed across these courses
+                  </p>
+                  {gradeAdvice.courses.map((c) => (
+                    <SoftCard key={c.id} dark={dark} className="p-3.5 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{c.title || "Untitled course"}</p>
+                        <p className={cx("text-xs mt-0.5", faint)}>{c.unit} Units</p>
                       </div>
-                    )
-                  )}
+                      <div className="text-emerald-500 font-black text-xl shrink-0">{c.required}</div>
+                    </SoftCard>
+                  ))}
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         </div>
 
         {/* HISTORY */}
+        <div>
+          <SectionHeading dark={dark} icon={History} title="Saved Records" subtitle="Your CGPA history over time" />
 
-        <div className="mt-8">
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div>
-              <h2 className="text-3xl font-black">
-                Saved Records
-              </h2>
-
-              <p className="opacity-60 mt-1">
-                Previously saved
-                CGPA history
-              </p>
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+              {[0, 1, 2].map((i) => <div key={i} className={cx("rounded-2xl h-40 animate-pulse", dark ? "bg-white/5" : "bg-gray-100")} />)}
             </div>
-
-            <History className="text-indigo-500" />
-          </div>
-
-          {records.length ===
-          0 ? (
-            <div
-              className={`${card} rounded-4xl p-12 text-center`}
-            >
-              <History className="mx-auto opacity-40 mb-4" />
-
-              <h3 className="font-bold text-xl">
-                No Records Yet
-              </h3>
-
-              <p className="opacity-60 mt-2">
-                Save your first
-                CGPA record.
-              </p>
-            </div>
+          ) : records.length === 0 ? (
+            <Card dark={dark} className="p-10 sm:p-12 text-center">
+              <History className={cx("mx-auto mb-3", faint)} size={26} />
+              <h3 className="font-bold text-lg">No records yet</h3>
+              <p className={cx("mt-1.5 text-sm", subtle)}>Fill in your semesters above and save your first record.</p>
+            </Card>
           ) : (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-              {records.map(
-                (r) => (
-                  <div
-                    key={r.id}
-                    className={`${card} rounded-4xl p-5`}
-                  >
-                    <div className="flex justify-between items-start">
-
-                      <div>
-                        <p className="text-sm opacity-60">
-                          CGPA
-                        </p>
-
-                        <h2 className="text-5xl font-black text-indigo-500 mt-2">
-                          {
-                            r.cgpa
-                          }
-                        </h2>
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          handleDelete(
-                            r.id
-                          )
-                        }
-                        className="w-11 h-11 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center"
-                      >
-                        <Trash2
-                          size={18}
-                        />
-                      </button>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+              {records.map((r) => (
+                <Card key={r.id} dark={dark} className="p-4 sm:p-5">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className={cx("text-xs", faint)}>CGPA</p>
+                      <h2 className="text-4xl font-black text-indigo-500 mt-1 tabular-nums">{r.cgpa}</h2>
                     </div>
-
-                    <div className="space-y-3 mt-6 max-h-72 overflow-y-auto pr-1">
-
-                      {r.semesters.map(
-                        (
-                          s,
-                          i
-                        ) => (
-                          <div
-                            key={i}
-                            className={`${softCard} rounded-2xl p-4`}
-                          >
-                            <div className="flex justify-between">
-
-                              <div>
-                                <p className="font-semibold">
-                                  {
-                                    s.name
-                                  }
-                                </p>
-
-                                <p className="text-xs opacity-60 mt-1">
-                                  {
-                                    s.units
-                                  }{" "}
-                                  Units
-                                </p>
-                              </div>
-
-                              <div className="text-indigo-500 font-black text-xl">
-                                {
-                                  s.gpa
-                                }
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
+                    <IconButton dark={dark} variant="dangerGhost" icon={Trash2} label="Delete record" onClick={() => setConfirmDeleteId(r.id)} />
                   </div>
-                )
-              )}
+
+                  <div className="space-y-2 mt-4 max-h-56 overflow-y-auto pr-1">
+                    {r.semesters?.map((s, i) => (
+                      <SoftCard key={i} dark={dark} className="p-3 flex justify-between items-center">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm truncate">{s.name}</p>
+                          <p className={cx("text-xs mt-0.5", faint)}>{s.units} Units</p>
+                        </div>
+                        <div className="text-indigo-500 font-bold text-lg tabular-nums shrink-0">{fmt2(Number(s.gpa))}</div>
+                      </SoftCard>
+                    ))}
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
         </div>
       </div>
 
+      {/* MOBILE STICKY SAVE BAR */}
+      <div className={cx("lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 border-t backdrop-blur", dark ? "bg-[#050816]/90 border-white/10" : "bg-white/90 border-gray-200")}>
+        <Button dark={dark} variant="primary" icon={Save} disabled={!canSave} onClick={() => setShowSaveModal(true)} className="w-full">
+          Save Record
+        </Button>
+      </div>
+
       {/* SAVE MODAL */}
-
       {showSaveModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-
-          <div
-            className={`w-full max-w-md rounded-[2.5rem] p-8 relative ${
-              dark
-                ? "bg-[#0b1120] border border-white/10"
-                : "bg-white"
-            }`}
-          >
-            <button
-              onClick={() =>
-                setShowSaveModal(
-                  false
-                )
-              }
-              className="absolute top-5 right-5 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="text-center">
-
-              <div className="w-48 h-48 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 p-3 mx-auto">
-
-                <div
-                  className={`w-full h-full rounded-full flex flex-col items-center justify-center ${
-                    dark
-                      ? "bg-[#050816]"
-                      : "bg-white"
-                  }`}
-                >
-                  <p className="text-sm opacity-60">
-                    CGPA
-                  </p>
-
-                  <h1 className="text-6xl font-black text-indigo-500 mt-2">
-                    {calculateCGPA()}
-                  </h1>
-                </div>
-              </div>
-
-              <h2 className="text-3xl font-black mt-8">
-                Save Record
-              </h2>
-
-              <p className="opacity-60 mt-2">
-                Store your current
-                academic progress
-              </p>
-
-              <button
-                onClick={
-                  handleSave
-                }
-                className="w-full mt-8 py-4 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-bold flex items-center justify-center gap-2"
-              >
-                <Save size={18} />
-
-                {saving
-                  ? "Saving..."
-                  : "Save Now"}
-              </button>
-
-              {msg && (
-                <p className="mt-4 text-sm opacity-70">
-                  {msg}
-                </p>
-              )}
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowSaveModal(false); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="save-modal-title" className={cx("w-full max-w-sm rounded-2xl p-6", dark ? "bg-[#0b1120] border border-white/10" : "bg-white")}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center"><Save size={19} /></div>
+              <IconButton dark={dark} icon={X} label="Close" onClick={() => setShowSaveModal(false)} />
+            </div>
+            <h2 id="save-modal-title" className="text-xl font-bold">Save this record?</h2>
+            <p className={cx("text-sm mt-2", subtle)}>
+              You're about to save a CGPA of <span className="font-bold text-indigo-500">{cgpaLabel}</span> across {validSemesters.length} semester{validSemesters.length === 1 ? "" : "s"}. You can delete it later from your history.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <Button dark={dark} variant="secondary" onClick={() => setShowSaveModal(false)} className="flex-1">Cancel</Button>
+              <Button dark={dark} variant="primary" icon={Save} loading={saving} onClick={handleSave} className="flex-1">{saving ? "Saving…" : "Save Record"}</Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmDeleteId(null); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" className={cx("w-full max-w-sm rounded-2xl p-6", dark ? "bg-[#0b1120] border border-white/10" : "bg-white")}>
+            <div className="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-4"><AlertTriangle size={19} /></div>
+            <h2 id="delete-modal-title" className="text-xl font-bold">Delete this record?</h2>
+            <p className={cx("text-sm mt-2", subtle)}>This can't be undone.</p>
+            <div className="flex gap-3 mt-6">
+              <Button dark={dark} variant="secondary" onClick={() => setConfirmDeleteId(null)} className="flex-1">Cancel</Button>
+              <Button dark={dark} variant="danger" icon={Trash2} loading={deleting === confirmDeleteId} onClick={() => handleDelete(confirmDeleteId)} className="flex-1">Delete</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOASTS */}
+      <div aria-live="polite" className="fixed bottom-20 lg:bottom-5 right-4 left-4 sm:left-auto z-[60] space-y-2.5 sm:w-[calc(100%-2rem)] sm:max-w-sm">
+        {toasts.map((t) => (
+          <div key={t.id} className={cx("rounded-xl px-4 py-3.5 flex items-start gap-3 shadow-lg", dark ? "bg-[#0b1120] border border-white/10" : "bg-white border border-gray-200")}>
+            {t.type === "success" ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" /> : <XCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />}
+            <p className="text-sm flex-1">{t.message}</p>
+            <button onClick={() => dismissToast(t.id)} aria-label="Dismiss" className={cx(faint, "hover:opacity-100")}><X size={15} /></button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

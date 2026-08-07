@@ -58,10 +58,11 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
       {
         label: "Resources",
         children: [
-          { label: "Academic Tools", to: "/questions" },
+          { label: "Past Questions", to: "/questions" },
           { label: "Lecture Notes", to: "/lecturenotesmarketplace" },
-          { label: "Marketplace", to: "/hostelmarketplace" },
-          { label: "Smart Features", to: "/ai" },
+          { label: "Find Hostels", to: "/hostelmarketplace" },
+          { label: "StudentMarketplace", to: "/studentmarketplace" },
+          { label: "AI Assistance", to: "/ai" },
         ],
       },
       {
