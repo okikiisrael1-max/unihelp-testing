@@ -39,7 +39,7 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "../../firebase/config";
-import taskBanner from "../images/task_banner.jpg";
+import taskBanner from "../images/tasks_banner.jpg";
 
 export default function Tasks({ dark = false }) {
   /* ======================================================
