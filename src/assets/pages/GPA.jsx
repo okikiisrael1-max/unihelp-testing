@@ -605,26 +605,7 @@ const GPA = ({ dark }) => {
               </div>
             </div>
 
-            {/* MOTIVATION */}
-            <div
-              className={`rounded-3xl p-6 text-white ${
-                dark
-                  ? "bg-gradient-to-br from-indigo-700 to-purple-700"
-                  : "bg-gradient-to-br from-indigo-500 to-purple-600"
-              }`}
-            >
-              <Sparkles className="mb-3" size={28} />
 
-              <h2 className="text-2xl font-black">
-                Keep Improving 🚀
-              </h2>
-
-              <p className="text-sm opacity-90 mt-3 leading-6">
-                Small consistent improvements each
-                semester can dramatically boost your
-                CGPA.
-              </p>
-            </div>
           </div>
         </div>
 

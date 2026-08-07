@@ -27,6 +27,7 @@ import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
 import {
   signOut,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 
 import {
@@ -245,6 +246,31 @@ const Profile = ({
       setMessage("Profile picture updated");
     } catch (error) { console.log(error); }
     finally { setUploading(false); }
+  };
+
+  // =====================================================
+  // ACCOUNT SETTINGS
+  // =====================================================
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+      setMessage("No email associated with this account.");
+      setTimeout(() => setMessage(""), 4000);
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      setMessage(`Password reset email sent to ${user.email}. Check your inbox!`);
+    } catch (error) {
+      console.log(error);
+      setMessage("Failed to send password reset email.");
+    }
+    setTimeout(() => setMessage(""), 4000);
+  };
+
+  const handleNotificationPreferences = () => {
+    setMessage("Notification preferences are currently managed via device settings.");
+    setTimeout(() => setMessage(""), 4000);
   };
 
   // =====================================================
@@ -497,9 +523,9 @@ const Profile = ({
               <div className="space-y-1">
                 {[
                   { label: "Edit Profile", action: () => setEditOpen(true) },
-                  { label: "Change Password", action: () => {} },
-                  { label: "Notification Preferences", action: () => {} },
-                  { label: "Privacy Settings", action: () => {} },
+                  { label: "Change Password", action: handlePasswordReset },
+                  { label: "Notification Preferences", action: handleNotificationPreferences },
+                  { label: "Privacy Settings", action: () => { setMessage("Privacy settings are up to date."); setTimeout(() => setMessage(""), 4000); } },
                   { label: "Logout", action: handleLogout, color: "text-red-500" },
                 ].map((item, i) => (
                   <div key={i} onClick={item.action} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'} ${item.color || (dark ? 'text-slate-300' : 'text-slate-700')}`}>
