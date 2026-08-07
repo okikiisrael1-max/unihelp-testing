@@ -61,24 +61,12 @@ const FeaturesCatalog = ({ dark }) => {
           <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${theme.accent}`} />
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <Link
-                to="/"
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}
-              >
-                <ArrowLeft size={15} />
-                Back to dashboard
-              </Link>
-              <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl lg:text-5xl">
+              <h1 className="mt-4 text-3xl font-bold leading-tight md:text-4xl lg:text-5xl">
                 Explore all <span className="text-indigo-500">UniHelp features</span>
               </h1>
               <p className={`mt-3 max-w-2xl text-sm md:text-base leading-7 ${theme.textSoft}`}>
                 Discover the complete set of academic, marketplace, and smart student tools built to simplify your campus life.
               </p>
-            </div>
-
-            <div className={`flex items-center gap-2 rounded-2xl border px-3 py-2 shrink-0 ${theme.card}`}>
-              <Sparkles size={16} className="text-indigo-500 shrink-0" />
-              <span className="text-sm font-semibold whitespace-nowrap">{allFeatures.length} tools available</span>
             </div>
           </div>
         </div>

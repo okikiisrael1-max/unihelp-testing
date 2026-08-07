@@ -16,6 +16,7 @@ import {
   TrendingDown,
   Trophy,
   X,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -263,7 +264,6 @@ const Dashboard = ({ dark }) => {
           <div>
             <span
               className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full mb-4 ${theme.iconTint}`}>
-              <Sparkles size={12} />
               {greeting}, {firstName}
             </span>
 
@@ -376,62 +376,40 @@ const Dashboard = ({ dark }) => {
             </div>
           ))}
         </section>
-        
-        {/* ================================================= 
 
-        {featuredFeatureItems?.length > 0 && (
-          <section className="mb-10 md:mb-14">
-            <div className="flex items-end justify-between mb-5">
-              <div>
-                <h2 className="text-xl md:text-2xl font-black">
-                  Featured <span className="text-indigo-500">Right Now</span>
-                </h2>
-                <p className={`text-sm mt-1 ${theme.textSoft}`}>
-                  Hand-picked tools worth trying this week.
-                </p>
-              </div>
-            </div>
 
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1 snap-x snap-mandatory">
-              {featuredFeatureItems.map((item, i) => {
-                const Icon = item.icon;
-                const image = FEATURED_IMAGES[i % FEATURED_IMAGES.length];
+        {/* ================================================= */}
+        {/*  Group ADS*/}
+        {/* ================================================= */}
+         <section className="relative mb-8 md:mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-transparent text-white shadow-lg shadow-indigo-500/20">
+      <div className="relative z-10 grid gap-6 px-5 pt-7 sm:px-8 sm:pt-9 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
+        <div className="min-w-0">
+          <h2 className=" text-2xl font-bold leading-tight sm:text-4xl">
+            Join <span className="text-indigo-300">Student Groups</span>
+          </h2>
 
-                return (
-                  <Link
-                    key={`${item.title}-${i}`}
-                    to={item.link}
-                    className={`group relative shrink-0 w-[240px] sm:w-[260px] snap-start rounded-3xl p-5 text-white overflow-hidden transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
-                  >
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" 
-                      style={{ backgroundImage: `url(${image})` }} 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 group-hover:bg-black/50 transition-colors duration-500" />
-                    
-                    <div className="relative z-10 h-full flex flex-col justify-between min-h-[160px]">
-                      <div>
-                        {Icon && (
-                          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-6 border border-white/20 shadow-sm">
-                            <Icon size={18} className="text-white drop-shadow" />
-                          </div>
-                        )}
-                        <h3 className="font-black text-lg leading-tight mb-1.5 drop-shadow-md">{item.title}</h3>
-                        <p className="text-xs leading-5 text-gray-200 line-clamp-2 drop-shadow-md">{item.desc}</p>
-                      </div>
-                      
-                      <div className="flex items-center gap-1 mt-6 text-xs font-bold text-white drop-shadow-md">
-                        Try it
-                        <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-          */}
+          <p className="mt-2 max-w-sm text-sm leading-6 text-white/80">
+            Connect with like-minded students, share resources, and collaborate on projects in your university community.
+          </p>
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+             <Link
+              to="/community"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600">
+              <Activity size={16} />
+              Explore Groups
+            </Link>
+          </div>
+        </div>
+
+        <img
+          src={Images.group_illutration}
+          alt=""
+          aria-hidden="true"
+          className="hidden h-80 w-80 shrink-0 object-contain sm:block md:h-auto md:w-80 lg:h-auto lg:w-90"
+        />
+      </div>
+    </section>
 
 
         {/* ================================================= */}
