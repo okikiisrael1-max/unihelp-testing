@@ -17,7 +17,6 @@ const CBTPracticePage = ({ dark = false }) => {
   const [reviewMode, setReviewMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Fetch courses on mount
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -35,7 +34,6 @@ const CBTPracticePage = ({ dark = false }) => {
     fetchCourses();
   }, []);
 
-  // Fetch questions when a course is selected
   useEffect(() => {
     if (selectedCourse === 'All' || !selectedCourse) {
       setQuestions([]);
