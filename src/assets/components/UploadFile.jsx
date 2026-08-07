@@ -18,10 +18,11 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useContext } from "react";
 import imageCompression from "browser-image-compression";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuthContext } from "../context/AuthContext";
 
 import { db, auth } from "../../firebase/config";
 import { uploadFile } from "../../services/cloudinary";
@@ -30,6 +31,8 @@ import {
   collection,
   addDoc,
   serverTimestamp,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 
 import {
@@ -181,6 +184,23 @@ export default function UploadFile({ dark }) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [schoolType, setSchoolType] = useState("university");
+  const { user } = useContext(AuthContext);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      if (user?.uid) {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().role === "admin") {
+          setIsAdmin(true);
+        }
+      }
+      setCheckingRole(false);
+    };
+    checkRole();
+  }, [user]);
 
   const [form, setForm] = useState({
     school: "", title: "", courseCode: "", year: "", department: "", level: "",
@@ -283,6 +303,34 @@ export default function UploadFile({ dark }) {
   // =========================
   // UI
   // =========================
+  if (checkingRole) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh] w-full max-w-xl mx-auto">
+        <Loader2 className="animate-spin text-indigo-500" size={40} />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className={`w-full max-w-xl mx-auto mt-10 rounded-2xl p-8 text-center ${dark ? "bg-[#111827]" : "bg-white"}`}>
+        <div className="mx-auto w-20 h-20 mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
+          <AlertCircle size={40} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold mb-3">Access Denied</h2>
+        <p className="opacity-70 text-sm mb-6">
+          Only administrators are allowed to upload lecture notes and past questions.
+        </p>
+        <button 
+          onClick={() => navigate("/")}
+          className="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-indigo-700 transition"
+        >
+          Go Back Home
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen px-4 py-6">
       <div className="max-w-xl mx-auto space-y-6">
