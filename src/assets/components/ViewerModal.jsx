@@ -312,6 +312,7 @@ const ViewerModal = ({
                       maxWidth: "100%",
                       userSelect: "none",
                       WebkitUserSelect: "none",
+                      WebkitTouchCallout: "none"
                     }}
                   />
                 )}

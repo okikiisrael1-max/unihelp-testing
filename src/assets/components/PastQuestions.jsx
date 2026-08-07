@@ -60,6 +60,7 @@ const PDFThumbnail = ({ url, dark }) => {
             style={{
               userSelect: "none",
               WebkitUserSelect: "none",
+              WebkitTouchCallout: "none"
             }}
           />
         )
