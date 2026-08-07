@@ -38,15 +38,15 @@ import { toast } from "react-toastify";
 import { Images } from "../data/data";
 import { allFeatures, featuredFeatureItems, featureSections } from "../data/features";
 
-// Array of Unsplash images used for the Featured Tools shelf
-const FEATURED_IMAGES = [
-  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1501504905252-473c47e087f8?q=80&w=1000&auto=format&fit=crop",
-];
+import fImg1 from "../images/featured/desk1.jpg";
+import fImg2 from "../images/featured/coffee_notes.jpg";
+import fImg3 from "../images/featured/study_desk.jpg";
+import fImg4 from "../images/featured/stationery.jpg";
+import fImg5 from "../images/featured/cozy_room.jpg";
+import fImg6 from "../images/featured/bed_study.jpg";
+
+// Array of local aesthetic images used for the Featured Tools shelf
+const FEATURED_IMAGES = [fImg1, fImg2, fImg3, fImg4, fImg5, fImg6];
 
 const Dashboard = ({ dark }) => {
   const { user } = useContext(AuthContext);
