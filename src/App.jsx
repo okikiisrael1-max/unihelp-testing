@@ -267,6 +267,7 @@ const App = () => {
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
             <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />
             <Route path="/challenge" element={ <ProtectedRoute> <ChallengeDashboard dark={dark} /> </ProtectedRoute> } />
+            <Route path="/leaderboard" element={ <ProtectedRoute> <ChallengeDashboard dark={dark} initialTab="leaderboard" /> </ProtectedRoute> } />
             <Route path="/streak" element={ <ProtectedRoute> <StreakDashboard dark={dark} /> </ProtectedRoute> } />
             <Route path="/smart-timetable" element={ <ProtectedRoute> <SmartTimetableBuilder dark={dark} /> </ProtectedRoute> } />
             <Route path="/cgpa" element={ <ProtectedRoute> <CGPA dark={dark} /> </ProtectedRoute> } />
