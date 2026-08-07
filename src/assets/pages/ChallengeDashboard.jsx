@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   collection,
   doc,
@@ -21,7 +21,6 @@ import {
   BookOpen,
   BrainCircuit,
   Calendar,
-  CheckCircle2,
   Clock,
   Crown,
   Flame,
@@ -30,28 +29,27 @@ import {
   Loader2,
   Medal,
   Sparkles,
-  Star,
   Target,
   Timer,
   Trophy,
   TrendingUp,
   Zap,
-  ArrowRight,
   BarChart3,
-  ChevronRight,
   Users,
   Globe,
-  School,
   Library,
-  TimerReset,
   Lightbulb,
   Flag,
   CheckCheck,
   Moon,
   Sun,
   Star as StarIcon,
-  ArrowLeft,
 } from "lucide-react";
+import ChallengeOverviewPage from "./challenges/ChallengeOverviewPage";
+import ChallengeCategoriesPage from "./challenges/ChallengeCategoriesPage";
+import ChallengeLeaderboardPage from "./challenges/ChallengeLeaderboardPage";
+import ChallengeAchievementsPage from "./challenges/ChallengeAchievementsPage";
+import ChallengeHistoryPage from "./challenges/ChallengeHistoryPage";
 
 const CHALLENGE_CATEGORIES = [
   { id: 'daily', title: 'Daily Challenge', subtitle: 'New questions every day', icon: 'calendar', tone: '#6366F1', difficulty: 'Mixed', questionCount: 1000 },
@@ -308,10 +306,10 @@ const defaultStats = (profile = {}) => ({
   updatedAt: null,
 });
 
-export default function ChallengeDashboard({ dark = false }) {
+export default function ChallengeDashboard({ dark = false, initialTab = 'dashboard' }) {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -368,6 +366,10 @@ export default function ChallengeDashboard({ dark = false }) {
       setHistory(snap.docs.map((item) => ({ id: item.id, ...item.data() })));
     } catch { setHistory([]); }
   }, []);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -802,7 +804,6 @@ export default function ChallengeDashboard({ dark = false }) {
   return (
     <div className={`min-h-screen md:pt-20 ${theme.bg} transition-all duration-300`}>
       <div className="px-4 md:px-6 lg:px-8 py-5 md:py-8">
-        {/* TABS */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {['dashboard', 'categories', 'leaderboard', 'achievements', 'history'].map((tab) => (
             <button
@@ -821,253 +822,56 @@ export default function ChallengeDashboard({ dark = false }) {
           ))}
         </div>
 
-        {/* DASHBOARD TAB */}
         {activeTab === 'dashboard' && (
-          <>
-            {/* Hero Stats */}
-            <div className={`relative overflow-hidden rounded-4xl p-6 md:p-8 mb-8 border ${
-              dark ? 'bg-linear-to-br from-indigo-950 via-[#0f172a] to-black border-white/10' : 'bg-linear-to-br from-indigo-600 via-violet-600 to-purple-700 border-indigo-400/20 text-white'
-            }`}>
-              <div className="absolute top-0 right-0 opacity-20"><Sparkles size={180} /></div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <Flame size={24} className="text-orange-400" />
-                  <span className="text-2xl font-black">{stats?.currentStreak || 0} Day Streak</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-                    <p className="text-xs text-white/70">Total XP</p>
-                    <p className="text-2xl font-black">{stats?.xp || 0}</p>
-                  </div>
-                  <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-                    <p className="text-xs text-white/70">Rank</p>
-                    <p className="text-2xl font-black" style={{ color: getRankColor(stats?.rank) }}>{stats?.rank || 'Bronze'}</p>
-                  </div>
-                  <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-                    <p className="text-xs text-white/70">Questions</p>
-                    <p className="text-2xl font-black">{stats?.questionsAnswered || 0}</p>
-                  </div>
-                  <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/10">
-                    <p className="text-xs text-white/70">Accuracy</p>
-                    <p className="text-2xl font-black">{stats?.accuracy || 0}%</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mb-8">
-              <h3 className="text-lg font-black mb-4">Quick Challenge</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {CHALLENGE_CATEGORIES.slice(0, 4).map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleStartQuiz(cat)}
-                    className={`${theme.card} rounded-3xl p-4 text-left transition-all hover:-translate-y-1 hover:shadow-lg`}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: cat.tone + '20', color: cat.tone }}>
-                        {getCategoryIcon(cat.icon)}
-                      </div>
-                    </div>
-                    <h4 className="font-bold text-sm">{cat.title}</h4>
-                    <p className={`text-xs ${theme.textSoft} mt-1`}>{cat.subtitle}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className={`${theme.card} rounded-3xl p-6`}>
-              <h3 className="font-bold text-lg mb-4">Recent Activity</h3>
-              {history.length === 0 ? (
-                <div className={`${theme.soft} rounded-2xl p-8 text-center`}>
-                  <Activity size={40} className="mx-auto mb-3 opacity-50" />
-                  <p className={`text-sm ${theme.textSoft}`}>No activity yet. Start a challenge!</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {history.slice(0, 5).map((item) => (
-                    <div key={item.id} className={`${theme.soft} rounded-2xl p-3 flex items-center justify-between`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${getStatusColor(item.accuracy)} bg-current/10`}>
-                          {item.accuracy}%
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm capitalize">{item.category} Challenge</p>
-                          <p className={`text-xs ${theme.textSoft}`}>{item.score}/{item.totalQuestions} correct · +{item.xpEarned} XP</p>
-                        </div>
-                      </div>
-                      <span className={`text-xs font-bold ${getStatusColor(item.accuracy)}`}>{item.status}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
+          <ChallengeOverviewPage
+            theme={theme}
+            stats={stats}
+            history={history}
+            handleStartQuiz={handleStartQuiz}
+            getRankColor={getRankColor}
+            getStatusColor={getStatusColor}
+            getCategoryIcon={getCategoryIcon}
+            dark={dark}
+            challengeCategories={CHALLENGE_CATEGORIES}
+          />
         )}
 
-        {/* CATEGORIES TAB */}
         {activeTab === 'categories' && (
-          <div>
-            <h2 className="text-2xl font-black mb-2">Challenge Categories</h2>
-            <p className={`${theme.textSoft} mb-6`}>Choose a category to start answering questions</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {CHALLENGE_CATEGORIES.map((cat) => {
-                const catStats = stats?.categoryStats?.[cat.id] || {};
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleStartQuiz(cat)}
-                    className={`${theme.card} rounded-3xl p-5 text-left transition-all hover:-translate-y-1 hover:shadow-lg`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: cat.tone + '20', color: cat.tone }}>
-                        {getCategoryIcon(cat.icon, 24)}
-                      </div>
-                      <ArrowRight size={18} className={`${theme.textSoft}`} />
-                    </div>
-                    <h3 className="font-bold text-lg">{cat.title}</h3>
-                    <p className={`text-sm ${theme.textSoft} mb-3`}>{cat.subtitle}</p>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs ${theme.textSoft}`}>{cat.questionCount.toLocaleString()} questions</span>
-                      {catStats.attempted > 0 && (
-                        <span className="text-xs font-bold text-indigo-500">{catStats.correct}/{catStats.attempted}</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ChallengeCategoriesPage
+            theme={theme}
+            stats={stats}
+            handleStartQuiz={handleStartQuiz}
+            getCategoryIcon={getCategoryIcon}
+            challengeCategories={CHALLENGE_CATEGORIES}
+          />
         )}
 
-        {/* LEADERBOARD TAB */}
         {activeTab === 'leaderboard' && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-black">Leaderboard</h2>
-                <p className={`${theme.textSoft} text-sm`}>Top challengers ranked by XP</p>
-              </div>
-              <div className="flex gap-2">
-                {['global', 'university', 'department'].map((scope) => (
-                  <button
-                    key={scope}
-                    onClick={() => { setLeaderboardScope(scope); fetchLeaderboard(scope); }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                      leaderboardScope === scope ? 'bg-indigo-600 text-white' : theme.soft
-                    }`}
-                  >
-                    {scope === 'global' ? '🌍 Global' : scope === 'university' ? '🏫 University' : '📚 Department'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {leaderboard.length === 0 ? (
-              <div className={`${theme.card} rounded-3xl p-10 text-center`}>
-                <Trophy size={50} className="mx-auto mb-4 opacity-50" />
-                <h3 className="font-bold text-xl mb-2">No Rankings Yet</h3>
-                <p className={`text-sm ${theme.textSoft}`}>Complete challenges to appear on the leaderboard.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {leaderboard.map((item, index) => {
-                  const isMe = item.uid === auth.currentUser?.uid;
-                  return (
-                    <div key={item.id || index} className={`${theme.card} rounded-2xl p-4 flex items-center gap-4 ${isMe ? 'ring-2 ring-indigo-500' : ''}`}>
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-yellow-500 text-white' : index === 1 ? 'bg-gray-400 text-white' : index === 2 ? 'bg-orange-600 text-white' : theme.soft
-                      }`}>
-                        {item.position || index + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name || 'Student'}</p>
-                        <p className={`text-xs ${theme.textSoft}`}>{item.university || ''} {item.department ? `· ${item.department}` : ''}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">{item.xp || 0} XP</p>
-                        <p className="text-xs font-medium" style={{ color: getRankColor(item.rank) }}>{item.rank || 'Bronze'}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <ChallengeLeaderboardPage
+            theme={theme}
+            leaderboard={leaderboard}
+            leaderboardScope={leaderboardScope}
+            setLeaderboardScope={setLeaderboardScope}
+            fetchLeaderboard={fetchLeaderboard}
+            getRankColor={getRankColor}
+            currentUserId={auth.currentUser?.uid}
+          />
         )}
 
-        {/* ACHIEVEMENTS TAB */}
         {activeTab === 'achievements' && (
-          <div>
-            <h2 className="text-2xl font-black mb-2">Achievements</h2>
-            <p className={`${theme.textSoft} mb-6`}>Complete challenges to unlock achievements</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {achievements.map((ach) => (
-                <div key={ach.id} className={`${theme.card} rounded-3xl p-5 ${ach.unlocked ? '' : 'opacity-60'}`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${ach.unlocked ? 'bg-yellow-500/20 text-yellow-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                      {getAchievementIcon(ach.icon)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm">{ach.title}</h4>
-                      <p className={`text-xs ${theme.textSoft}`}>{ach.unlocked ? 'Unlocked 🎉' : `${ach.value}/${ach.target}`}</p>
-                    </div>
-                    {ach.unlocked && <CheckCircle2 size={18} className="text-green-500" />}
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-white/10">
-                    <div className={`h-full rounded-full transition-all ${ach.unlocked ? 'bg-green-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(100, ach.progress * 100)}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ChallengeAchievementsPage
+            theme={theme}
+            achievements={achievements}
+            getAchievementIcon={getAchievementIcon}
+          />
         )}
 
-        {/* HISTORY TAB */}
         {activeTab === 'history' && (
-          <div>
-            <h2 className="text-2xl font-black mb-2">Challenge History</h2>
-            <p className={`${theme.textSoft} mb-6`}>Your past challenge attempts</p>
-            {history.length === 0 ? (
-              <div className={`${theme.card} rounded-3xl p-10 text-center`}>
-                <Clock size={50} className="mx-auto mb-4 opacity-50" />
-                <h3 className="font-bold text-xl mb-2">No History Yet</h3>
-                <p className={`text-sm ${theme.textSoft}`}>Complete a challenge to see your history here.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {history.map((item) => (
-                  <div key={item.id} className={`${theme.card} rounded-3xl p-5`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(item.accuracy)} bg-current/10`}>
-                          {item.status}
-                        </span>
-                        <span className="font-medium text-sm capitalize">{item.category} Challenge</span>
-                      </div>
-                      <span className={`text-xs ${theme.textSoft}`}>+{item.xpEarned} XP</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className={`${theme.soft} rounded-xl p-2 text-center`}>
-                        <p className={`text-xs ${theme.textSoft}`}>Score</p>
-                        <p className="font-bold">{item.score}/{item.totalQuestions}</p>
-                      </div>
-                      <div className={`${theme.soft} rounded-xl p-2 text-center`}>
-                        <p className={`text-xs ${theme.textSoft}`}>Accuracy</p>
-                        <p className="font-bold">{item.accuracy}%</p>
-                      </div>
-                      <div className={`${theme.soft} rounded-xl p-2 text-center`}>
-                        <p className={`text-xs ${theme.textSoft}`}>Duration</p>
-                        <p className="font-bold">{item.durationSeconds || 0}s</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ChallengeHistoryPage
+            theme={theme}
+            history={history}
+            getStatusColor={getStatusColor}
+          />
         )}
       </div>
     </div>
