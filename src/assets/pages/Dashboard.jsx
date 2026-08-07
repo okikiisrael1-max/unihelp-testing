@@ -38,14 +38,14 @@ import { toast } from "react-toastify";
 import { Images } from "../data/data";
 import { allFeatures, featuredFeatureItems, featureSections } from "../data/features";
 
-import fImg1 from "../images/featured/desk1.jpg";
-import fImg2 from "../images/featured/coffee_notes.jpg";
-import fImg3 from "../images/featured/study_desk.jpg";
+import fImg1 from "../images/featured/gpa_calc.jpg";
+import fImg2 from "../images/featured/cgpa_track.jpg";
+import fImg3 from "../images/featured/past_questions.jpg";
 import fImg4 from "../images/featured/stationery.jpg";
-import fImg5 from "../images/featured/cozy_room.jpg";
-import fImg6 from "../images/featured/bed_study.jpg";
+import fImg5 from "../images/featured/desk1.jpg";
+import fImg6 from "../images/featured/coffee_notes.jpg";
 
-// Array of local aesthetic images used for the Featured Tools shelf
+// Array of local contextual images used for the Featured Tools shelf
 const FEATURED_IMAGES = [fImg1, fImg2, fImg3, fImg4, fImg5, fImg6];
 
 const Dashboard = ({ dark }) => {
