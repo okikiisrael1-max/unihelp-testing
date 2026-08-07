@@ -215,16 +215,10 @@ const App = () => {
 
   if (loadingRole) {
     return (
-      <div
-        className={`h-screen flex items-center justify-center ${
-          dark ? "bg-[#020617] text-white" : "bg-white text-black"
-        }`}
-      >
+      <div className={`h-screen flex items-center justify-center ${ dark ? "bg-[#020617] text-white" : "bg-white text-black"}`}>
         <div className="text-center">
           <div className="w-16 h-16 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin mx-auto mb-5" />
-
           <h2 className="text-xl font-bold">Loading UniHelp...</h2>
-
           <p className="opacity-70 mt-2 text-sm">Preparing your experience</p>
         </div>
       </div>
@@ -239,341 +233,60 @@ const App = () => {
       <div className={`${dark ? "bg-[#020617] text-white" : "bg-[#f8fafc] text-black"}`}>
         <Routes>
           {/* ================= AUTH ================= */}
-          <Route path="/login"
-            element={currentUser ? <Navigate to="/" replace /> : <Login dark={dark} />}/>
+          <Route path="/login"  element={currentUser ? <Navigate to="/" replace /> : <Login dark={dark} />}/>
           <Route path="/register" element={ currentUser ? <Navigate to="/" replace /> : <Signup dark={dark} /> }/>
           <Route path="/reset-password" element={ currentUser ? <Navigate to="/" replace /> : <ResetPassword dark={dark} /> }/>
           <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
-          {/* ================= PROFILE ================= */}
 
-
-             <Route
-              path="/announcements"
-              element={
-                <ProtectedRoute>
-                  <Announcements dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cbt-practice"
-              element={
-                <ProtectedRoute>
-                  <CBTPracticePage dark={dark} />
-                </ProtectedRoute>
-              }
-            />
+        <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
+            <Route path="/" element={ <Dashboard dark={dark} /> }/>
+            <Route path="/profile" element={ <ProtectedRoute> <Profile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
+            <Route path="/announcements" element={<ProtectedRoute><Announcements dark={dark} /> </ProtectedRoute>}/>
+            <Route path="/cbt-practice" element={ <ProtectedRoute> <CBTPracticePage dark={dark} /> </ProtectedRoute>}/>
             <Route path="/faq" element={<FAQPage dark={dark} />} />
             <Route path="/about" element={<About dark={dark}/>}/>
             <Route path="/help-center" element={<HelpCenter dark={dark} />} />
             <Route path="/privacy" element={<PrivacyPolicy dark={dark} />} />
             <Route path="/terms" element={<TermsOfService dark={dark} />} />
-
-          <Route
-              path="/contact"
-              element={
-                <ProtectedRoute>
-                  <Contact dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/report"
-              element={
-                <ProtectedRoute>
-                  <Report dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-          <Route
-              path="/formula-hub"
-              element={<FormulaHome dark={dark} />}
-            />
-
-            <Route
-              path="/formula-hub/subject/:subject"
-              element={<SubjectPage dark={dark} />}
-            />
-
-            <Route
-              path="/formula-hub/subjects"
-              element={<FormulaSubjectsPage dark={dark} />}
-            />
-            
-            <Route
-              path="/formula-hub/:id"
-              element={<FormulaDetails dark={dark} />}
-            />
-
-            
-
-            <Route
-              path="/formula-hub/bookmarks"
-              element={<BookmarksPage dark={dark} />}
-            />
-
-          
-
-          
-
-          {/* ================= DASHBOARD LAYOUT ================= */}
-           <Route
-            element={
-              <DashboardLayout
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-                dark={dark}
-                setDark={setDark}
-              />}>
-          
-          
-            {/* ================= HOME REDIRECT ================= */}
-
-            <Route
-              path="/"
-              element={
-                  <Dashboard dark={dark} />
-              }
-            />
-
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile dark={dark} toggleTheme={() => setDark(!dark)} />
-                </ProtectedRoute>
-              }
-            />
-
-
-            {/* ================= COMMON ROUTES ================= */}
-
-            <Route
-              path="/community"
-              element={
-                <ProtectedRoute>
-                  <Community dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/community/:groupId"
-              element={
-                <ProtectedRoute>
-                  <Community dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/community/:groupId/manage"
-              element={
-                <ProtectedRoute>
-                  <ManageGroup dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/messages"
-              element={
-                <ProtectedRoute>
-                  <Messenger dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationsCenter dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/community-settings"
-              element={
-                <ProtectedRoute>
-                  <CommunitySettings dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/coming-soon"
-              element={
-                <ProtectedRoute>
-                  <ComingSoon dark={dark} />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/contact" element={<ProtectedRoute> <Contact dark={dark} /> </ProtectedRoute>}/>
+            <Route  path="/report" element={ <ProtectedRoute> <Report dark={dark} /> </ProtectedRoute> } />
+            <Route path="/formula-hub" element={<FormulaHome dark={dark} />} />
+            <Route path="/formula-hub/subject/:subject" element={<SubjectPage dark={dark} />}/>
+            <Route path="/formula-hub/subjects" element={<FormulaSubjectsPage dark={dark} />}/>
+            <Route path="/formula-hub/:id" element={<FormulaDetails dark={dark} />} />
+            <Route path="/formula-hub/bookmarks" element={<BookmarksPage dark={dark} />}/>
+            <Route path="/community" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute> } />
+            <Route path="/community/:groupId" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute>}/>
+            <Route path="/community/:groupId/manage" element={ <ProtectedRoute> <ManageGroup dark={dark} /></ProtectedRoute>}/>
+            <Route path="/messages" element={ <ProtectedRoute> <Messenger dark={dark} /> </ProtectedRoute> } />
+            <Route path="/notifications" element={ <ProtectedRoute> <NotificationsCenter dark={dark} /> </ProtectedRoute> } />
+            <Route path="/community-settings" element={ <ProtectedRoute> <CommunitySettings dark={dark} /> </ProtectedRoute>}/>
+            <Route path="/coming-soon" element={ <ProtectedRoute> <ComingSoon dark={dark} /> </ProtectedRoute>} />
             <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
-
-            <Route
-              path="/newsfeed"
-              element={
-                <ProtectedRoute>
-                  <NewsFeed dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/premium"
-              element={
-                <ProtectedRoute>
-                  <PremiumSubscriptionPage dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/tasks"
-              element={
-                <ProtectedRoute>
-                  <Tasks dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/challenge"
-              element={
-                <ProtectedRoute>
-                  <ChallengeDashboard dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/streak"
-              element={
-                <ProtectedRoute>
-                  <StreakDashboard dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/smart-timetable"
-              element={
-                <ProtectedRoute>
-                  <SmartTimetableBuilder dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ================= UNIVERSITY ROUTES ================= */}
-
-                <Route
-                  path="/cgpa"
-                  element={
-                    <ProtectedRoute>
-                      <CGPA dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/gpa"
-                  element={
-                    <ProtectedRoute>
-                      <GPA dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/uploadquestion"
-                  element={
-                    <ProtectedRoute>
-                      <Upload dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/hostelmarketplace"
-                  element={
-                    <ProtectedRoute>
-                      <HostelMarketplace dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/lecturenotesmarketplace"
-                  element={
-                    <ProtectedRoute>
-                      <LectureNotesMarketplace dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/studentmarketplace"
-                  element={
-                    <ProtectedRoute>
-                      <StudentMarketplace dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/myhostels"
-                  element={
-                    <ProtectedRoute>
-                      <MyHostels dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/questions"
-                  element={
-                    <ProtectedRoute>
-                      <Question dark={dark} />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/stories" element={<StoriesHome dark={dark} />} />
-
-              <Route path="/stories/:id" element={<StoryDetails dark={dark} />} />
-
-              <Route path="/read-story/:storyId/:chapterId" element={<ReadStory />} />
-
-                <Route path="/create-story" element={<CreateStory dark={dark} />} />
-
-              <Route path="/create-chapter/:storyId" element={<CreateChapter dark={dark} />} />
-
-            {/* ================= SHARED FEATURES ================= */}
-
-            <Route
-              path="/ai"
-              element={
-                <ProtectedRoute>
-                  <AiAssistance dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ================= ADMIN ================= */}
-
-            <Route
-              path="/adminpanel"
-              element={
-                <ProtectedRoute>
-                  <AdminPanel dark={dark} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin-withdrawals"
-              element={
-                <ProtectedRoute>
-                  <AdminWithdrawals dark={dark} />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />     
+            <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
+            <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />
+            <Route path="/challenge" element={ <ProtectedRoute> <ChallengeDashboard dark={dark} /> </ProtectedRoute> } />
+            <Route path="/streak" element={ <ProtectedRoute> <StreakDashboard dark={dark} /> </ProtectedRoute> } />
+            <Route path="/smart-timetable" element={ <ProtectedRoute> <SmartTimetableBuilder dark={dark} /> </ProtectedRoute> } />
+            <Route path="/cgpa" element={ <ProtectedRoute> <CGPA dark={dark} /> </ProtectedRoute> } />
+            <Route path="/gpa" element={ <ProtectedRoute> <GPA dark={dark} /> </ProtectedRoute> } />
+            <Route path="/uploadquestion" element={ <ProtectedRoute> <Upload dark={dark} /> </ProtectedRoute> } />
+            <Route path="/hostelmarketplace" element={ <ProtectedRoute> <HostelMarketplace dark={dark} /> </ProtectedRoute> } />
+            <Route path="/lecturenotesmarketplace" element={ <ProtectedRoute> <LectureNotesMarketplace dark={dark} /> </ProtectedRoute> } />
+            <Route path="/studentmarketplace" element={ <ProtectedRoute> <StudentMarketplace dark={dark} /> </ProtectedRoute> } />
+            <Route path="/myhostels" element={ <ProtectedRoute> <MyHostels dark={dark} /> </ProtectedRoute> } />
+            <Route path="/questions" element={ <ProtectedRoute> <Question dark={dark} /> </ProtectedRoute> } />
+            <Route path="/stories" element={<StoriesHome dark={dark} />} />
+            <Route path="/stories/:id" element={<StoryDetails dark={dark} />} />
+            <Route path="/read-story/:storyId/:chapterId" element={<ReadStory />} />
+            <Route path="/create-story" element={<CreateStory dark={dark} />} />
+            <Route path="/create-chapter/:storyId" element={<CreateChapter dark={dark} />} />
+            <Route path="/ai" element={ <ProtectedRoute> <AiAssistance dark={dark} /> </ProtectedRoute> }/>
+            <Route path="/adminpanel" element={ <ProtectedRoute> <AdminPanel dark={dark} /> </ProtectedRoute> } />
+            <Route path="/admin-withdrawals" element={ <ProtectedRoute> <AdminWithdrawals dark={dark} /> </ProtectedRoute> }/> 
           </Route>
-
-          {/* ================= 404 ================= */}
 
           <Route path="*" element={<NotFound dark={dark} />} />
         </Routes>

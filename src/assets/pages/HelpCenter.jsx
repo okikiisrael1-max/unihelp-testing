@@ -31,12 +31,8 @@ export default function HelpCenter({ dark }) {
   const card = dark ? "bg-white/5 border border-white/10" : "bg-white border border-slate-200";
 
   return (
-    <div className={`min-h-screen ${bg}`}>
+    <div className={`min-h-screen md:mt-20 w-full ${bg}`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-lg font-medium mb-8">
-          <ArrowLeft size={20} /> Back
-        </button>
-
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-400 mb-5">
             <Sparkles size={16} /> Help Center
