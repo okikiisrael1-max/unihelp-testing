@@ -477,7 +477,7 @@ const CGPATracker = ({ dark }) => {
   ===================================================== */
 
   return (
-    <div className={`min-h-screen md:mb-20 w-full ${bg}`}>
+    <div className={`min-h-screen md:mt-20 w-full ${bg}`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-28 lg:pb-8 space-y-5 md:space-y-6">
 
         {/* TOOLBAR */}
