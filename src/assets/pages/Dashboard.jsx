@@ -359,29 +359,11 @@ const Dashboard = ({ dark }) => {
           <PromotionAdsBanner dark={dark} autoSlide={true} interval={5000} />
         </div>
 
-        {/* ================================================= */}
-        {/* STATS STRIP */}
-        {/* ================================================= */}
-
-        <section className={`grid grid-cols-2 md:grid-cols-4 rounded-3xl border mb-10 md:mb-14 overflow-hidden ${theme.card} ${theme.border}`}>
-          {statsStrip.map((stat) => (
-            <div key={stat.label} className="flex items-center gap-3 px-4 md:px-6 py-5">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${stat.tint}`}>
-                <stat.icon size={18} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-lg md:text-xl font-black leading-tight">{stat.value}</p>
-                <p className={`text-xs truncate ${theme.textSoft}`}>{stat.label}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-
 
         {/* ================================================= */}
         {/*  Group ADS*/}
         {/* ================================================= */}
-         <section className="relative mb-8 md:mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-transparent text-white shadow-lg shadow-indigo-500/20">
+         <section className="relative mb-8 md:mb-10 overflow-hidden hidden sm:block rounded-2xl bg-gradient-to-br from-indigo-600 to-transparent text-white shadow-lg shadow-indigo-500/20">
       <div className="relative z-10 grid gap-6 px-5 pt-7 sm:px-8 sm:pt-9 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
         <div className="min-w-0">
           <h2 className=" text-2xl font-bold leading-tight sm:text-4xl">
