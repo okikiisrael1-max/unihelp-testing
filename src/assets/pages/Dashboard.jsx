@@ -376,10 +376,8 @@ const Dashboard = ({ dark }) => {
             </div>
           ))}
         </section>
-
-        {/* ================================================= */}
-        {/* FEATURED TOOLS SHELF */}
-        {/* ================================================= */}
+        
+        {/* ================================================= 
 
         {featuredFeatureItems?.length > 0 && (
           <section className="mb-10 md:mb-14">
@@ -433,6 +431,8 @@ const Dashboard = ({ dark }) => {
             </div>
           </section>
         )}
+          */}
+
 
         {/* ================================================= */}
         {/* EXPLORE POWERFUL TOOLS */}
