@@ -41,7 +41,6 @@ import MyHostels from "./assets/pages/MyUploadedHostel";
 import Contact from "./assets/pages/Contact";
 import Report from "./assets/pages/Report";
 import StudentMarketplace from "./assets/pages/StudentMarketplace";
-import AdminWithdrawals from "./assets/pages/AdminWithdrawals";
 import AdminPanel from "./assets/pages/AdminPanel";
 import PremiumSubscriptionPage from "./assets/pages/PremiumSubscriptionPage";
 import Tasks from "./assets/pages/Tasks";
@@ -285,7 +284,6 @@ const App = () => {
             <Route path="/create-chapter/:storyId" element={<CreateChapter dark={dark} />} />
             <Route path="/ai" element={ <ProtectedRoute> <AiAssistance dark={dark} /> </ProtectedRoute> }/>
             <Route path="/adminpanel" element={ <ProtectedRoute> <AdminPanel dark={dark} /> </ProtectedRoute> } />
-            <Route path="/admin-withdrawals" element={ <ProtectedRoute> <AdminWithdrawals dark={dark} /> </ProtectedRoute> }/> 
           </Route>
 
           <Route path="*" element={<NotFound dark={dark} />} />

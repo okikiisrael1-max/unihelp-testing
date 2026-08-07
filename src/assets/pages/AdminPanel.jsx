@@ -30,7 +30,6 @@ import {
   deleteDoc,
   onSnapshot,
 } from "firebase/firestore";
-import AdminWithdrawals from "./AdminWithdrawals";
 import MarketplaceAdmin from "../components/MarketplaceAdmin";
 import AdminAnnouncements from "../components/AdminAnncouncement";
 import Announcements from './Announcements';
@@ -606,11 +605,6 @@ export default function AdminPanel({ dark }) {
         {/* Annoucements */}
         {tab === "announcements" && (
           <AdminAnnouncements dark={dark}/>
-        )}
-
-        {/* PAYMENTS */}
-        {tab === "payments" && (
-          <AdminWithdrawals dark={dark}/>
         )}
       </div>
     </div>

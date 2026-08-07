@@ -1,69 +1,110 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft, Search } from "lucide-react";
 
+const cx = (...args) => args.filter(Boolean).join(" ");
+
 export default function NotFound({ dark }) {
-  const bg = dark ? "bg-[#050816] text-white" : "bg-slate-50 text-slate-900";
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  const bg = dark ? "bg-[#050816] text-white" : "bg-[#f5f7ff] text-gray-900";
+  const subtle = dark ? "text-white/50" : "text-gray-500";
+  const faint = dark ? "text-white/35" : "text-gray-400";
+  const ringOffset = dark ? "focus-visible:ring-offset-[#050816]" : "focus-visible:ring-offset-white";
+
+  const fieldWrap = cx(
+    "flex items-center rounded-xl border overflow-hidden pl-4 pr-1.5 transition-colors",
+    dark ? "bg-white/[0.04] border-white/10 focus-within:border-indigo-500" : "bg-white border-gray-200 focus-within:border-indigo-500"
+  );
+  const searchInput = cx(
+    "flex-1 min-w-0 bg-transparent h-12 px-3 text-sm outline-none",
+    dark ? "text-white placeholder:text-white/30" : "text-gray-900 placeholder:text-gray-400"
+  );
+  const primaryBtn = cx(
+    "inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl text-sm font-semibold w-full sm:w-auto",
+    "bg-indigo-600 hover:bg-indigo-700 text-white transition-colors",
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+    ringOffset
+  );
+  const secondaryBtn = cx(
+    "inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl text-sm font-semibold w-full sm:w-auto transition-colors",
+    "focus:outline-none focus-visible:ring-2",
+    ringOffset,
+    dark ? "bg-white/[0.06] hover:bg-white/10 text-white focus-visible:ring-white/25" : "bg-gray-100 hover:bg-gray-200 text-gray-900 focus-visible:ring-gray-300"
+  );
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
 
   return (
-    <div
-      className={`relative flex min-h-screen items-center justify-center overflow-hidden px-6 ${bg}`}
-    >
-      <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-cyan-500/20 blur-[140px]" />
-      <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-purple-600/20 blur-[140px]" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+    <div className={`relative flex min-h-screen items-center justify-center px-6 py-16 ${bg}`}>
+      {/* One restrained accent, not a pair of neon blobs — keeps the moment calm rather than loud */}
+      <div className="pointer-events-none absolute left-1/2 top-[38%] h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-[120px]" />
 
-      <div className="relative z-10 max-w-2xl text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-white/5 px-5 py-2 backdrop-blur-md">
-          <div className="h-3 w-3 animate-pulse rounded-full bg-cyan-400" />
-          <span className="font-semibold tracking-wider text-cyan-300">UNIHELP</span>
-        </div>
+      <div className="relative z-10 w-full max-w-lg text-center">
+        <span
+          className={cx(
+            "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-widest",
+            dark ? "border-white/10 bg-white/5 text-white/50" : "border-gray-200 bg-white text-gray-500"
+          )}
+        >
+          UniHelp · Err-404
+        </span>
 
-        <h1 className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-[90px] font-black leading-none text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.4)] md:text-[120px]">
+        <h1 className="mt-6 text-[84px] sm:text-[112px] font-black leading-none tabular-nums text-indigo-500">
           404
         </h1>
 
-        <h2 className="mt-4 text-3xl font-bold md:text-5xl">Lost in the Digital Space</h2>
+        <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight">
+          This page isn't on the timetable
+        </h2>
 
-        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-gray-400">
-          The page you are searching for does not exist, was moved, or vanished into the UniHelp universe.
+        <p className={cx("mx-auto mt-3 max-w-sm text-sm sm:text-base leading-relaxed", subtle)}>
+          It may have moved, been renamed, or never existed. Search for what you need, or head back to solid ground.
         </p>
 
-        <div className="mx-auto mt-8 flex max-w-xl items-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl">
-          <div className="px-4 text-cyan-400">
-            <Search size={20} />
-          </div>
-
+        <form onSubmit={handleSearch} className={cx(fieldWrap, "mt-8 mx-auto max-w-sm")}>
+          <Search size={18} className={faint} aria-hidden />
+          <label htmlFor="notfound-search" className="sr-only">Search UniHelp</label>
           <input
+            id="notfound-search"
             type="text"
-            placeholder="Search UniHelp..."
-            className="flex-1 bg-transparent py-4 text-white outline-none placeholder:text-gray-500"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search UniHelp"
+            className={searchInput}
           />
-
-          <button className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-4 font-medium transition hover:opacity-90">
+          <button
+            type="submit"
+            disabled={!query.trim()}
+            className={cx(
+              "h-9 px-4 rounded-lg text-sm font-semibold shrink-0 transition-colors",
+              "bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+              ringOffset
+            )}
+          >
             Search
           </button>
-        </div>
+        </form>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-4 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition-all duration-300 hover:scale-105"
-          >
-            <Home size={20} />
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link to="/" className={primaryBtn}>
+            <Home size={16} />
             Back Home
           </Link>
-
-          <button
-            onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 backdrop-blur-md transition-all duration-300 hover:bg-white/10"
-          >
-            <ArrowLeft size={20} />
+          <button onClick={() => window.history.back()} className={secondaryBtn}>
+            <ArrowLeft size={16} />
             Go Back
           </button>
         </div>
 
-        <p className="mt-12 text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} UniHelp - Smart Student Assistance Platform
+        <p className={cx("mt-12 text-xs", faint)}>
+          © {new Date().getFullYear()} UniHelp - Smart Student Assistance Platform
         </p>
       </div>
     </div>
