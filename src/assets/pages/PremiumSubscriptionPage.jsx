@@ -20,7 +20,6 @@ import {
 
 import {
   useFlutterwave,
-  closePaymentModal,
 } from "flutterwave-react-v3";
 
 import {
@@ -297,7 +296,7 @@ export default function PremiumSubscriptionPage({
           ) => {
             try {
               // CLOSE MODAL
-              closePaymentModal();
+              // closePaymentModal(); // Removed because it's not exported in this version
 
               // ======================================================
               // SUCCESS
