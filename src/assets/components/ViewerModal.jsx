@@ -257,11 +257,15 @@ const ViewerModal = ({
         </div>
 
         <div
-          className="flex-1 overflow-auto p-4 md:p-5"
+          className="flex-1 overflow-auto p-4 md:p-5 relative select-none"
+          onContextMenu={(e) => e.preventDefault()}
+          onCopy={(e) => e.preventDefault()}
           style={{
             background: dark ? "#111827" : "#f3f4f6",
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-y pinch-zoom",
+            userSelect: "none",
+            WebkitUserSelect: "none",
           }}
         >
           {documentUrl ? (
@@ -297,12 +301,17 @@ const ViewerModal = ({
                         setHasMorePages(false);
                       }
                     }}
-                    className={`mx-auto block h-auto max-w-full rounded-2xl bg-white transition-opacity ${
+                    className={`mx-auto block h-auto max-w-full rounded-2xl bg-white transition-opacity select-none pointer-events-none ${
                       pageLoading ? "opacity-0" : "opacity-100"
                     }`}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDragStart={(e) => e.preventDefault()}
+                    draggable="false"
                     style={{
                       width: `${previewWidth}px`,
                       maxWidth: "100%",
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
                     }}
                   />
                 )}

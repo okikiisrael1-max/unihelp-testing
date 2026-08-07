@@ -38,19 +38,29 @@ const PDFThumbnail = ({ url, dark }) => {
     >
       {previewUrl && !failed ? (
         useFramePreview ? (
-          <iframe
-            src={previewUrl}
-            title="PDF thumbnail"
-            loading="lazy"
-            className="absolute inset-0 h-full w-full border-0"
-          />
+          <div className="absolute inset-0 h-full w-full border-0 select-none pointer-events-none" onContextMenu={(e) => e.preventDefault()}>
+            <iframe
+              src={previewUrl}
+              title="PDF thumbnail"
+              loading="lazy"
+              className="absolute inset-0 h-full w-full border-0"
+              style={{ pointerEvents: "none" }}
+            />
+          </div>
         ) : (
           <img
             src={previewUrl}
             alt="PDF thumbnail"
             loading="lazy"
             onError={() => setFailed(true)}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none"
+            onContextMenu={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+            draggable="false"
+            style={{
+              userSelect: "none",
+              WebkitUserSelect: "none",
+            }}
           />
         )
       ) : (
@@ -258,13 +268,15 @@ const Questions = ({ dark }) => {
 
         {/* ── PAGE HEADER ── */}
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-500 rounded-xl text-white">
-              <BookOpen />
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30">
+              <BookOpen size={28} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Past Questions</h1>
-              <p className="text-sm opacity-60">
+              <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+                Past Questions
+              </h1>
+              <p className="text-sm opacity-70 mt-1 font-medium">
                 Discover and download shared academic materials
               </p>
             </div>
@@ -284,32 +296,34 @@ const Questions = ({ dark }) => {
 
         {/* ── SEARCH + FILTER ── */}
         <div
-          className="p-4 rounded-xl flex flex-col md:flex-row gap-3"
-          style={{ background: panelBg }}
+          className="p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-sm border"
+          style={{ background: panelBg, borderColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
         >
-          <div className="flex items-center gap-2 flex-1">
-            <Search size={16} className="opacity-40 flex-shrink-0" />
+          <div className="flex items-center gap-3 flex-1 px-3">
+            <Search size={18} className="text-indigo-400 flex-shrink-0" />
             <input
               placeholder="Search by title, course, school…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full p-2 outline-none bg-transparent text-sm"
+              className="w-full py-3 outline-none bg-transparent font-medium"
             />
           </div>
+          <div className="w-px bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
           <select
             value={courseFilter}
             onChange={(e) => setCourseFilter(e.target.value)}
-            className="p-2 rounded-lg text-sm"
-            style={{ background: selectBg }}
+            className="p-3 rounded-xl font-medium outline-none cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ background: "transparent" }}
           >
             <option value="">All Courses</option>
             {courses.map((c, i) => <option key={i}>{c}</option>)}
           </select>
+          <div className="w-px bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
           <select
             value={schoolFilter}
             onChange={(e) => setSchoolFilter(e.target.value)}
-            className="p-2 rounded-lg text-sm"
-            style={{ background: selectBg }}
+            className="p-3 rounded-xl font-medium outline-none cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ background: "transparent" }}
           >
             <option value="">All Schools</option>
             {schools.map((s, i) => <option key={i}>{s}</option>)}
