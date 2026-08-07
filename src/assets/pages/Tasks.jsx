@@ -39,6 +39,7 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "../../firebase/config";
+import taskBanner from "../images/task_banner.jpg";
 
 export default function Tasks({ dark = false }) {
   /* ======================================================
@@ -674,63 +675,63 @@ export default function Tasks({ dark = false }) {
         {/* HERO */}
 
         <div
-          className={`relative overflow-hidden rounded-[30px] md:rounded-[36px] p-5 md:p-8 mb-8 ${theme.card}`}
+          className={`relative overflow-hidden rounded-[30px] md:rounded-[36px] mb-8 border-0 ${theme.card}`}
         >
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="h-14 w-14 md:h-16 md:w-16 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shrink-0">
-                <ClipboardList />
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
-                    My Tasks
-                  </h1>
-
-                  <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-500 text-xs font-semibold">
-                    PRODUCTIVE
-                  </span>
+          <div className="flex flex-col-reverse md:flex-row items-stretch relative z-10">
+            <div className="flex flex-col justify-center p-6 md:p-8 flex-1 gap-6">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-indigo-500/30 shrink-0">
+                  <ClipboardList size={24} />
                 </div>
 
-                <p
-                  className={`mt-3 max-w-2xl leading-relaxed text-sm md:text-base ${theme.muted}`}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-2xl sm:text-4xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+                      My Tasks
+                    </h1>
+                    <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-[10px] font-bold tracking-widest border border-green-500/20">
+                      PRODUCTIVE
+                    </span>
+                  </div>
+
+                  <p
+                    className={`mt-2 max-w-lg leading-relaxed text-sm ${theme.muted}`}
+                  >
+                    Organize assignments, deadlines, exams, and stay productive daily. Stay ahead of your schedule.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto mt-2">
+                {!reminderPermission && (
+                  <button
+                    onClick={requestNotificationPermission}
+                    className="h-12 px-5 rounded-2xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 font-semibold flex items-center justify-center gap-2 transition-all w-full sm:w-auto text-sm border border-yellow-500/20"
+                  >
+                    <Bell size={16} />
+                    Enable Reminders
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="h-12 px-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 transition-all w-full sm:w-auto text-sm"
                 >
-                  Organize assignments,
-                  deadlines, exams and stay
-                  productive daily.
-                </p>
+                  <Plus size={18} />
+                  Add New Task
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-              {!reminderPermission && (
-                <button
-                  onClick={
-                    requestNotificationPermission
-                  }
-                  className="h-14 px-5 rounded-2xl bg-yellow-500 hover:bg-yellow-600 text-black font-semibold flex items-center justify-center gap-2 transition-all w-full sm:w-auto"
-                >
-                  <Bell size={18} />
-
-                  Enable Reminders
-                </button>
-              )}
-
-              <button
-                onClick={() =>
-                  setShowModal(
-                    true
-                  )
-                }
-                className="h-14 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-2 shadow-lg transition-all w-full sm:w-auto"
-              >
-                <Plus size={18} />
-
-                Add Task
-              </button>
+            <div className="w-full md:w-5/12 lg:w-1/3 relative shrink-0">
+              <img 
+                src={taskBanner} 
+                alt="Productivity" 
+                className="w-full h-40 md:h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-l from-transparent to-white dark:to-[#111827] pointer-events-none" />
             </div>
           </div>
         </div>
@@ -811,7 +812,7 @@ export default function Tasks({ dark = false }) {
                       }
                     </p>
 
-                    <h2 className="text-2xl md:text-3xl font-black mt-2">
+                    <h2 className="text-xl md:text-2xl font-black mt-1">
                       {
                         item.value
                       }
