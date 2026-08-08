@@ -7,6 +7,11 @@ const CBTPracticePage = ({ dark = false }) => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  
+  // Setup states
+  const [setupCourse, setSetupCourse] = useState(null);
+  const [numQuestions, setNumQuestions] = useState(20);
+  const [timeLimit, setTimeLimit] = useState(18); // minutes
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -43,14 +48,17 @@ const CBTPracticePage = ({ dark = false }) => {
     const fetchQuestions = async () => {
       setLoadingQuestions(true);
       try {
-        // The endpoint is usually in the format: https://taired-cbt.puter.site/api/v1/{id}.json
         const course = courses.find(c => c.id === selectedCourse);
         if (course && course.endpoint) {
           const response = await fetch(course.endpoint);
           const data = await response.json();
           if (data.status === 'success') {
+            // Shuffle and slice to the requested number of questions
+            const shuffled = [...data.data].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, numQuestions);
+            
             // Format to match existing UI
-            const formatted = data.data.map(q => {
+            const formatted = selected.map(q => {
               const options = [];
               if (q.a) options.push(q.a);
               if (q.b) options.push(q.b);
@@ -58,7 +66,6 @@ const CBTPracticePage = ({ dark = false }) => {
               if (q.d) options.push(q.d);
               if (q.e) options.push(q.e);
               
-              // Handle correct answer
               const correctKey = q.correct?.toLowerCase();
               const correctAnswer = correctKey && q[correctKey] ? q[correctKey] : '';
 
@@ -89,13 +96,14 @@ const CBTPracticePage = ({ dark = false }) => {
     // Reset state when changing courses
     setCurrentIndex(0);
     setSelectedAnswer(null);
+    setAnswers({});
     setSubmitted(false);
     setScore(0);
     setShowSummary(false);
     setReviewMode(false);
-    setTimeLeft(18 * 60);
+    setTimeLeft(timeLimit * 60);
 
-  }, [selectedCourse, courses]);
+  }, [selectedCourse, courses, numQuestions, timeLimit]);
 
   const currentQuestion = questions[currentIndex] || null;
   const progressPercent = questions.length ? ((currentIndex + 1) / questions.length) * 100 : 0;
@@ -138,6 +146,7 @@ const CBTPracticePage = ({ dark = false }) => {
 
   const resetQuiz = () => {
     setSelectedCourse('All');
+    setSetupCourse(null);
     setCurrentIndex(0);
     setSelectedAnswer(null);
     setAnswers({});
@@ -201,42 +210,108 @@ const CBTPracticePage = ({ dark = false }) => {
     );
   }
 
+  if (loadingQuestions) {
+    return (
+      <div className={`min-h-screen px-4 py-6 flex flex-col items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+        <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
+        <p className="text-lg font-medium animate-pulse">Setting up your CBT session...</p>
+      </div>
+    );
+  }
+
   if (selectedCourse === 'All' || questions.length === 0) {
+    if (setupCourse) {
+      const course = courses.find(c => c.id === setupCourse);
+      return (
+        <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+          <div className={`w-full max-w-md rounded-[28px] border p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Practice Setup</h2>
+              <p className="text-sm opacity-70">Customize your session for {course?.title}</p>
+            </div>
+            
+            <div className="space-y-5 mb-8">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Number of Questions</label>
+                <input 
+                  type="number" 
+                  min="5" 
+                  max={course?.question_count || 100} 
+                  value={numQuestions} 
+                  onChange={(e) => setNumQuestions(Number(e.target.value))}
+                  className={`w-full rounded-2xl border px-4 py-3 outline-none transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-indigo-500' : 'border-slate-300 bg-white text-slate-900 focus:border-indigo-500'}`}
+                />
+                <p className="text-xs opacity-60 mt-2">Maximum available: {course?.question_count}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Time Limit (Minutes)</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="180" 
+                  value={timeLimit} 
+                  onChange={(e) => setTimeLimit(Number(e.target.value))}
+                  className={`w-full rounded-2xl border px-4 py-3 outline-none transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-indigo-500' : 'border-slate-300 bg-white text-slate-900 focus:border-indigo-500'}`}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSetupCourse(null)}
+                className={`flex-1 rounded-2xl border px-4 py-3 font-semibold transition ${dark ? 'border-slate-700 bg-slate-800 hover:border-slate-600' : 'border-slate-300 bg-slate-100 hover:border-slate-400'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setSelectedCourse(setupCourse)}
+                className="flex-1 rounded-2xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-500 shadow-lg shadow-indigo-500/30"
+              >
+                Start Practice
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-        <div className={`mx-auto flex max-w-5xl flex-col rounded-[28px] border p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
+        <div className={`mx-auto max-w-5xl rounded-[28px] border p-6 sm:p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
           <div className="mb-4 flex items-center gap-3">
             <div className="rounded-2xl bg-indigo-600/15 p-3 text-indigo-500">
               <Target size={22} />
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-500">CBT Practice</p>
-              <h1 className="text-2xl font-semibold">Ready to practice?</h1>
+              <h1 className="text-2xl font-bold">Ready to practice?</h1>
             </div>
           </div>
-          <p className="text-sm leading-6 opacity-80 mb-6">
-            Select a course to start your CBT practice using our official live question bank.
+          <p className="text-sm leading-6 opacity-80 mb-8 max-w-2xl">
+            Select a course to start your CBT practice using our official live question bank. Test your knowledge and improve your exam readiness.
           </p>
 
-          <label className="text-sm font-medium mb-4 block max-w-sm">
-            <span className="mb-2 block">Select Course</span>
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className={`w-full rounded-2xl border px-3 py-2.5 outline-none transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
-            >
-              <option value="All">-- Choose a Course --</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>{course.title} ({course.question_count} questions)</option>
-              ))}
-            </select>
-          </label>
-          
-          {loadingQuestions && (
-            <div className="flex items-center gap-2 text-indigo-500 font-semibold mt-4">
-              <Loader2 className="animate-spin" size={20} /> Loading questions...
-            </div>
-          )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <div
+                key={course.id}
+                onClick={() => setSetupCourse(course.id)}
+                className={`group cursor-pointer rounded-2xl border p-5 transition-all hover:scale-[1.02] ${dark ? 'border-slate-700 bg-slate-800 hover:border-indigo-500 hover:bg-indigo-500/5' : 'border-slate-200 bg-slate-50 hover:border-indigo-500 hover:shadow-lg hover:bg-white'}`}
+              >
+                <div className="mb-4 flex items-start justify-between">
+                  <div className={`rounded-xl p-2.5 transition-colors ${dark ? 'bg-slate-700 text-indigo-400 group-hover:bg-indigo-500/20' : 'bg-slate-200 text-indigo-600 group-hover:bg-indigo-50'}`}>
+                    <BookOpen size={20} />
+                  </div>
+                </div>
+                <h3 className="mb-2 text-lg font-bold">{course.title}</h3>
+                <div className="flex items-center gap-2 text-sm font-medium opacity-70">
+                  <Target size={14} />
+                  <span>{course.question_count} Questions</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -287,28 +362,24 @@ const CBTPracticePage = ({ dark = false }) => {
           </div>
         </div>
 
-        <div className="mb-6 grid gap-3 md:grid-cols-[auto_auto_auto] md:items-end">
-          <label className="text-sm font-medium">
-            <span className="mb-2 block">Change Course</span>
-            <select
-              value={selectedCourse}
-              onChange={(e) => {
-                setSelectedCourse(e.target.value);
-              }}
-              className={`w-full rounded-2xl border px-3 py-2.5 outline-none transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
-            >
-              <option value="All">-- Stop Practice --</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>{course.title}</option>
-              ))}
-            </select>
-          </label>
-
+        <div className="mb-6 flex flex-wrap gap-3 items-end">
           <button
             onClick={resetQuiz}
-            className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'}`}
+            className={`rounded-2xl border px-5 py-2.5 text-sm font-semibold transition flex items-center gap-2 ${dark ? 'border-slate-700 bg-slate-800 text-slate-100 hover:border-rose-500/50 hover:text-rose-400' : 'border-slate-300 bg-white text-slate-900 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50'}`}
           >
-            Reset Practice
+            End Practice
+          </button>
+          
+          <button
+            onClick={() => {
+              // Restart current practice with same settings
+              const currentCourseId = selectedCourse;
+              setSelectedCourse('All');
+              setTimeout(() => setSelectedCourse(currentCourseId), 100);
+            }}
+            className={`rounded-2xl border px-5 py-2.5 text-sm font-semibold transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'}`}
+          >
+            Restart Current
           </button>
         </div>
 
