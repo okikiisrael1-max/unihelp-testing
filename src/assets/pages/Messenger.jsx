@@ -14,6 +14,7 @@ import {
   where,
 } from "firebase/firestore";
 import {
+  ArrowLeft,
   CheckCheck,
   Clock,
   FileText,
@@ -147,12 +148,17 @@ export default function Messenger({ dark = false }) {
     return activeConversation.memberInfo?.[otherId] || null;
   }, [activeConversation, user]);
 
+  const activeOtherId = useMemo(() => {
+    if (!activeConversation || !user?.uid) return "";
+    return activeConversation.memberIds?.find((id) => id !== user.uid) || "";
+  }, [activeConversation, user]);
+
   // Load profile
   useEffect(() => {
     getCurrentUserProfile(user).then((data) => setProfile(data || {}));
   }, [user]);
 
-  // Listen conversations
+  // Listen conversations (no auto-open — WhatsApp always starts on the list)
   useEffect(() => {
     if (!user?.uid) return undefined;
     const q = query(
@@ -164,7 +170,6 @@ export default function Messenger({ dark = false }) {
     return onSnapshot(q, (snap) => {
       const items = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
       setConversations(items);
-      setActiveId((current) => current || items[0]?.id || "");
     });
   }, [user]);
 
@@ -375,6 +380,106 @@ export default function Messenger({ dark = false }) {
     return otherUid ? friend.profiles?.[otherUid] || {} : {};
   };
 
+  const friendIds = useMemo(() => {
+    const ids = new Set();
+    friends.forEach((friend) => {
+      friend.users?.forEach?.((id) => {
+        if (id !== user?.uid) ids.add(id);
+      });
+    });
+    return ids;
+  }, [friends, user?.uid]);
+
+  const incomingRequestByUser = useMemo(() => {
+    const map = new Map();
+    incomingRequests.forEach((request) => {
+      if (request.from) map.set(request.from, request);
+    });
+    return map;
+  }, [incomingRequests]);
+
+  const outgoingRequestByUser = useMemo(() => {
+    const map = new Map();
+    outgoingRequests.forEach((request) => {
+      if (request.to) map.set(request.to, request);
+    });
+    return map;
+  }, [outgoingRequests]);
+
+  const getRelationshipLabel = (peerId) => {
+    if (!peerId || friendIds.has(peerId)) return null;
+    if (incomingRequestByUser.has(peerId)) return { text: "Friend request received", icon: UserRoundPlus, tone: "info" };
+    if (outgoingRequestByUser.has(peerId)) return { text: "Friend request sent", icon: Clock, tone: "info" };
+    return { text: "Not friends yet", icon: UserPlus, tone: "warning" };
+  };
+
+  const activeRelationshipLabel = getRelationshipLabel(activeOtherId);
+  const activeIncomingRequest = activeOtherId ? incomingRequestByUser.get(activeOtherId) : null;
+  const activeOutgoingRequest = activeOtherId ? outgoingRequestByUser.get(activeOtherId) : null;
+  const activeAreFriends = !activeOtherId || friendIds.has(activeOtherId);
+  const nonFriendMessageUsed = !activeAreFriends && Number(activeConversation?.messageCount || 0) >= 1;
+  const canUseComposer = activeAreFriends || !nonFriendMessageUsed;
+
+  const sendActiveFriendRequest = async () => {
+    if (!activeOtherId) return;
+    await handleSendRequest({
+      id: activeOtherId,
+      uid: activeOtherId,
+      ...(otherUser || {}),
+    });
+    setNotice("Friend request sent.");
+  };
+
+  const acceptActiveFriendRequest = async () => {
+    if (!activeIncomingRequest) return;
+    await handleAcceptRequest(activeIncomingRequest);
+    setNotice("Friend request accepted. You can chat freely now.");
+  };
+
+  const RelationshipPrompt = () => {
+    if (!activeRelationshipLabel) return null;
+    const PromptIcon = activeRelationshipLabel.icon;
+    const isIncoming = !!activeIncomingRequest;
+    const isOutgoing = !!activeOutgoingRequest;
+    const title = isIncoming
+      ? "Friend request waiting"
+      : isOutgoing
+        ? "Friend request sent"
+        : "Add friend to keep chatting";
+    const body = isIncoming
+      ? `${otherUser?.name || "This student"} wants to connect. Accept to continue this chat freely.`
+      : isOutgoing
+        ? "You can continue chatting after the request is accepted."
+        : nonFriendMessageUsed
+          ? "You have used your one intro message. Add them as a friend to send more."
+          : "You can send one intro message before becoming friends.";
+
+    return (
+      <div className={`mx-3 mb-3 flex flex-col gap-3 rounded-3xl border p-4 sm:flex-row sm:items-center ${dark ? "border-indigo-400/20 bg-indigo-400/10" : "border-indigo-100 bg-indigo-50"}`}>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-indigo-600 shadow-sm">
+          <PromptIcon size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-extrabold">{title}</p>
+          <p className={`mt-1 text-sm ${t.muted}`}>{body}</p>
+        </div>
+        {isIncoming ? (
+          <button onClick={acceptActiveFriendRequest} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-emerald-600">
+            <UserCheck size={16} /> Accept
+          </button>
+        ) : isOutgoing ? (
+          <span className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-extrabold ${t.soft}`}>
+            <Clock size={16} /> Pending
+          </span>
+        ) : (
+          <button onClick={sendActiveFriendRequest} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-indigo-700">
+            <UserPlus size={16} /> Add friend
+          </button>
+        )}
+      </div>
+    );
+  };
+
   // --- Tab Bar ---
   const TabBar = () => (
     <div className="flex gap-1 rounded-2xl border p-1 mb-4" style={{ borderColor: dark ? "rgba(255,255,255,0.1)" : "#E2E8F0", background: dark ? "rgba(255,255,255,0.03)" : "#FFFFFF" }}>
@@ -391,7 +496,7 @@ export default function Messenger({ dark = false }) {
             }`}
           >
             <Icon size={16} />
-            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="inline">{tab.label}</span>
             {badge > 0 && (
               <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-extrabold text-white">
                 {badge}
@@ -416,6 +521,8 @@ export default function Messenger({ dark = false }) {
         const otherId = item.memberIds?.find((id) => id !== user?.uid);
         const other = item.memberInfo?.[otherId] || {};
         const unread = item.unread?.[user?.uid] || 0;
+        const relationshipLabel = getRelationshipLabel(otherId);
+        const RelationshipIcon = relationshipLabel?.icon;
         return (
           <button key={item.id} onClick={() => setActiveId(item.id)} className={`mb-2 flex w-full items-center gap-3 rounded-2xl border p-3 text-left ${activeId === item.id ? "border-indigo-500 bg-indigo-500/10" : t.soft}`}>
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">{other.avatar ? <img src={other.avatar} alt="" className="h-full w-full object-cover" /> : <User2 className="m-3" />}</div>
@@ -425,6 +532,16 @@ export default function Messenger({ dark = false }) {
                 <span className={`shrink-0 text-[11px] ${t.muted}`}>{formatShortTime(item.updatedAt)}</span>
               </div>
               <p className={`truncate text-sm ${t.muted}`}>{item.lastMessage || "Say hello"}</p>
+              {relationshipLabel && RelationshipIcon ? (
+                <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-extrabold ${
+                  relationshipLabel.tone === "warning"
+                    ? dark ? "bg-amber-400/10 text-amber-300" : "bg-amber-50 text-amber-700"
+                    : dark ? "bg-indigo-400/10 text-indigo-300" : "bg-indigo-50 text-indigo-700"
+                }`}>
+                  <RelationshipIcon size={12} />
+                  {relationshipLabel.text}
+                </span>
+              ) : null}
             </div>
             {unread > 0 && <span className="rounded-full bg-indigo-600 px-2 py-1 text-xs font-bold text-white">{unread}</span>}
           </button>
@@ -696,14 +813,14 @@ export default function Messenger({ dark = false }) {
 
   return (
     <div className={`min-h-screen md:mt-20 ${t.page}`}>
-      <div className="mx-auto grid min-h-screen max-w-7xl gap-4 px-4 py-6 md:px-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-        {/* Left Panel */}
-        <aside className={`rounded-3xl border ${t.panel}`}>
+      <div className="mx-auto grid max-w-8xl gap-0 px-0 py-0 sm:gap-4 sm:px-4 sm:py-6 md:px-6 lg:grid-cols-[400px_minmax(0,1fr)]">
+        {/* Left Panel — conversation list / tabs. Full-screen on mobile until a chat is opened. */}
+        <aside
+          className={`${activeId ? "hidden" : "flex"} lg:flex flex-col h-[calc(100vh-var(--nav-offset,0px))] lg:h-[90vh] rounded-none border-0 sm:rounded-3xl sm:border ${t.panel}`}>
           <div className="border-b border-white/10 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-black">Messenger</h1>
-                <p className={`text-sm ${t.muted}`}>Direct messages</p>
               </div>
               <Link to="/community-settings" className={`rounded-2xl border p-3 ${t.soft}`} aria-label="Messaging settings"><Settings size={18} /></Link>
             </div>
@@ -722,26 +839,35 @@ export default function Messenger({ dark = false }) {
           </div>
 
           {/* Tab Content */}
-          <div className="max-h-[70vh] overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-3">
             {activeTab === "chats" && <ChatsTab />}
             {activeTab === "friends" && <FriendsTab />}
             {activeTab === "requests" && <RequestsTab />}
           </div>
         </aside>
 
-        {/* Right Panel - Chat */}
-        <main className={`flex min-h-[90vh] flex-col overflow-hidden rounded-3xl border ${t.panel}`}>
+        {/* Right Panel — Chat. Full-screen on mobile once a chat is opened, hidden otherwise. */}
+        <main
+          className={`${activeId ? "flex" : "hidden"} lg:flex flex-col h-[calc(100vh-var(--nav-offset,0px))] lg:h-[90vh] overflow-hidden rounded-none border-0 sm:rounded-3xl sm:border ${t.panel}`}
+        >
           {activeConversation ? (
             <>
               <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 overflow-hidden rounded-2xl bg-indigo-500/10">{otherUser?.avatar ? <img src={otherUser.avatar} alt="" className="h-full w-full object-cover" /> : <User2 className="m-3" />}</div>
-                  <div>
-                    <h2 className="font-black">{otherUser?.name || "Student"}</h2>
-                    <p className={`text-xs ${t.muted}`}>Delivered, read receipts, attachments</p>
+                <div className="flex min-w-0 items-center gap-2">
+                  <button
+                    onClick={() => setActiveId("")}
+                    className="lg:hidden -ml-1 shrink-0 rounded-xl p-2 hover:bg-black/5 dark:hover:bg-white/10"
+                    aria-label="Back to chats"
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">{otherUser?.avatar ? <img src={otherUser.avatar} alt="" className="h-full w-full object-cover" /> : <User2 className="m-3" />}</div>
+                  <div className="min-w-0">
+                    <h2 className="truncate font-black">{otherUser?.name || "Student"}</h2>
+                    <p className={`truncate text-xs ${t.muted}`}>Delivered, read receipts, attachments</p>
                   </div>
                 </div>
-                <CheckCheck className="text-indigo-400" size={20} />
+                <CheckCheck className="shrink-0 text-indigo-400" size={20} />
               </div>
 
               <div className="flex-1 overflow-y-auto p-4">
@@ -782,6 +908,8 @@ export default function Messenger({ dark = false }) {
                 </div>
               </div>
 
+              <RelationshipPrompt />
+
               <div className="border-t border-white/10 p-3">
                 {replyTo && (
                   <div className={`mb-3 flex items-start justify-between gap-3 rounded-2xl border p-3 text-xs ${t.soft}`}>
@@ -793,21 +921,27 @@ export default function Messenger({ dark = false }) {
                   </div>
                 )}
                 {file && <div className={`mb-3 flex items-center justify-between rounded-2xl border p-3 text-xs ${t.soft}`}><span>{file.name}</span><button onClick={() => setFile(null)}><X size={15} /></button></div>}
-                <div className={`flex items-end gap-2 rounded-3xl border p-3 ${t.soft}`}>
-                  <button className="rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Emoji"><Smile size={18} /></button>
-                  <label className="cursor-pointer rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Attach file">
-                    <UploadCloud size={18} />
-                    <input hidden type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                  </label>
-                  <textarea value={text} onChange={(e) => { setText(e.target.value); setTyping(true); }} rows={1} placeholder="Message..." className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-3 text-sm outline-none" onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} />
-                  <button onClick={send} disabled={sending || (!text.trim() && !file)} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white disabled:opacity-50">
-                    {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                  </button>
-                </div>
+                {canUseComposer ? (
+                  <div className={`flex items-end gap-2 rounded-3xl border p-3 ${t.soft}`}>
+                    <button className="rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Emoji"><Smile size={18} /></button>
+                    <label className="cursor-pointer rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Attach file">
+                      <UploadCloud size={18} />
+                      <input hidden type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                    </label>
+                    <textarea value={text} onChange={(e) => { setText(e.target.value); setTyping(true); }} rows={1} placeholder={activeAreFriends ? "Message..." : "Send one intro message..."} className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-3 text-sm outline-none" onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} />
+                    <button onClick={send} disabled={sending || (!text.trim() && !file)} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white disabled:opacity-50">
+                      {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                    </button>
+                  </div>
+                ) : (
+                  <div className={`rounded-3xl border p-4 text-center text-sm font-semibold ${t.soft}`}>
+                    Add each other as friends to send more messages in this chat.
+                  </div>
+                )}
               </div>
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center p-8 text-center">
+            <div className="hidden flex-1 items-center justify-center p-8 text-center lg:flex">
               <div>
                 <MessageCircle className="mx-auto opacity-35" size={54} />
                 <h2 className="mt-4 text-2xl font-black">Choose a conversation</h2>
