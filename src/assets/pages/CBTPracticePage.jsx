@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowLeft, Award, BookOpen, Clock3, Maximize2, Minimize2, Sparkles, Target, Trophy, Zap, Loader2 } from 'lucide-react';
+import { ArrowLeft, Award, BookOpen, Clock3, Maximize2, Minimize2, Sparkles, Target, Trophy, Zap, Loader2, Search } from 'lucide-react';
 
 const CBTPracticePage = ({ dark = false }) => {
   const [courses, setCourses] = useState([]);
@@ -12,15 +12,25 @@ const CBTPracticePage = ({ dark = false }) => {
   const [setupCourse, setSetupCourse] = useState(null);
   const [numQuestions, setNumQuestions] = useState(20);
   const [timeLimit, setTimeLimit] = useState(18); // minutes
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [answers, setAnswers] = useState({}); // { [index]: selectedOption }
   const [score, setScore] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [timeLeft, setTimeLeft] = useState(18 * 60);
   const [reviewMode, setReviewMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cbt_history');
+      if (saved) setHistory(JSON.parse(saved));
+    } catch(e) {}
+  }, [showSummary]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -95,9 +105,7 @@ const CBTPracticePage = ({ dark = false }) => {
     
     // Reset state when changing courses
     setCurrentIndex(0);
-    setSelectedAnswer(null);
     setAnswers({});
-    setSubmitted(false);
     setScore(0);
     setShowSummary(false);
     setReviewMode(false);
@@ -109,21 +117,8 @@ const CBTPracticePage = ({ dark = false }) => {
   const progressPercent = questions.length ? ((currentIndex + 1) / questions.length) * 100 : 0;
   const completionPercent = questions.length ? (score / questions.length) * 100 : 0;
   
-  // Actually we need to track answers if we want review mode to work correctly across questions.
-  // For simplicity, we just keep the existing behavior which only tracks the *current* question's selected answer,
-  // or we need to add an 'answers' state array. The previous code mutated `item.answer` but we are using state now.
-  const [answers, setAnswers] = useState({}); // { [index]: selectedOption }
-
-  // Whenever we change questions, load the previously selected answer if it exists
-  useEffect(() => {
-    if (answers[currentIndex]) {
-      setSelectedAnswer(answers[currentIndex]);
-      setSubmitted(true); // If it's in answers, it was submitted
-    } else {
-      setSelectedAnswer(null);
-      setSubmitted(false);
-    }
-  }, [currentIndex, answers]);
+  const currentAnswer = answers[currentIndex];
+  const isSubmitted = Boolean(currentAnswer);
 
   const answeredCount = Object.keys(answers).length;
   const questionStatus = questions.map((_, index) => {
@@ -148,9 +143,7 @@ const CBTPracticePage = ({ dark = false }) => {
     setSelectedCourse('All');
     setSetupCourse(null);
     setCurrentIndex(0);
-    setSelectedAnswer(null);
     setAnswers({});
-    setSubmitted(false);
     setScore(0);
     setShowSummary(false);
     setReviewMode(false);
@@ -167,16 +160,14 @@ const CBTPracticePage = ({ dark = false }) => {
     }
   };
 
-  const handleSubmit = () => {
-    if (!currentQuestion) return;
-    if (selectedAnswer === null) return;
+  const handleSelectOption = (option) => {
+    if (reviewMode || isSubmitted) return;
 
-    if (selectedAnswer === currentQuestion.correctAnswer) {
+    if (option === currentQuestion.correctAnswer) {
       setScore((prev) => prev + 1);
     }
 
-    setAnswers(prev => ({ ...prev, [currentIndex]: selectedAnswer }));
-    setSubmitted(true);
+    setAnswers(prev => ({ ...prev, [currentIndex]: option }));
   };
 
   const handleBack = () => {
@@ -192,6 +183,21 @@ const CBTPracticePage = ({ dark = false }) => {
       setReviewMode(false);
     } else {
       setShowSummary(true);
+      
+      try {
+        const savedHistory = JSON.parse(localStorage.getItem('cbt_history')) || [];
+        const result = {
+          courseId: selectedCourse,
+          courseTitle: questions[0]?.courseTitle,
+          score,
+          totalQuestions: questions.length,
+          date: new Date().toISOString()
+        };
+        savedHistory.unshift(result);
+        localStorage.setItem('cbt_history', JSON.stringify(savedHistory.slice(0, 50)));
+      } catch (e) {
+        console.error("Failed to save history", e);
+      }
     }
   };
 
@@ -204,7 +210,7 @@ const CBTPracticePage = ({ dark = false }) => {
 
   if (loading) {
     return (
-      <div className={`min-h-screen px-4 py-6 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className={`min-h-screen px-4 pt-24 pb-12 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
         <Loader2 className="animate-spin text-indigo-500" size={40} />
       </div>
     );
@@ -212,9 +218,59 @@ const CBTPracticePage = ({ dark = false }) => {
 
   if (loadingQuestions) {
     return (
-      <div className={`min-h-screen px-4 py-6 flex flex-col items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className={`min-h-screen px-4 pt-24 pb-12 flex flex-col items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
         <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
         <p className="text-lg font-medium animate-pulse">Setting up your CBT session...</p>
+      </div>
+    );
+  }
+
+  if (showHistory) {
+    return (
+      <div className={`min-h-screen px-4 pt-24 pb-12 sm:px-6 lg:px-8 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+        <div className={`w-full max-w-2xl rounded-[28px] border p-6 sm:p-8 shadow-2xl max-h-[80vh] flex flex-col ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">Performance History</h2>
+              <p className="text-sm opacity-70">Your recent practice sessions</p>
+            </div>
+            <button
+              onClick={() => setShowHistory(false)}
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition ${dark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-100'}`}
+            >
+              <ArrowLeft size={16} />
+              Go Back
+            </button>
+          </div>
+          
+          <div className="overflow-y-auto pr-2 space-y-3">
+            {history.length === 0 ? (
+              <p className="opacity-70 text-center py-8">No history found. Complete a practice session to see it here!</p>
+            ) : (
+              history.map((item, idx) => {
+                const percent = Math.round((item.score / item.totalQuestions) * 100);
+                return (
+                  <div key={idx} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border p-4 ${dark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                    <div>
+                      <h3 className="font-bold text-lg">{item.courseTitle}</h3>
+                      <p className="text-sm opacity-70 mt-1">{new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString()}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <p className="text-sm opacity-70">Score</p>
+                        <p className="font-bold">{item.score} / {item.totalQuestions}</p>
+                      </div>
+                      <div className={`flex items-center justify-center h-12 w-12 rounded-full font-bold ${percent >= 70 ? 'bg-emerald-500/10 text-emerald-500' : percent >= 40 ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                        {percent}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -223,7 +279,7 @@ const CBTPracticePage = ({ dark = false }) => {
     if (setupCourse) {
       const course = courses.find(c => c.id === setupCourse);
       return (
-        <div className={`min-h-screen md:mt-20 px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+        <div className={`min-h-screen px-4 pt-24 pb-12 sm:px-6 lg:px-8 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
           <div className={`w-full max-w-md rounded-[28px] border p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-2">Practice Setup</h2>
@@ -277,23 +333,46 @@ const CBTPracticePage = ({ dark = false }) => {
     }
 
     return (
-      <div className={`min-h-screen md:mt-20 px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className={`min-h-screen px-4 pt-24 pb-12 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
         <div className={`mx-auto max-w-5xl rounded-[28px] border p-6 sm:p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
-          <div className="mb-4 flex items-center gap-3">
-            <div className="rounded-2xl bg-indigo-600/15 p-3 text-indigo-500">
-              <Target size={22} />
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-indigo-600/15 p-3 text-indigo-500">
+                <Target size={22} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-500">CBT Practice</p>
+                <h1 className="text-2xl font-bold">Ready to practice?</h1>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-500">CBT Practice</p>
-              <h1 className="text-2xl font-bold">Ready to practice?</h1>
-            </div>
+            
+            {history.length > 0 && (
+              <button 
+                onClick={() => setShowHistory(true)}
+                className={`flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition ${dark ? 'border-slate-700 bg-slate-800 hover:border-slate-500' : 'border-slate-300 bg-white hover:border-slate-400'}`}
+              >
+                <Award size={16} className="text-indigo-500" />
+                <span className="hidden sm:inline">Performance History</span>
+              </button>
+            )}
           </div>
           <p className="text-sm leading-6 opacity-80 mb-8 max-w-2xl">
             Select a course to start your CBT practice using our official live question bank. Test your knowledge and improve your exam readiness.
           </p>
 
+          <div className="mb-6 relative max-w-md">
+            <input
+              type="text"
+              placeholder="Search for a course..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full rounded-2xl border px-4 py-3 pl-11 outline-none transition ${dark ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-indigo-500' : 'border-slate-300 bg-white text-slate-900 focus:border-indigo-500'}`}
+            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" size={18} />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
+            {courses.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.id.toLowerCase().includes(searchTerm.toLowerCase())).map((course) => (
               <div
                 key={course.id}
                 onClick={() => setSetupCourse(course.id)}
@@ -318,7 +397,7 @@ const CBTPracticePage = ({ dark = false }) => {
   }
 
   return (
-    <div className={`min-h-screen md:mt-20 px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen px-4 pt-24 pb-12 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       <div className={`mx-auto max-w-6xl rounded-4xl border p-4 shadow-2xl sm:p-6 lg:p-8 ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
@@ -439,16 +518,14 @@ const CBTPracticePage = ({ dark = false }) => {
 
             <div className="mt-6 space-y-3">
               {currentQuestion.options.map((option, idx) => {
-                const isSelected = selectedAnswer === option;
-                const isCorrect = submitted && option === currentQuestion.correctAnswer;
-                const isWrong = submitted && isSelected && option !== currentQuestion.correctAnswer;
+                const isSelected = currentAnswer === option;
+                const isCorrect = isSubmitted && option === currentQuestion.correctAnswer;
+                const isWrong = isSubmitted && isSelected && option !== currentQuestion.correctAnswer;
 
                 return (
                   <button
                     key={`${option}-${idx}`}
-                    onClick={() => {
-                      if (!submitted) setSelectedAnswer(option);
-                    }}
+                    onClick={() => handleSelectOption(option)}
                     className={`flex w-full items-start rounded-2xl border px-4 py-3.5 text-left transition ${
                       isCorrect
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
@@ -468,7 +545,7 @@ const CBTPracticePage = ({ dark = false }) => {
               })}
             </div>
 
-            {submitted && (
+            {reviewMode && currentQuestion.explanation && (
               <div className={`mt-5 rounded-2xl border p-4 text-sm ${dark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
                 <div className="mb-2 flex items-center gap-2 font-semibold text-emerald-500">
                   <Zap size={16} />
@@ -486,13 +563,6 @@ const CBTPracticePage = ({ dark = false }) => {
               >
                 <ArrowLeft size={16} />
                 Back
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={selectedAnswer === null || submitted}
-                className="rounded-2xl bg-indigo-600 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Submit answer
               </button>
               <button
                 onClick={() => setReviewMode(true)}
