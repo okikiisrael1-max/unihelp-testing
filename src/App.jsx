@@ -78,6 +78,7 @@ import PrivacyPolicy from "./assets/pages/PrivacyPolicy";
 import TermsOfService from "./assets/pages/TermsOfService";
 import CompleteProfile from "./assets/pages/CompleteProfile";
 import FeaturesCatalog from "./assets/pages/FeaturesCatalog";
+import ViewProfile from "./assets/pages/ViewProfile";
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -240,6 +241,7 @@ const App = () => {
         <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
             <Route path="/" element={ <Dashboard dark={dark} /> }/>
             <Route path="/profile" element={ <ProtectedRoute> <Profile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
+            <Route path="/profile/:uid" element={ <ProtectedRoute> <ViewProfile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
             <Route path="/announcements" element={<ProtectedRoute><Announcements dark={dark} /> </ProtectedRoute>}/>
             <Route path="/cbt-practice" element={ <ProtectedRoute> <CBTPracticePage dark={dark} /> </ProtectedRoute>}/>
             <Route path="/faq" element={<FAQPage dark={dark} />} />

@@ -17,14 +17,18 @@ import {
   ArrowLeft,
   CheckCheck,
   Clock,
+  Eye,
   FileText,
   Loader2,
   MessageCircle,
+  MoreVertical,
+  Pencil,
   Reply,
   Search,
   Send,
   Settings,
   Smile,
+  Trash2,
   UploadCloud,
   User2,
   UserCheck,
@@ -33,6 +37,7 @@ import {
   UserX,
   Users,
   X,
+  XCircle,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -64,6 +69,8 @@ const TABS = [
   { key: "requests", label: "Requests", icon: UserRoundPlus },
 ];
 
+const EDIT_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+
 const theme = (dark) => ({
   page: dark ? "bg-[#050816] text-white" : "bg-[#f6f8fc] text-slate-950",
   panel: dark ? "border-white/10 bg-white/[0.05]" : "border-slate-200 bg-white",
@@ -72,6 +79,7 @@ const theme = (dark) => ({
   muted: dark ? "text-slate-400" : "text-slate-500",
   tabActive: dark ? "bg-indigo-500/20 text-indigo-300" : "bg-indigo-100 text-indigo-700",
   tabInactive: dark ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-700",
+  menu: dark ? "border-white/10 bg-[#0f1729]" : "border-slate-200 bg-white",
 });
 
 const kindFor = (file) => {
@@ -88,8 +96,17 @@ const Attachment = ({ item }) => {
 };
 
 const messagePreview = (message) => {
+  if (message?.deleted) return "This message was deleted";
   if (message?.text) return message.text.slice(0, 120);
   return message?.attachments?.[0]?.name || "Attachment";
+};
+
+const toDate = (value) => {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate();
+  if (value.seconds) return new Date(value.seconds * 1000);
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
 const firstLetter = (name = "Student") => name.trim().charAt(0).toUpperCase() || "S";
@@ -124,6 +141,12 @@ export default function Messenger({ dark = false }) {
   const [replyTo, setReplyTo] = useState(null);
   const openedUserRef = useRef("");
   const bottomRef = useRef(null);
+
+  // Message action state (menu / edit)
+  const [openMenuId, setOpenMenuId] = useState("");
+  const [editingId, setEditingId] = useState("");
+  const [editText, setEditText] = useState("");
+  const menuRef = useRef(null);
 
   // Friends state
   const [friends, setFriends] = useState([]);
@@ -200,6 +223,25 @@ export default function Messenger({ dark = false }) {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
     });
   }, [activeId, user]);
+
+  // Reset per-message UI state whenever the open chat changes
+  useEffect(() => {
+    setOpenMenuId("");
+    setEditingId("");
+    setEditText("");
+  }, [activeId]);
+
+  // Close the actions dropdown on outside click
+  useEffect(() => {
+    if (!openMenuId) return undefined;
+    const handleClick = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [openMenuId]);
 
   // Search users
   useEffect(() => {
@@ -319,6 +361,65 @@ export default function Messenger({ dark = false }) {
     }
   };
 
+  // --- Message actions: edit / delete ---
+  const canEditMessage = (message) => {
+    if (!message || message.deleted || message.senderId !== user?.uid) return false;
+    const sentAt = toDate(message.createdAt);
+    if (!sentAt) return false;
+    return Date.now() - sentAt.getTime() <= EDIT_WINDOW_MS;
+  };
+
+  const canDeleteMessage = (message) => !!message && !message.deleted && message.senderId === user?.uid;
+
+  const startEditMessage = (message) => {
+    setEditingId(message.id);
+    setEditText(message.text || "");
+    setOpenMenuId("");
+  };
+
+  const cancelEditMessage = () => {
+    setEditingId("");
+    setEditText("");
+  };
+
+  const saveEditMessage = async (message) => {
+    const trimmed = editText.trim();
+    if (!trimmed || !activeId) return;
+    if (!canEditMessage(message)) {
+      setNotice("This message can no longer be edited (30 minute window passed).");
+      setEditingId("");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "conversations", activeId, "messages", message.id), {
+        text: trimmed,
+        edited: true,
+        editedAt: serverTimestamp(),
+      });
+      setEditingId("");
+      setEditText("");
+    } catch (err) {
+      setNotice(err.message || "Could not edit message.");
+    }
+  };
+
+  const deleteMessage = async (message) => {
+    if (!activeId) return;
+    const confirmed = window.confirm("Delete this message for everyone? This can't be undone.");
+    if (!confirmed) return;
+    try {
+      await updateDoc(doc(db, "conversations", activeId, "messages", message.id), {
+        deleted: true,
+        text: "",
+        attachments: [],
+        deletedAt: serverTimestamp(),
+      });
+      setOpenMenuId("");
+    } catch (err) {
+      setNotice(err.message || "Could not delete message.");
+    }
+  };
+
   const handleSendRequest = async (targetUser) => {
     try {
       await sendFriendRequest({
@@ -379,6 +480,8 @@ export default function Messenger({ dark = false }) {
     const otherUid = friend.users?.find((id) => id !== user?.uid);
     return otherUid ? friend.profiles?.[otherUid] || {} : {};
   };
+
+  const getFriendUid = (friend) => friend.users?.find((id) => id !== user?.uid) || "";
 
   const friendIds = useMemo(() => {
     const ids = new Set();
@@ -574,29 +677,48 @@ export default function Messenger({ dark = false }) {
 
       {friends.length > 0 ? friends.map((friend) => {
         const friendProfile = getFriendProfile(friend);
+        const friendUid = getFriendUid(friend);
         const name = friendProfile.name || friendProfile.username || "Student";
         const avatar = friendProfile.avatar || "";
         const school = friendProfile.school || friendProfile.university || "";
         const department = friendProfile.department || "";
 
         return (
-          <button
+          <div
             key={friend.id}
-            onClick={() => openFriendChat(friend)}
-            className={`mb-2 flex w-full items-center gap-3 rounded-2xl border p-3 text-left ${t.soft} hover:brightness-95 transition-all`}
+            className={`mb-2 flex w-full items-center gap-3 rounded-2xl border p-3 ${t.soft}`}
           >
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">
-              {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-lg font-extrabold text-indigo-500">{name[0]}</div>}
+            <button onClick={() => openFriendChat(friend)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">
+                {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-lg font-extrabold text-indigo-500">{name[0]}</div>}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold">{name}</p>
+                {school && <p className={`truncate text-xs ${t.muted}`}>{school}</p>}
+                {department && <p className={`truncate text-xs ${t.muted}`}>{department}</p>}
+              </div>
+            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {friendUid && (
+                <Link
+                  to={`/profile/${friendUid}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl border ${t.soft}`}
+                  aria-label={`View ${name}'s profile`}
+                  title="View profile"
+                >
+                  <Eye size={16} />
+                </Link>
+              )}
+              <button
+                onClick={() => openFriendChat(friend)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600"
+                aria-label={`Message ${name}`}
+              >
+                <MessageCircle size={16} />
+              </button>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-bold">{name}</p>
-              {school && <p className={`truncate text-xs ${t.muted}`}>{school}</p>}
-              {department && <p className={`truncate text-xs ${t.muted}`}>{department}</p>}
-            </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-              <MessageCircle size={16} />
-            </div>
-          </button>
+          </div>
         );
       }) : (
         <div className={`rounded-3xl border p-6 text-center ${t.soft}`}>
@@ -811,6 +933,118 @@ export default function Messenger({ dark = false }) {
     );
   };
 
+  // --- Message bubble ---
+  const MessageBubble = ({ message }) => {
+    const mine = message.senderId === user?.uid;
+    const senderName = mine
+      ? profile.username || user?.displayName || "You"
+      : message.senderName || otherUser?.name || "Student";
+    const senderAvatar = mine
+      ? message.senderAvatar || profile.photo || user?.photoURL || ""
+      : message.senderAvatar || otherUser?.avatar || "";
+    const isEditing = editingId === message.id;
+    const isMenuOpen = openMenuId === message.id;
+    const editable = canEditMessage(message);
+    const deletable = canDeleteMessage(message);
+    const showActions = !message.deleted && !isEditing;
+
+    return (
+      <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+        {!mine && <ChatAvatar src={senderAvatar} name={senderName} />}
+        <div className={`relative max-w-[86%] rounded-3xl border px-3 py-1 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft} ${message.deleted ? "opacity-70" : ""}`}>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[9px] font-bold opacity-75">
+              {formatShortTime(message.createdAt)}
+              {message.edited && !message.deleted ? " · edited" : ""}
+            </p>
+            {showActions && (
+              <div className="relative" ref={isMenuOpen ? menuRef : null}>
+                <button
+                  onClick={() => setOpenMenuId(isMenuOpen ? "" : message.id)}
+                  className="rounded-lg p-1 opacity-80 hover:bg-white/10"
+                  aria-label="Message actions"
+                >
+                  <MoreVertical size={16} />
+                </button>
+                {isMenuOpen && (
+                  <div className={`absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-2xl border shadow-lg ${t.menu} ${mine ? "text-slate-900 dark:text-white" : ""}`}>
+                    <button
+                      onClick={() => { setReplyTo(message); setOpenMenuId(""); }}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold ${dark ? "hover:bg-white/10" : "hover:bg-slate-100"}`}
+                    >
+                      <Reply size={14} /> Reply
+                    </button>
+                    {mine && (
+                      <button
+                        onClick={() => editable ? startEditMessage(message) : setNotice("Editing is only available within 30 minutes of sending.")}
+                        className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold ${editable ? (dark ? "hover:bg-white/10" : "hover:bg-slate-100") : "opacity-40 cursor-not-allowed"}`}
+                      >
+                        <Pencil size={14} /> Edit
+                      </button>
+                    )}
+                    {mine && deletable && (
+                      <button
+                        onClick={() => deleteMessage(message)}
+                        className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold text-red-500 ${dark ? "hover:bg-red-500/10" : "hover:bg-red-50"}`}
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {message.deleted ? (
+            <p className={`mt-1 flex items-center gap-1.5 text-sm italic ${mine ? "text-white/70" : t.muted}`}>
+              <Trash2 size={13} /> This message was deleted
+            </p>
+          ) : isEditing ? (
+            <div className="mt-1 min-w-[220px]">
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                rows={2}
+                autoFocus
+                className={`w-full resize-none rounded-xl border px-3 py-2 text-sm outline-none ${mine ? "border-white/30 bg-white/10 text-white placeholder:text-white/50" : t.input}`}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    saveEditMessage(message);
+                  } else if (event.key === "Escape") {
+                    cancelEditMessage();
+                  }
+                }}
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <button onClick={cancelEditMessage} className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold ${mine ? "bg-white/10 text-white" : t.soft}`}>
+                  <XCircle size={13} /> Cancel
+                </button>
+                <button onClick={() => saveEditMessage(message)} disabled={!editText.trim()} className="flex items-center gap-1 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                  <CheckCheck size={13} /> Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {message.replyTo && (
+                <div className={`mb-2 rounded-2xl border-l-4 p-2 text-xs ${mine ? "border-white/60 bg-white/10" : "border-indigo-400 bg-indigo-500/10"}`}>
+                  <p className="font-bold opacity-80">{message.replyTo.senderName}</p>
+                  <p className="mt-1 line-clamp-2 opacity-75">{message.replyTo.text}</p>
+                </div>
+              )}
+              {message.text && <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.text}</p>}
+              {(message.attachments || []).map((item, index) => <Attachment key={index} item={item} />)}
+              {mine && <div className="mt-2 flex justify-end"><CheckCheck size={14} /></div>}
+            </>
+          )}
+        </div>
+        {mine && <ChatAvatar src={senderAvatar} name={senderName} mine />}
+      </div>
+    );
+  };
+
   return (
     <div className={`min-h-screen md:mt-20 ${t.page}`}>
       <div className="mx-auto grid max-w-8xl gap-0 px-0 py-0 sm:gap-4 sm:px-4 sm:py-6 md:px-6 lg:grid-cols-[400px_minmax(0,1fr)]">
@@ -861,49 +1095,30 @@ export default function Messenger({ dark = false }) {
                   >
                     <ArrowLeft size={20} />
                   </button>
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">{otherUser?.avatar ? <img src={otherUser.avatar} alt="" className="h-full w-full object-cover" /> : <User2 className="m-3" />}</div>
-                  <div className="min-w-0">
-                    <h2 className="truncate font-black">{otherUser?.name || "Student"}</h2>
-                    <p className={`truncate text-xs ${t.muted}`}>Delivered, read receipts, attachments</p>
-                  </div>
+                  {activeAreFriends && activeOtherId ? (
+                    <Link to={`/profile/${activeOtherId}`} className="flex min-w-0 items-center gap-3 group">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">{otherUser?.avatar ? <img src={otherUser.avatar} alt="" className="h-full w-full object-cover" /> : <User2 className="m-3" />}</div>
+                      <div className="min-w-0">
+                        <h2 className="truncate font-black group-hover:underline">{otherUser?.name || "Student"}</h2>
+                        <p className={`truncate text-xs ${t.muted}`}>View profile</p>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">{otherUser?.avatar ? <img src={otherUser.avatar} alt="" className="h-full w-full object-cover" /> : <User2 className="m-3" />}</div>
+                      <div className="min-w-0">
+                        <h2 className="truncate font-black">{otherUser?.name || "Student"}</h2>
+                        <p className={`truncate text-xs ${t.muted}`}>Delivered, read receipts, attachments</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <CheckCheck className="shrink-0 text-indigo-400" size={20} />
               </div>
 
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-3">
-                  {messages.map((message) => {
-                    const mine = message.senderId === user?.uid;
-                    const senderName = mine
-                      ? profile.username || user?.displayName || "You"
-                      : message.senderName || otherUser?.name || "Student";
-                    const senderAvatar = mine
-                      ? message.senderAvatar || profile.photo || user?.photoURL || ""
-                      : message.senderAvatar || otherUser?.avatar || "";
-                    return (
-                      <div key={message.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-                        {!mine && <ChatAvatar src={senderAvatar} name={senderName} />}
-                        <div className={`max-w-[86%] rounded-3xl border px-3 py-1 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft}`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-[9px] font-bold opacity-75">{formatShortTime(message.createdAt)}</p>
-                            <button onClick={() => setReplyTo(message)} className="rounded-lg p-1 opacity-80 hover:bg-white/10" aria-label="Reply to message">
-                              <Reply size={22} />
-                            </button>
-                          </div>
-                          {message.replyTo && (
-                            <div className={`mb-2 rounded-2xl border-l-4 p-2 text-xs ${mine ? "border-white/60 bg-white/10" : "border-indigo-400 bg-indigo-500/10"}`}>
-                              <p className="font-bold opacity-80">{message.replyTo.senderName}</p>
-                              <p className="mt-1 line-clamp-2 opacity-75">{message.replyTo.text}</p>
-                            </div>
-                          )}
-                          {message.text && <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.text}</p>}
-                          {(message.attachments || []).map((item, index) => <Attachment key={index} item={item} />)}
-                          {mine && <div className="mt-2 flex justify-end"><CheckCheck size={14} /></div>}
-                        </div>
-                        {mine && <ChatAvatar src={senderAvatar} name={senderName} mine />}
-                      </div>
-                    );
-                  })}
+                  {messages.map((message) => <MessageBubble key={message.id} message={message} />)}
                   <div ref={bottomRef} />
                 </div>
               </div>
