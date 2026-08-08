@@ -223,7 +223,7 @@ const CBTPracticePage = ({ dark = false }) => {
     if (setupCourse) {
       const course = courses.find(c => c.id === setupCourse);
       return (
-        <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+        <div className={`min-h-screen md:mt-20 px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-center ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
           <div className={`w-full max-w-md rounded-[28px] border p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-2">Practice Setup</h2>
@@ -277,7 +277,7 @@ const CBTPracticePage = ({ dark = false }) => {
     }
 
     return (
-      <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className={`min-h-screen md:mt-20 px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
         <div className={`mx-auto max-w-5xl rounded-[28px] border p-6 sm:p-8 shadow-2xl ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
           <div className="mb-4 flex items-center gap-3">
             <div className="rounded-2xl bg-indigo-600/15 p-3 text-indigo-500">
@@ -318,7 +318,7 @@ const CBTPracticePage = ({ dark = false }) => {
   }
 
   return (
-    <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen md:mt-20 px-4 py-6 sm:px-6 lg:px-8 ${dark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       <div className={`mx-auto max-w-6xl rounded-4xl border p-4 shadow-2xl sm:p-6 lg:p-8 ${dark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-white'}`}>
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
