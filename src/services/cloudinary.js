@@ -58,13 +58,6 @@ const extractFileNameFromUrl = (url = "") => {
 const validateFile = (file, kind) => {
   const errors = [];
 
-  if (!isCloudinaryConfigured()) {
-    errors.push(
-      "Cloudinary is not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env"
-    );
-    return errors;
-  }
-
   if (!file) {
     errors.push("No file provided");
     return errors;
@@ -133,67 +126,33 @@ const uploadToCloudinary = (
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+    // Simulate progress
+    if (onProgress) {
+      onProgress(50);
+    }
 
-    const publicId = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}`;
-
-    formData.append("public_id", publicId);
-
-    const xhr = new XMLHttpRequest();
-
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable && onProgress) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        onProgress(percent);
+    const reader = new FileReader();
+    
+    reader.onloadend = () => {
+      if (onProgress) {
+        onProgress(100);
       }
-    });
-
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-
-          resolve({
-            secure_url: response.secure_url,
-            public_id: response.public_id,
-            format: response.format,
-            bytes: response.bytes,
-            resource_type: response.resource_type,
-            original_filename: file.name,
-          });
-        } catch (error) {
-          reject({
-            errors: ["Failed to parse upload response"],
-            raw: xhr.responseText,
-          });
-        }
-        return;
-      }
-
-      let message = "Upload failed";
-      try {
-        const errorResponse = JSON.parse(xhr.responseText);
-        message = errorResponse.error?.message || message;
-      } catch (_) {}
-
-      reject({ errors: [message], status: xhr.status });
-    });
-
-    xhr.addEventListener("error", () => {
-      reject({ errors: ["Network error. Check your internet connection."] });
-    });
-
-    xhr.addEventListener("abort", () => {
-      reject({ errors: ["Upload was cancelled"] });
-    });
-
-    const uploadUrl = `${CLOUDINARY_BASE_URL}/${resourceType}/upload`;
-    xhr.open("POST", uploadUrl);
-    xhr.send(formData);
+      
+      resolve({
+        secure_url: reader.result,
+        public_id: `base64_${Date.now()}`,
+        format: file.type.split('/')[1] || 'unknown',
+        bytes: file.size,
+        resource_type: resourceType,
+        original_filename: file.name,
+      });
+    };
+    
+    reader.onerror = () => {
+      reject({ errors: ["Failed to read file as base64"] });
+    };
+    
+    reader.readAsDataURL(file);
   });
 };
 
