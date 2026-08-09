@@ -46,7 +46,6 @@ import fImg4 from "../images/featured/stationery.jpg";
 import fImg5 from "../images/featured/desk1.jpg";
 import fImg6 from "../images/featured/coffee_notes.jpg";
 
-// Array of local contextual images used for the Featured Tools shelf
 const FEATURED_IMAGES = [fImg1, fImg2, fImg3, fImg4, fImg5, fImg6];
 
 const Dashboard = ({ dark }) => {
@@ -419,8 +418,7 @@ const Dashboard = ({ dark }) => {
 
           {/* SEARCH */}
           <div
-            className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-4 transition ${theme.input}`}
-          >
+            className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-4 transition ${theme.input}`}>
             <Search size={17} className={theme.textFaint} />
             <input
               type="text"
@@ -452,8 +450,7 @@ const Dashboard = ({ dark }) => {
                     activeCategory === name
                       ? "bg-indigo-500 border-indigo-500 text-white"
                       : `${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`
-                  }`}
-                >
+                  }`}>
                   {name}
                 </button>
               ))}

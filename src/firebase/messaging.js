@@ -37,7 +37,7 @@ export const requestNotificationPermission =
             messaging,
             {
               vapidKey:
-                "BNSkrKfXIg968vhAb-KcSk7x5knlR67nEhIq-dlD7mGAbN1AgAABQlEmPq1ISNesMUvqW0JvyMQymywrAna0jv4",
+                import.meta.env.VITE_FIREBASE_VAPID_KEY || "",
             }
           );
 

@@ -8,9 +8,19 @@ const VAPID_KEY =
 const getServiceWorkerRegistration = async () => {
   if (!("serviceWorker" in navigator)) return null;
 
+  const serviceWorkerUrl = new URL(
+    "../../firebase/firebase-messaging-sw.js",
+    import.meta.url
+  );
+
   try {
-    const existingRegistration = await navigator.serviceWorker.getRegistration(
-      "/firebase-messaging-sw.js"
+    const existingRegistration = (
+      await navigator.serviceWorker.getRegistrations()
+    ).find(
+      (registration) =>
+        registration.active?.scriptURL === serviceWorkerUrl.href ||
+        registration.installing?.scriptURL === serviceWorkerUrl.href ||
+        registration.waiting?.scriptURL === serviceWorkerUrl.href
     );
 
     if (existingRegistration) {
@@ -19,8 +29,8 @@ const getServiceWorkerRegistration = async () => {
     }
 
     const registration = await navigator.serviceWorker.register(
-      "/firebase-messaging-sw.js",
-      { scope: "/" }
+      serviceWorkerUrl,
+      { scope: "/", type: "module" }
     );
 
     await navigator.serviceWorker.ready;
