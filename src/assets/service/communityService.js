@@ -89,20 +89,28 @@ export const searchUsers = async (term, currentUid, pageSize = 12) => {
 export const listGroups = async ({ search = "", category = "All", cursor = null } = {}) => {
   const groupsRef = collection(db, "groups");
   const clauses = [];
+  const trimmedSearch = normalizeSearch(search);
+  const isSearching = trimmedSearch.length > 0;
 
-  if (category && category !== "All") clauses.push(where("category", "==", category));
-  if (search.trim()) {
-    const value = normalizeSearch(search);
-    clauses.push(orderBy("nameLower"), where("nameLower", ">=", value), where("nameLower", "<=", `${value}\uf8ff`));
+  if (isSearching) {
+    clauses.push(orderBy("nameLower"), where("nameLower", ">=", trimmedSearch), where("nameLower", "<=", `${trimmedSearch}\uf8ff`));
   } else {
+    if (category && category !== "All") clauses.push(where("category", "==", category));
     clauses.push(orderBy("lastActivityAt", "desc"));
   }
+
   if (cursor) clauses.push(startAfter(cursor));
   clauses.push(limit(PAGE_SIZE));
 
   const snap = await getDocs(query(groupsRef, ...clauses));
+  let groups = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+
+  if (isSearching && category && category !== "All") {
+    groups = groups.filter((group) => group.category === category);
+  }
+
   return {
-    groups: snap.docs.map((entry) => ({ id: entry.id, ...entry.data() })),
+    groups,
     cursor: snap.docs[snap.docs.length - 1] || null,
     hasMore: snap.docs.length === PAGE_SIZE,
   };

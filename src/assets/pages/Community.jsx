@@ -532,7 +532,7 @@ function GroupDiscovery() {
               {CATEGORIES.map((item) => (
                 <button
                   key={item}
-                  onClick={() => setCategory(item)}
+                  onClick={() => setCategory(category === item ? "All" : item)}
                   className={`h-11 shrink-0 rounded-lg px-4 text-xs font-semibold uppercase tracking-wide ${FONT_MONO} transition ${
                     category === item ? "[background:var(--brass)] [color:var(--on-brass)]" : `border [border-color:var(--line)] ${cx.muted} hover:[border-color:var(--brass)]`
                   }`}
