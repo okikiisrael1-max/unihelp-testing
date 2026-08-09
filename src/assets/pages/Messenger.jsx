@@ -981,13 +981,13 @@ export default function Messenger({ dark = false }) {
                   <div className={`absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-2xl border shadow-lg ${t.menu} ${mine ? "text-slate-900 dark:text-white" : ""}`}>
                     <button
                       onClick={() => { setReplyTo(message); setOpenMenuId(""); }}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold ${dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100"}`}>
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold ${dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 text-black"}`}>
                       <Reply size={14} /> Reply
                     </button>
                     {mine && (
                       <button
                         onClick={() => editable ? startEditMessage(message) : setNotice("Editing is only available within 30 minutes of sending.")}
-                        className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold ${editable ? (dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100") : "opacity-40 cursor-not-allowed"}`}
+                        className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-bold ${editable ? (dark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 text-black") : "opacity-40 cursor-not-allowed"}`}
                       >
                         <Pencil size={14} /> Edit
                       </button>
