@@ -512,7 +512,7 @@ const Dashboard = ({ dark }) => {
             </div>
 
             <div className="space-y-2.5">
-              {allItems.slice(0, 5).map((item, i) => (
+              {allItems.slice(5, 10).map((item, i) => (
                 <Link
                   key={item.title}
                   to={item.link}

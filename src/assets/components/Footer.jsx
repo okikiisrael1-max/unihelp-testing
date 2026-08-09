@@ -8,6 +8,10 @@ import {
   Twitter,
   Youtube,
   ChevronRight,
+  PhoneCall,
+  Info,
+  HelpCircle,
+  FileWarning,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -83,14 +87,26 @@ export default function Footer({ dark = false }) {
         </div>
 
         <div>
-          <h3 className="mb-5 text-lg font-bold">Features</h3>
-
-          <ul className={`space-y-3 ${theme.muted}`}>
-            <li>CGPA Calculator</li>
-            <li>GPA Calculator</li>
-            <li>Resources</li>
-            <li>Student Marketplace</li>
-            <li>Community Chat</li>
+          <h3 className="mb-5 text-lg font-bold">Support</h3>
+          <ul className="space-y-3">
+            {[
+              { title: "About UniHelp", desc: "Learn what UniHelp offers", icon: Info, link: "/about" },
+              { title: "FAQ", desc: "Answers to common questions", icon: HelpCircle, link: "/faq" },
+              { title: "Help Center", desc: "Find guidance for UniHelp", icon: Info, link: "/help-center" },
+              { title: "Report", desc: "Report safety or platform issues", icon: FileWarning, link: "/report" },
+              { title: "Contact", desc: "Reach the UniHelp team", icon: PhoneCall, link: "/contact" },
+            ].map((item, index) => (
+              <li key={index}>
+                <Link
+                  to={item.link}
+                  className={`flex items-center gap-2 text-sm transition sm:text-base ${theme.muted} ${
+                    dark ? "hover:text-indigo-400" : "hover:text-indigo-600"
+                  }`}>
+                  <ChevronRight size={16} />
+                  {item.title}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 

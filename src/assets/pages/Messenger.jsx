@@ -140,6 +140,7 @@ export default function Messenger({ dark = false }) {
   const [notice, setNotice] = useState("");
   const [replyTo, setReplyTo] = useState(null);
   const openedUserRef = useRef("");
+  const openedConversationRef = useRef("");
   const bottomRef = useRef(null);
 
   // Message action state (menu / edit)
@@ -196,9 +197,19 @@ export default function Messenger({ dark = false }) {
     });
   }, [user]);
 
-  // Handle URL param user
+  // Handle URL params for opening a chat directly
   useEffect(() => {
+    const targetConversation = searchParams.get("conversation") || searchParams.get("conversationId");
     const targetUid = searchParams.get("user");
+
+    if (targetConversation && activeId !== targetConversation && openedConversationRef.current !== targetConversation) {
+      openedConversationRef.current = targetConversation;
+      setActiveTab("chats");
+      setActiveId(targetConversation);
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
     if (!targetUid || !user?.uid || targetUid === user.uid || openedUserRef.current === targetUid) return;
 
     openedUserRef.current = targetUid;
@@ -212,7 +223,7 @@ export default function Messenger({ dark = false }) {
         setSearchParams({}, { replace: true });
       })
       .catch(() => setNotice("Could not open that conversation."));
-  }, [searchParams, setSearchParams, user]);
+  }, [searchParams, setSearchParams, user, activeId]);
 
   // Listen messages for active conversation
   useEffect(() => {

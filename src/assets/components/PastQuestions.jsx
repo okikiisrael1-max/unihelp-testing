@@ -256,7 +256,7 @@ const Questions = ({ dark }) => {
 
   // ─────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen md:mt-20 px-4 py-6 ${pageBg}`}>
+    <div className={`min-h-screen px-4 py-6 ${pageBg}`}>
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* ── SEARCH + FILTER + PREMIUM STATUS ── */}

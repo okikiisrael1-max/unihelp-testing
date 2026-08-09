@@ -378,8 +378,8 @@ function CreateGroupModal({ onClose, onCreated, user, profile }) {
   };
 
   return (
-    <div className="fixed inset-0 top-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-10 backdrop-blur-sm">
-      <form onSubmit={submit} className={`quad-rise w-full md:w-[70%] p-5 shadow-2xl md:p-7 ${cx.panel}`}>
+    <div className="fixed inset-0 top-0 z-[550] flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-10 backdrop-blur-sm">
+      <form onSubmit={submit} className={`quad-rise md:mt-10 w-full md:w-[70%] p-5 shadow-2xl md:p-7 ${cx.panel}`}>
         <div className="flex items-start justify-between gap-4 border-b pb-5 [border-color:var(--line)]">
           <div>
             <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${cx.muted} ${FONT_MONO}`}>New listing</p>

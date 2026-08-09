@@ -35,10 +35,7 @@ const FeaturesCatalog = ({ dark }) => {
   const visibleFeatures = useMemo(() => {
     return allFeatures.filter((item) => {
       const matchesCategory = activeCategory === "All" || item.category === activeCategory;
-      const matchesQuery =
-        !normalizedQuery ||
-        item.title.toLowerCase().includes(normalizedQuery) ||
-        item.desc.toLowerCase().includes(normalizedQuery);
+      const matchesQuery = !normalizedQuery || item.title.toLowerCase().includes(normalizedQuery) || item.desc.toLowerCase().includes(normalizedQuery);
 
       return matchesCategory && matchesQuery;
     });

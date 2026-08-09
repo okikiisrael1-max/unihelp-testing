@@ -59,7 +59,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
         label: "Quick Tools",
         children: [
           { label: "Study Resources", to: "/resources" },
-          { label: "CBT practice", to: "/cbt" },
+          { label: "CBT practice", to: "/cbt-practice" },
           { label: "Find Hostels", to: "/hostelmarketplace" },
           { label: "StudentMarketplace", to: "/studentmarketplace" },
           { label: "AI Assistance", to: "/ai" },

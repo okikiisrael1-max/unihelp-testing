@@ -72,34 +72,21 @@ const resolveHref = (item) => {
   switch (item.type) {
     case "dm":
     case "message":
-      return item.conversationId ? `/messages/${item.conversationId}` : "/messages";
+      return item.conversationId ? `/messages?conversation=${encodeURIComponent(item.conversationId)}` : "/messages";
 
     case "comment":
     case "reply":
     case "mention":
-      if (item.groupId && item.postId) {
-        return `/community/${item.groupId}/posts/${item.postId}${
-          item.commentId ? `#comment-${item.commentId}` : ""
-        }`;
-      }
-      return item.groupId ? `/community/${item.groupId}` : null;
-
     case "reaction":
-      if (item.groupId && item.postId) {
-        return `/community/${item.groupId}/posts/${item.postId}`;
-      }
-      return item.groupId ? `/community/${item.groupId}` : null;
-
     case "group_request":
     case "group_invite":
-      return item.groupId ? `/community/${item.groupId}/requests` : "/community";
+      return item.groupId ? `/community/${item.groupId}` : "/community";
 
     default:
       // No known type — fall back to whatever identifiers are present.
-      if (item.conversationId) return `/messages/${item.conversationId}`;
-      if (item.groupId && item.postId) return `/community/${item.groupId}/posts/${item.postId}`;
+      if (item.conversationId) return `/messages?conversation=${encodeURIComponent(item.conversationId)}`;
       if (item.groupId) return `/community/${item.groupId}`;
-      return null;
+      return "/community";
   }
 };
 
