@@ -334,73 +334,7 @@ export default function TutorialSearchPage({
         <div className="absolute bottom-[-120px] right-[-120px] w-[350px] h-[350px] bg-pink-500/20 blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-10">
-
-        {/* HERO */}
-        <div className="px-4 md:px-7 pt-6 md:pt-24">
-
-          <div className="relative overflow-hidden rounded-[35px] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 md:p-10 text-slate-100">
-
-            <div className="absolute top-0 right-0 opacity-10">
-              <Youtube size={260} />
-            </div>
-
-            <div className="relative z-10">
-
-              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 rounded-full text-sm mb-5">
-                <Sparkles size={16} />
-                UniHelp Learning Hub
-              </div>
-
-              <h1 className="text-3xl md:text-6xl font-black leading-tight mb-4">
-                Learn Any Skill
-                <br />
-                For Free 🚀
-              </h1>
-
-              <p className="max-w-2xl text-white/80 text-sm md:text-lg leading-relaxed">
-                Discover tutorials, tech
-                courses, editing guides,
-                business lessons and
-                educational videos curated
-                for students.
-              </p>
-
-              <div className="flex flex-wrap gap-4 mt-8">
-
-                <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-4">
-                  <p className="text-sm text-white/70">
-                    Tutorials
-                  </p>
-
-                  <h2 className="text-3xl font-black">
-                    1000+
-                  </h2>
-                </div>
-
-                <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-4">
-                  <p className="text-sm text-white/70">
-                    Categories
-                  </p>
-
-                  <h2 className="text-3xl font-black">
-                    6
-                  </h2>
-                </div>
-
-                <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-4">
-                  <p className="text-sm text-white/70">
-                    Students
-                  </p>
-
-                  <h2 className="text-3xl font-black">
-                    Live
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="relative md:mt-24  z-10">
 
         {/* SEARCH */}
         <div className="px-4 md:px-7 mt-8">

@@ -79,6 +79,7 @@ import TermsOfService from "./assets/pages/TermsOfService";
 import CompleteProfile from "./assets/pages/CompleteProfile";
 import FeaturesCatalog from "./assets/pages/FeaturesCatalog";
 import ViewProfile from "./assets/pages/ViewProfile";
+import TutorialSearchPage from "./assets/pages/Tutorials";
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -264,6 +265,7 @@ const App = () => {
             <Route path="/community-settings" element={ <ProtectedRoute> <CommunitySettings dark={dark} /> </ProtectedRoute>}/>
             <Route path="/coming-soon" element={ <ProtectedRoute> <ComingSoon dark={dark} /> </ProtectedRoute>} />
             <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
+            <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
             <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />     
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
