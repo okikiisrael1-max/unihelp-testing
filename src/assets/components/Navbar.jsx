@@ -47,7 +47,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
 
   const searchDatabase = useMemo(() => [
     { type: 'link', title: 'Dashboard', desc: 'Go to your home dashboard', url: '/', icon: Home, colorClass: 'bg-indigo-500/10 text-indigo-500', keywords: ['home', 'main', 'start'] },
-    { type: 'link', title: 'CBT Practice', desc: 'Take exam past questions', url: '/cbt', icon: Target, colorClass: 'bg-indigo-500/10 text-indigo-500', keywords: ['exam', 'test', 'quiz', 'questions', 'past questions', 'cbt'] },
+    { type: 'link', title: 'CBT Practice', desc: 'Take exam past questions', url: '/cbt-practice', icon: Target, colorClass: 'bg-indigo-500/10 text-indigo-500', keywords: ['exam', 'test', 'quiz', 'questions', 'past questions', 'cbt'] },
     { type: 'link', title: 'Lecture Notes', desc: 'Browse Study Resources & PDFs', url: '/resources', icon: BookOpen, colorClass: 'bg-emerald-500/10 text-emerald-500', keywords: ['pdf', 'read', 'study', 'materials', 'handout', 'notes', 'resources'] },
     { type: 'link', title: 'Hostel Marketplace', desc: 'Find accommodations', url: '/hostelmarketplace', icon: Home, colorClass: 'bg-rose-500/10 text-rose-500', keywords: ['house', 'rent', 'lodge', 'accommodation', 'hostel'] },
     { type: 'link', title: 'Student Marketplace', desc: 'Buy and sell items', url: '/studentmarketplace', icon: Search, colorClass: 'bg-amber-500/10 text-amber-500', keywords: ['shop', 'store', 'buy', 'sell', 'products', 'market'] },
