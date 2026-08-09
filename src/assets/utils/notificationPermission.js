@@ -3,7 +3,7 @@ import { getToken, onMessage } from "firebase/messaging";
 import { messaging } from "../../firebase/config";
 
 const VAPID_KEY =
-  "BNSkrKfXIg968vhAb-KcSk7x5knlR67nEhIq-dlD7mGAbN1AgAABQlEmPq1ISNesMUvqW0JvyMQymywrAna0jv4";
+  import.meta.env.VITE_FIREBASE_VAPID_KEY || "";
 
 const getServiceWorkerRegistration = async () => {
   if (!("serviceWorker" in navigator)) return null;

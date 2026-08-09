@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 /* ---------------- CONFIG ---------------- */
 
 const API_KEY =
-  "AIzaSyAhQUd-So4kqcAMEr6lTlnly-KJdK16Nu8";
+  import.meta.env.VITE_YOUTUBE_API_KEY || "";
 
 const DEFAULT_QUERIES = [
   "Use Of English",

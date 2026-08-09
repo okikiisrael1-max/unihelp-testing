@@ -1,8 +1,10 @@
 // ================= CONFIG =================
 const NEWS_DATA_API_KEY =
-  "pub_8e4604fffe4c4da6978410bb483909b7";
+  import.meta.env.VITE_NEWS_DATA_API_KEY || "";
 const GNEWS_API_KEY =
-  "83f4c77fb42e587d094456b2ae149c99";
+  import.meta.env.VITE_GNEWS_API_KEY || "";
+const FREENEWS_API_KEY =
+  import.meta.env.VITE_FREENEWS_API_KEY || "";
 
 // ================= CACHE =================
 let cache = null;
