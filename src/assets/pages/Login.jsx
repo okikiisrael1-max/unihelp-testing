@@ -129,6 +129,8 @@ const Login = ({ dark }) => {
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
+      } else if (error.code === "auth/account-exists-with-different-credential") {
+        toast.error("An account already exists with this email. Please log in with your password.");
       } else {
         toast.error("Google login failed");
       }
