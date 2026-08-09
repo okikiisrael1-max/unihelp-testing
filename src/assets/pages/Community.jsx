@@ -86,7 +86,7 @@ const paletteVars = (dark) =>
         "--line": "#334155",
         "--brass": "#6366f1",
         "--brass-soft": "rgba(99,102,241,0.16)",
-        "--moss": "#22c55e",
+        "--moss": "#0884ff",
         "--moss-soft": "rgba(34,197,94,0.14)",
         "--clay": "#ef4444",
         "--clay-soft": "rgba(239,68,68,0.14)",
@@ -102,7 +102,7 @@ const paletteVars = (dark) =>
         "--line": "#e2e8f0",
         "--brass": "#4f46e5",
         "--brass-soft": "#e0e7ff",
-        "--moss": "#16a34a",
+        "--moss": "#3813cb",
         "--moss-soft": "#dcfce7",
         "--clay": "#dc2626",
         "--clay-soft": "#fee2e2",
@@ -521,8 +521,7 @@ function GroupDiscovery() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className={`${cx.input} appearance-none pr-10 text-xs font-semibold uppercase tracking-wide ${FONT_MONO}`}
-              >
+                className={`${cx.input} appearance-none pr-10 text-xs font-semibold uppercase tracking-wide ${FONT_MONO}`}>
                 {CATEGORIES.map((item) => (
                   <option key={item} value={item}>{item}</option>
                 ))}
@@ -556,8 +555,7 @@ function GroupDiscovery() {
                 <Link
                   key={group.id}
                   to={`/community/${group.id}`}
-                  className={`quad-rise overflow-visible transition hover:-translate-y-1 hover:shadow-xl ${cx.panel}`}
-                >
+                  className={`quad-rise overflow-visible transition hover:-translate-y-1 hover:shadow-xl ${cx.panel}`}>
                   <div className="h-24 overflow-hidden">
                     <CoverPattern url={group.coverUrl} />
                   </div>

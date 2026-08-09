@@ -70,9 +70,9 @@ export default function PremiumSubscriptionPage({
 
     name: "Student Premium",
 
-    monthlyPrice: 2500,
+    monthlyPrice: 1000,
 
-    yearlyPrice: 24000,
+    yearlyPrice: 10000,
 
     description:
       "Unlock premium student tools, verified badge, downloads and exclusive UniHelp access.",
