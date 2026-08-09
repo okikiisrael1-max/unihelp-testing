@@ -59,14 +59,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
       links: [
         { to: "/GPA", label: "GPA Calculator", icon: <CalculatorIcon size={18} /> },
         { to: "/CGPA", label: "CGPA Tracking", icon: <ChartAreaIcon size={18} /> },
-        { to: "/questions", label: "Past Questions", icon: <File size={18} /> },
-      ],
-    },
-    {
-      title: "Learning Resources",
-      icon: <BookOpen size={20} />,
-      links: [
-        { to: "/lecturenotesmarketplace", label: "Lecture Notes", icon: <NotebookPenIcon size={18} /> },
+        { to: "/resources", label: "Study Resources", icon: <File size={18} /> },
       ],
     },
 

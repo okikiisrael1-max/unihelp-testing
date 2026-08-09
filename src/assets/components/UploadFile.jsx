@@ -295,7 +295,7 @@ export default function UploadFile({ dark }) {
         files: uploadedFiles, userId: auth.currentUser.uid,
         userEmail: auth.currentUser.email, createdAt: serverTimestamp(),
       });
-      navigate("/questions");
+      navigate("/resources");
     } catch { setError("❌ Upload failed. Try again."); }
     setUploading(false);
   };

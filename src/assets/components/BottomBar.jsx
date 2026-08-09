@@ -9,6 +9,7 @@ import {
   MessageCircleDashedIcon,
   Users,
   MessageCircleMore,
+  BookOpenIcon,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -28,9 +29,9 @@ const BottomBar = ({ dark }) => {
     },
 
     {
-      name: "Questions",
-      icon: FileQuestion,
-      path: "/questions",
+      name: "Resources",
+      icon: BookOpenIcon,
+      path: "/resources",
     },
 
     {

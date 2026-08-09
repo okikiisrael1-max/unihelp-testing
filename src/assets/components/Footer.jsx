@@ -62,8 +62,7 @@ export default function Footer({ dark = false }) {
           <ul className="space-y-3">
             {[
               { name: "Home", link: "/" },
-              { name: "Past Questions", link: "/questions" },
-              { name: "Lecture Notes", link: "/lecturenotesmarketplace" },
+              { name: "Resources", link: "/resources" },
               { name: "Marketplace", link: "/studentmarketplace" },
               { name: "Find Hostels", link: "/hostelmarketplace" },
               { name: "Community", link: "/community" },
@@ -89,9 +88,8 @@ export default function Footer({ dark = false }) {
           <ul className={`space-y-3 ${theme.muted}`}>
             <li>CGPA Calculator</li>
             <li>GPA Calculator</li>
-            <li>Past Questions</li>
+            <li>Resources</li>
             <li>Student Marketplace</li>
-            <li>Lecture Notes</li>
             <li>Community Chat</li>
           </ul>
         </div>

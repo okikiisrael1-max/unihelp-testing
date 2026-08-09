@@ -312,7 +312,7 @@ export const demoAds = [
 
     buttonText: "Start Practicing",
 
-    buttonLink: "/questions",
+    buttonLink: "/resources",
 
     theme: "success",
   },

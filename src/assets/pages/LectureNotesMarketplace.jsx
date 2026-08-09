@@ -35,7 +35,6 @@ import {
   RefreshCw,
   Search,
   Send,
-  Sparkles,
   Star,
   Crown,
   Share2,
@@ -492,7 +491,7 @@ export default function LectureNotesMarketplace({ dark }) {
   };
 
   const handleShare = async (note) => {
-    const shareUrl = buildShareUrl("/lecturenotesmarketplace", {
+    const shareUrl = buildShareUrl("/resources", {
       note: note.id,
     });
 
@@ -541,7 +540,7 @@ export default function LectureNotesMarketplace({ dark }) {
   };
 
   return (
-    <div className={`min-h-screen md:mt-20 w-full overflow-hidden ${bg}`}>
+    <div className={`min-h-screen  w-full overflow-hidden rounded-[32px] ${bg}`}>
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-[140px]" />
         <div className="absolute bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-violet-600/10 blur-[120px]" />
@@ -549,64 +548,36 @@ export default function LectureNotesMarketplace({ dark }) {
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:py-8">
         <div className={`${card} rounded-[32px] p-5 sm:p-6 shadow-2xl`}>
-          <div className="flex flex-col gap-5 lg:flex-row items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center shrink-0 justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl">
-                <FileText size={30} className="text-white" />
-              </div>
-
-              <div>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-400">
-                  <Sparkles size={14} />
-                  Lecture Notes Hub
-                </div>
-                <p className="mt-1 text-[14px] opacity-70">
-                  Upload, preview, and download campus notes without storage bottlenecks.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowUpload(true)}
-                className="flex h-12 items-center gap-2 rounded-2xl bg-indigo-600 px-5 font-medium text-white hover:bg-indigo-700 text-[13px]"
-              >
-                <Upload size={18} />
-                Upload
-              </button>
-              <button
-                onClick={() => setTab("requests")}
-                className={`flex h-12 items-center gap-2 rounded-2xl px-5 font-medium text-[13px] ${
-                  dark ? "bg-white/5 text-white" : "bg-slate-100 text-slate-900"
-                }`}
-              >
-                <HelpCircle size={18} />
-                Requests
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-2 grid-cols-2 xl:grid-cols-4">
-            {stats.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.label} className={`rounded-xl w-full p-2 ${softCard}`}>
-                  <div className="flex items-center justify-center gap-2">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              {stats.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.label}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 ${softCard}`}
+                  >
+                    <div className="rounded-xl bg-indigo-500/10 p-1.5 text-indigo-400">
+                      <Icon size={16} />
+                    </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.25em] opacity-60">
+                      <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 leading-none">
                         {item.label}
                       </p>
-                      <p className="mt-2 flex gap-2 text-xl text-center font-black">
-                        <div className="rounded-2xl bg-indigo-500/10 p-1.5 text-indigo-400">
-                      <Icon size={18} />
-                    </div>{item.value}
-                      </p>
+                      <p className="mt-0.5 text-sm font-bold leading-none">{item.value}</p>
                     </div>
-                    
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setShowUpload(true)}
+              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 font-medium text-white hover:bg-indigo-700 text-[13px]"
+            >
+              <Upload size={18} />
+              Upload PDF
+            </button>
           </div>
         </div>
 
@@ -622,6 +593,45 @@ export default function LectureNotesMarketplace({ dark }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <div
+              role="tablist"
+              aria-label="View"
+              className={`grid grid-cols-2 gap-1 rounded-2xl p-1 ${
+                dark ? "bg-white/5" : "bg-slate-100"
+              }`}
+            >
+              <button
+                role="tab"
+                aria-selected={tab === "notes"}
+                onClick={() => setTab("notes")}
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all duration-200 ${
+                  tab === "notes"
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
+                    : dark
+                      ? "text-slate-300 hover:text-white"
+                      : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <LayoutGrid size={16} className={tab === "notes" ? "opacity-100" : "opacity-60"} />
+                Notes
+              </button>
+              <button
+                role="tab"
+                aria-selected={tab === "requests"}
+                onClick={() => setTab("requests")}
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all duration-200 ${
+                  tab === "requests"
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
+                    : dark
+                      ? "text-slate-300 hover:text-white"
+                      : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <MessageSquareMore size={16} className={tab === "requests" ? "opacity-100" : "opacity-60"} />
+                Requests
+              </button>
+            </div>
+
             <div className="relative">
               <button
                 onClick={() => setShowNotifications((current) => !current)}
@@ -639,7 +649,7 @@ export default function LectureNotesMarketplace({ dark }) {
 
               {showNotifications && (
                 <div
-                  className={`absolute left-0 md:right-0 top-14 z-20 w-80 overflow-hidden rounded-3xl border p-3 shadow-2xl ${
+                  className={`absolute right-0 top-14 z-20 w-80 overflow-hidden rounded-3xl border p-3 shadow-2xl ${
                     dark
                       ? "border-white/10 bg-slate-950"
                       : "border-slate-200 bg-white"
@@ -671,34 +681,6 @@ export default function LectureNotesMarketplace({ dark }) {
                 </div>
               )}
             </div>
-
-            <button
-              onClick={() => setTab("notes")}
-              className={`inline-flex h-12 items-center gap-2 rounded-2xl px-5 font-semibold ${
-                tab === "notes"
-                  ? "bg-indigo-600 text-white"
-                  : dark
-                    ? "bg-white/5 text-white"
-                    : "bg-white text-slate-900"
-              }`}
-            >
-              <LayoutGrid size={18} />
-              Notes
-            </button>
-
-            <button
-              onClick={() => setTab("requests")}
-              className={`inline-flex h-12 items-center gap-2 rounded-2xl px-5 font-semibold ${
-                tab === "requests"
-                  ? "bg-indigo-600 text-white"
-                  : dark
-                    ? "bg-white/5 text-white"
-                    : "bg-white text-slate-900"
-              }`}
-            >
-              <MessageSquareMore size={18} />
-              Requests
-            </button>
           </div>
         </div>
 

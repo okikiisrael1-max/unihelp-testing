@@ -7,9 +7,9 @@ import {
 } from "firebase/firestore";
 import {
   FileText, Download, BookOpen, School,
-  Calendar, User, HardDrive, Search,
-  Star, Crown, Lock, Eye, X, RefreshCw,
-  Share2,
+  Calendar, Search,
+  Star, Crown, Lock, Eye,
+  Share2, SlidersHorizontal,
 } from "lucide-react";
 import {
   getCloudinaryAttachmentUrl,
@@ -30,11 +30,10 @@ const PDFThumbnail = ({ url, dark }) => {
 
   return (
     <div
-      className="relative w-full rounded-xl overflow-hidden mb-3"
-      style={{
-        height: 160,
-        background: dark ? "#1a2235" : "#f0f2f7",
-      }}
+      className={`relative w-full rounded-2xl overflow-hidden mb-3 ${
+        dark ? "bg-slate-950" : "bg-indigo-50"
+      }`}
+      style={{ height: 160 }}
     >
       {previewUrl && !failed ? (
         useFramePreview ? (
@@ -73,33 +72,23 @@ const PDFThumbnail = ({ url, dark }) => {
         </div>
       )}
 
-      <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.85)", color: "#fff", letterSpacing: "0.06em" }}>
+      <span className="absolute top-2 right-2 rounded-full bg-indigo-600/90 px-2 py-0.5 text-[10px] font-bold tracking-[0.15em] text-white">
         PDF
       </span>
     </div>
   );
 };
+
 const SkeletonCard = ({ dark }) => (
-  <div
-    className="p-5 rounded-xl shadow-lg"
-    style={{ background: dark ? "#111827" : "#fff" }}
-  >
-    <div
-      className="w-full h-40 rounded-xl animate-pulse mb-3"
-      style={{ background: dark ? "#1a2235" : "#e5e7eb" }}
-    />
-    <div className="h-5 rounded animate-pulse mb-2" style={{ background: dark ? "#1a2235" : "#e5e7eb" }} />
-    <div className="h-4 w-3/5 rounded animate-pulse mb-4" style={{ background: dark ? "#1a2235" : "#e5e7eb" }} />
+  <div className={`p-5 rounded-[28px] border ${dark ? "bg-white/[0.04] border-white/10" : "bg-white border-slate-200 shadow-sm"}`}>
+    <div className={`w-full h-40 rounded-2xl animate-pulse mb-3 ${dark ? "bg-white/5" : "bg-slate-100"}`} />
+    <div className={`h-5 rounded animate-pulse mb-2 ${dark ? "bg-white/5" : "bg-slate-100"}`} />
+    <div className={`h-4 w-3/5 rounded animate-pulse mb-4 ${dark ? "bg-white/5" : "bg-slate-100"}`} />
     {[1, 2].map((i) => (
-      <div
-        key={i}
-        className="h-12 rounded-lg animate-pulse mb-2"
-        style={{ background: dark ? "#1a2235" : "#e5e7eb" }}
-      />
+      <div key={i} className={`h-12 rounded-xl animate-pulse mb-2 ${dark ? "bg-white/5" : "bg-slate-100"}`} />
     ))}
   </div>
 );
-
 
 // ─────────────────────────────────────────────────────────────
 // MAIN COMPONENT
@@ -227,7 +216,7 @@ const Questions = ({ dark }) => {
   }, [isPremium]);
 
   const handleShare = useCallback(async (file, question) => {
-    const shareUrl = buildShareUrl("/questions", {
+    const shareUrl = buildShareUrl("/resources", {
       question: question?.id,
       file: file?.name,
     });
@@ -254,95 +243,90 @@ const Questions = ({ dark }) => {
   // ── Derived options ──────────────────────────────────────
   const courses = [...new Set(questions.map((q) => q.courseCode))];
   const schools = [...new Set(questions.map((q) => q.school))];
+  const activeFilterCount = [search, courseFilter, schoolFilter].filter(Boolean).length;
 
-  // ── Style tokens ─────────────────────────────────────────
-  const pageBg   = dark ? "bg-[#0b0f1a] text-white" : "bg-gray-100 text-gray-900";
-  const cardBg   = dark ? "#111827" : "#ffffff";
-  const panelBg  = dark ? "#111827" : "#ffffff";
-  const selectBg = dark ? "#1f2937" : "#f3f4f6";
-  const fileBg   = dark ? "#1a2235" : "#f4f6fa";
+  // ── Style tokens (shared with the rest of the Resources suite) ──
+  const pageBg    = dark ? "bg-[#050816] text-white" : "bg-[#f5f7ff] text-slate-900";
+  const card      = dark ? "bg-white/[0.04] border border-white/10 backdrop-blur-xl" : "bg-white border border-slate-200 shadow-sm";
+  const softCard  = dark ? "bg-white/[0.03]" : "bg-slate-50";
+  const fileBg    = dark ? "bg-white/[0.03]" : "bg-slate-50";
+  const selectCls = `rounded-2xl px-4 py-3 text-sm font-medium outline-none cursor-pointer transition-colors ${
+    dark ? "bg-slate-950 border border-white/10 focus:border-indigo-500" : "bg-slate-100 border border-slate-200 focus:border-indigo-500"
+  }`;
 
   // ─────────────────────────────────────────────────────────
   return (
-    <div className={`min-h-screen px-4 py-6 ${pageBg}`}>
+    <div className={`min-h-screen md:mt-20 px-4 py-6 ${pageBg}`}>
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ── PAGE HEADER ── */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30">
-              <BookOpen size={28} />
+        {/* ── SEARCH + FILTER + PREMIUM STATUS ── */}
+        <div className={`${card} rounded-[28px] p-3`}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className={`flex flex-1 items-center gap-3 rounded-2xl px-4 py-3 ${softCard}`}>
+              <Search size={18} className="text-indigo-400 flex-shrink-0" />
+              <input
+                placeholder="Search by title, course, school…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full outline-none bg-transparent font-medium text-sm"
+              />
             </div>
-            <div>
-              <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
-                Past Questions
-              </h1>
-              <p className="text-sm opacity-70 mt-1 font-medium">
-                Discover and download shared academic materials
-              </p>
+
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={16} className="hidden md:block opacity-40 mx-1" />
+              <select
+                value={courseFilter}
+                onChange={(e) => setCourseFilter(e.target.value)}
+                className={selectCls}
+              >
+                <option value="">All courses</option>
+                {courses.map((c, i) => <option key={i}>{c}</option>)}
+              </select>
+              <select
+                value={schoolFilter}
+                onChange={(e) => setSchoolFilter(e.target.value)}
+                className={selectCls}
+              >
+                <option value="">All schools</option>
+                {schools.map((s, i) => <option key={i}>{s}</option>)}
+              </select>
+
+              <div
+                className={`hidden sm:flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                  isPremium
+                    ? "bg-amber-500 text-black"
+                    : dark ? "bg-white/5" : "bg-slate-100"
+                }`}
+              >
+                <Crown size={15} />
+                {isPremium ? "Premium" : "Free"}
+              </div>
             </div>
           </div>
 
-          <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm ${
-              isPremium
-                ? "bg-yellow-500 text-black"
-                : dark ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <Crown size={16} />
-            {isPremium ? "Premium User" : "Free User"}
-          </div>
-        </div>
-
-        {/* ── SEARCH + FILTER ── */}
-        <div
-          className="p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-sm border"
-          style={{ background: panelBg, borderColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-        >
-          <div className="flex items-center gap-3 flex-1 px-3">
-            <Search size={18} className="text-indigo-400 flex-shrink-0" />
-            <input
-              placeholder="Search by title, course, school…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full py-3 outline-none bg-transparent font-medium"
-            />
-          </div>
-          <div className="w-px bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
-          <select
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-            className="p-3 rounded-xl font-medium outline-none cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-            style={{ background: "transparent" }}
-          >
-            <option value="">All Courses</option>
-            {courses.map((c, i) => <option key={i}>{c}</option>)}
-          </select>
-          <div className="w-px bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
-          <select
-            value={schoolFilter}
-            onChange={(e) => setSchoolFilter(e.target.value)}
-            className="p-3 rounded-xl font-medium outline-none cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-            style={{ background: "transparent" }}
-          >
-            <option value="">All Schools</option>
-            {schools.map((s, i) => <option key={i}>{s}</option>)}
-          </select>
+          {activeFilterCount > 0 && (
+            <div className="flex items-center gap-2 px-1 pt-3 text-xs opacity-60">
+              <span>{filtered.length} result{filtered.length === 1 ? "" : "s"}</span>
+              <button
+                onClick={() => { setSearch(""); setCourseFilter(""); setSchoolFilter(""); }}
+                className="font-semibold text-indigo-400 hover:underline"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── PREMIUM NOTICE ── */}
         {!isPremium && (
           <div
-            className="p-4 rounded-xl flex items-start gap-3"
-            style={{
-              background: dark ? "rgba(234,179,8,0.08)" : "#fefce8",
-              border: "1px solid rgba(234,179,8,0.25)",
-            }}
+            className={`rounded-2xl p-4 flex items-start gap-3 border ${
+              dark ? "bg-amber-500/[0.06] border-amber-500/20" : "bg-amber-50 border-amber-200"
+            }`}
           >
-            <Lock className="text-yellow-500 shrink-0 mt-0.5" size={17} />
+            <Lock className="text-amber-500 shrink-0 mt-0.5" size={17} />
             <div>
-              <h3 className="font-semibold text-sm">Premium Download Required</h3>
+              <h3 className="font-semibold text-sm">Premium download required</h3>
               <p className="text-sm opacity-60 mt-0.5">
                 Free users can browse and <strong>view</strong> questions in-app,
                 but cannot download PDFs. Upgrade to unlock downloads.
@@ -360,10 +344,10 @@ const Questions = ({ dark }) => {
 
         {/* ── EMPTY STATE ── */}
         {!loading && filtered.length === 0 && (
-          <div className="text-center mt-24 opacity-50">
-            <FileText size={48} className="mx-auto mb-3" />
-            <p className="font-medium">No matching results</p>
-            <p className="text-sm mt-1 opacity-70">
+          <div className={`${card} rounded-[28px] p-12 text-center`}>
+            <FileText size={44} className="mx-auto mb-4 opacity-40" />
+            <h2 className="text-xl font-bold">No matching results</h2>
+            <p className="mt-2 text-sm opacity-60">
               Try a different search term or clear your filters.
             </p>
           </div>
@@ -373,11 +357,7 @@ const Questions = ({ dark }) => {
         {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((q) => (
-              <div
-                key={q.id}
-                className="p-5 rounded-xl shadow-lg flex flex-col"
-                style={{ background: cardBg }}
-              >
+              <div key={q.id} className={`${card} p-5 rounded-[28px] flex flex-col`}>
                 {/* PDF thumbnail — first file only */}
                 {q.files?.[0]?.url && (
                   <PDFThumbnail url={q.files[0].url} dark={dark} />
@@ -391,13 +371,13 @@ const Questions = ({ dark }) => {
                   <button
                     onClick={() => toggleBookmark(q)}
                     aria-label={bookmarks[q.id] ? "Remove bookmark" : "Bookmark"}
-                    className="flex-shrink-0 mt-0.5"
+                    className="flex-shrink-0 mt-0.5 transition-transform hover:scale-110"
                   >
                     <Star
                       size={19}
                       className={
                         bookmarks[q.id]
-                          ? "text-yellow-400 fill-yellow-400"
+                          ? "text-amber-400 fill-amber-400"
                           : "opacity-30"
                       }
                     />
@@ -405,57 +385,49 @@ const Questions = ({ dark }) => {
                 </div>
 
                 {/* Meta */}
-                <div className="text-xs space-y-1.5 mb-4 opacity-55">
-                  <p className="flex items-center gap-1.5"><School size={12} />{q.school}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="flex items-center gap-1.5"><BookOpen size={12} />{q.courseCode}</p>
-                  <p className="flex items-center gap-1.5"><Calendar size={12} />{q.year}</p>
-                  </div>
-                  
-                  </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs opacity-55 mb-4">
+                  <span className="flex items-center gap-1.5"><School size={12} />{q.school}</span>
+                  <span className="flex items-center gap-1.5"><BookOpen size={12} />{q.courseCode}</span>
+                  <span className="flex items-center gap-1.5"><Calendar size={12} />{q.year}</span>
+                </div>
 
                 {/* File list */}
                 <div className="space-y-2 mt-auto">
                   {q.files?.map((file, i) => (
                     <div
                       key={i}
-                      className="flex justify-between items-center gap-2 p-3 rounded-lg"
-                      style={{ background: fileBg }}>
-
+                      className={`flex justify-between items-center gap-2 p-3 rounded-xl ${fileBg}`}
+                    >
                       {/* View — everyone */}
                       <button
                         onClick={() => openViewer(file, q)}
-                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors"
-                        style={{ background: "rgba(99,102,241,0.18)", color: "#818cf8" }}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25"
                         title="View document"
                       >
                         <Eye size={13} /> View
                       </button>
 
-                      {/* Download — premium only */}
                       <button
                         onClick={() => handleShare(file, q)}
-                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lgshrink-0 transition-colors"
-                        style={{ background: "rgba(16,185,129,0.16)", color: "#34d399" }}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
                         title="Share question"
                       >
                         <Share2 size={13} /> Share
                       </button>
 
+                      {/* Download — premium only */}
                       <button
                         onClick={() => handleDownload(file)}
-                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors"
-                        style={
+                        className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 transition-colors ${
                           isPremium
-                            ? { background: "#4f46e5", color: "#fff" }
-                            : {
-                                background: dark ? "#252d40" : "#e5e7eb",
-                                color: dark ? "#6b7280" : "#9ca3af",
-                              }
-                        }
+                            ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                            : dark
+                              ? "bg-white/5 text-slate-500"
+                              : "bg-slate-200 text-slate-400"
+                        }`}
                         title={isPremium ? "Download PDF" : "Upgrade to download"}
                       >
-                        {!isPremium && <Lock size={10} className="text-yellow-500" />}
+                        {!isPremium && <Lock size={10} className="text-amber-500" />}
                         <Download size={13} />
                       </button>
                     </div>

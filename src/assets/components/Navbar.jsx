@@ -56,10 +56,10 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
         to: "/",
       },
       {
-        label: "Resources",
+        label: "Quick Tools",
         children: [
-          { label: "Past Questions", to: "/questions" },
-          { label: "Lecture Notes", to: "/lecturenotesmarketplace" },
+          { label: "Study Resources", to: "/resources" },
+          { label: "CBT practice", to: "/cbt" },
           { label: "Find Hostels", to: "/hostelmarketplace" },
           { label: "StudentMarketplace", to: "/studentmarketplace" },
           { label: "AI Assistance", to: "/ai" },

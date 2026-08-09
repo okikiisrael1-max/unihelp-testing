@@ -37,8 +37,7 @@ export const featureSections = [
     items: [
       { title: "GPA Calculator", desc: "Calculate semester GPA instantly", icon: Calculator, link: "/GPA" },
       { title: "CGPA Tracker", desc: "Track academic performance", icon: Activity, link: "/CGPA" },
-      { title: "Past Questions", desc: "Practice with exam materials", icon: File, link: "/questions" },
-      { title: "Lecture Notes", desc: "Upload and access notes", icon: UploadCloud, link: "/lecturenotesmarketplace" },
+      { title: "Resources", desc: "Practice questions and lecture notes", icon: File, link: "/resources" },
       { title: "CBT Practice", desc: "Practice with exam materials", icon: ComputerIcon, link: "/cbt-practice" },
       { title: "Task Management", desc: "Plan assignments and deadlines", icon: Clock3, link: "/tasks" },
       { title: "Smart Timetable", desc: "Generate a balanced weekly schedule", icon: CalendarDays, link: "/smart-timetable" },

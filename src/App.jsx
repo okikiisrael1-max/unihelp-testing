@@ -28,7 +28,7 @@ import Question from "./assets/pages/Question";
 import Upload from "./assets/pages/Upload";
 import AiAssistance from "./assets/pages/AiAssistance";
 import GPA from "./assets/pages/GPA";
-import LectureNotesMarketplace from "./assets/pages/LectureNotesMarketplace";
+import Resources from "./assets/pages/Resources";
 import HostelMarketplace from "./assets/pages/HostelMarketplace";
 import NewsFeed from "./assets/pages/NewsFeed";
 import Community from "./assets/pages/Community";
@@ -276,10 +276,10 @@ const App = () => {
             <Route path="/gpa" element={ <ProtectedRoute> <GPA dark={dark} /> </ProtectedRoute> } />
             <Route path="/uploadquestion" element={ <ProtectedRoute> <Upload dark={dark} /> </ProtectedRoute> } />
             <Route path="/hostelmarketplace" element={ <ProtectedRoute> <HostelMarketplace dark={dark} /> </ProtectedRoute> } />
-            <Route path="/lecturenotesmarketplace" element={ <ProtectedRoute> <LectureNotesMarketplace dark={dark} /> </ProtectedRoute> } />
+            <Route path="/resources" element={ <ProtectedRoute> <Resources dark={dark} /> </ProtectedRoute> } />
             <Route path="/studentmarketplace" element={ <ProtectedRoute> <StudentMarketplace dark={dark} /> </ProtectedRoute> } />
             <Route path="/myhostels" element={ <ProtectedRoute> <MyHostels dark={dark} /> </ProtectedRoute> } />
-            <Route path="/questions" element={ <ProtectedRoute> <Question dark={dark} /> </ProtectedRoute> } />
+            
             <Route path="/stories" element={<StoriesHome dark={dark} />} />
             <Route path="/stories/:id" element={<StoryDetails dark={dark} />} />
             <Route path="/read-story/:storyId/:chapterId" element={<ReadStory />} />

@@ -240,21 +240,11 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
           },
 
           {
-            to: "/questions",
+            to: "/resources",
 
-            label: "Past Questions",
+            label: "Resources",
 
-            icon: <File size={18} />,
-          },
-
-          {
-            to: "/lecturenotesmarketplace",
-
-            label: "Lecture Notes",
-
-            icon: (
-              <NotebookPenIcon size={18} />
-            ),
+            icon: <BookOpen size={18} />,
           },
 
           {
