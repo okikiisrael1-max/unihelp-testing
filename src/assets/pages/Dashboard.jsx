@@ -17,6 +17,8 @@ import {
   Trophy,
   X,
   Plus,
+  PlayCircle,
+  PlayCircleIcon,
 } from "lucide-react";
 
 import {
@@ -285,7 +287,6 @@ const Dashboard = ({ dark }) => {
                 to="/CGPA"
                 className="px-5 py-3 text-sm rounded-2xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
                 Track your CGPA
-                <ArrowRight size={16} />
               </Link>
               <a
                 href="#explore-tools"
@@ -337,14 +338,25 @@ const Dashboard = ({ dark }) => {
 
             <Link
               to="/ai"
-              className={`absolute bottom-1 right-2 sm:-bottom-5 sm:right-2 md:right-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}
-            >
+              className={`absolute bottom-1 right-2 sm:-bottom-5 sm:right-2 md:right-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}>
               <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
                 <Bot size={16} />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-black leading-tight whitespace-nowrap">AI Tutor</p>
                 <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Ask anything</p>
+              </div>
+            </Link>
+
+             <Link
+              to="/watch"
+              className={`absolute top-5 -left-2 sm:top-15 sm:left-2 md:left-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}>
+              <div className="w-9 h-9 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+                <PlayCircleIcon size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-black leading-tight whitespace-nowrap">Watch</p>
+                <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Tutorials</p>
               </div>
             </Link>
           </div>
