@@ -12,6 +12,7 @@ import {
   signInWithPopup,
   signOut,
   sendEmailVerification,
+  linkWithCredential,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -33,6 +34,12 @@ const Login = ({ dark }) => {
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkPassword, setLinkPassword] = useState("");
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [pendingCredential, setPendingCredential] = useState(null);
+  const [pendingEmail, setPendingEmail] = useState("");
 
   const getUserRole = async (userId) => {
     try {
@@ -130,12 +137,46 @@ const Login = ({ dark }) => {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
       } else if (error.code === "auth/account-exists-with-different-credential") {
-        toast.error("An account already exists with this email. Please log in with your password.");
+        const cred = GoogleAuthProvider.credentialFromError(error);
+        setPendingCredential(cred);
+        setPendingEmail(error.customData.email);
+        setShowLinkModal(true);
       } else {
         toast.error("Google login failed");
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLinkAccount = async (e) => {
+    e.preventDefault();
+    if (!linkPassword) {
+      toast.error("Please enter your password");
+      return;
+    }
+    try {
+      setLinkLoading(true);
+      const result = await signInWithEmailAndPassword(auth, pendingEmail, linkPassword);
+      await linkWithCredential(result.user, pendingCredential);
+      
+      const role = await getUserRole(result.user.uid);
+      toast.success("Accounts linked successfully!");
+      setShowLinkModal(false);
+      
+      if (role) {
+        navigate("/");
+      } else {
+        navigate("/complete-profile");
+      }
+    } catch (error) {
+      if (error.code === "auth/wrong-password") {
+        toast.error("Incorrect password");
+      } else {
+        toast.error("Failed to link accounts");
+      }
+    } finally {
+      setLinkLoading(false);
     }
   };
 
@@ -459,6 +500,82 @@ const Login = ({ dark }) => {
                 </form>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showLinkModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowLinkModal(false)}
+        >
+          <div
+            className={`w-full max-w-[420px] p-8 rounded-3xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden ${
+              dark ? "bg-slate-800 border border-slate-700" : "bg-white"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowLinkModal(false)}
+              className="absolute top-4 right-4 z-20 p-2 rounded-full transition-colors hover:bg-black/20 bg-black/10 text-white backdrop-blur-sm"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+            <div className="py-2">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold mb-2">Link Accounts</h3>
+                <p className={`text-sm mb-8 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+                  An account already exists with <strong>{pendingEmail}</strong>. Please enter your password to link your Google account to it.
+                </p>
+              </div>
+
+              <form onSubmit={handleLinkAccount} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold block">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={linkPassword}
+                      onChange={(e) => setLinkPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className={`w-full pl-4 pr-12 py-3.5 rounded-xl border text-[15px] transition-all focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 ${
+                        dark
+                          ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                          : "bg-white border-gray-300 text-slate-900 placeholder:text-gray-400"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={`absolute right-4 top-1/2 -translate-y-1/2 p-1 transition-colors ${dark ? "text-slate-400 hover:text-slate-200" : "text-gray-400 hover:text-gray-700"}`}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={linkLoading}
+                  className={`w-full py-4 rounded-xl text-white font-bold transition-all shadow-lg ${
+                    linkLoading
+                      ? "bg-indigo-400 cursor-not-allowed shadow-none"
+                      : "bg-[#4338ca] hover:bg-[#3730a3] hover:shadow-[#4338ca]/30 active:scale-[0.98]"
+                  }`}
+                >
+                  {linkLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Linking...
+                    </span>
+                  ) : (
+                    "Link Accounts"
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
