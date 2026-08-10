@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+import React, { useState } from "react";
 import {
   Mail,
   Send,
@@ -10,590 +9,497 @@ import {
   Instagram,
   Linkedin,
   Globe,
-  Sparkles,
-  CheckCircle2,
   Clock3,
   ShieldCheck,
   Headphones,
   ArrowLeft,
+  AlertCircle,
+  Loader2,
+  ExternalLink,
+  Copy,
+  Check,
+  Building2,
+  Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function Contact({
-  dark
-}) {
-  const [name, setName] =
-    useState("");
+const subjectCategories = [
+  "General Support",
+  "Technical Issue",
+  "Billing & Account",
+  "Partnership & Media",
+];
 
-  const [email, setEmail] =
-    useState("");
+export default function Contact({ dark = true }) {
+  const navigate = useNavigate();
 
-  const [subject, setSubject] =
-    useState("");
+  // Active Tab Toggle State: 'form' | 'info'
+  const [activeTab, setActiveTab] = useState("form");
 
-  const [message, setMessage] =
-    useState("");
+  // Form State
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("General Support");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+  // Copy Feedback State
+  const [copiedKey, setCopiedKey] = useState(null);
 
-  const [success, setSuccess] =
-    useState("");
+  const API_URL = (
+    import.meta.env.VITE_API_URL || "http://localhost:5000"
+  ).replace(/\/$/, "");
 
-  const [error, setError] =
-    useState("");
+  const handleCopy = (text, key) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
 
-  const API_URL =
-    (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
-
-  const navigate = useNavigate()
   /* =========================================================
-     SUBMIT
+     SUBMIT HANDLER
   ========================================================= */
-
-  const handleSubmit = async (
-    e
-  ) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
     setSuccess("");
 
-    if (
-      !name ||
-      !email ||
-      !subject ||
-      !message
-    ) {
-      setError(
-        "All fields are required"
-      );
-
+    if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+      setError("All fields are required. Please complete the form before submitting.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const res = await fetch(
-        `${API_URL}/api/contact`,
-        {
-          method: "POST",
+      const res = await fetch(`${API_URL}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          subject: subject.trim(),
+          message: message.trim(),
+        }),
+      });
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            name,
-            email,
-            subject,
-            message,
-          }),
-        }
-      );
-
-      const data =
-        await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(
-          data.message ||
-            "Failed to send message"
-        );
-
+        setError(data.message || "An error occurred while submitting your inquiry.");
         return;
       }
 
-      setSuccess(
-        "Message sent successfully 🚀"
-      );
-
+      setSuccess("Your message has been logged. A support representative will respond shortly.");
       setName("");
       setEmail("");
-      setSubject("");
+      setSubject("General Support");
       setMessage("");
     } catch (err) {
-      console.log(err);
-
-      setError(
-        "Something went wrong"
-      );
+      console.error("Contact Form Error:", err);
+      setError("Network connection error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
   /* =========================================================
-     THEME
+     THEME CONFIGURATION (Indigo Accent Focus)
   ========================================================= */
-
   const theme = {
-    bg: dark
-      ? "bg-[#050816]"
-      : "bg-[#f4f7fb]",
-
+    bg: dark ? "bg-[#090D16] text-slate-100" : "bg-slate-50 text-slate-900",
     card: dark
-      ? "bg-white/[0.05]"
-      : "bg-white",
-
-    border: dark
-      ? "border-white/10"
-      : "border-black/10",
-
-    text: dark
-      ? "text-white"
-      : "text-black",
-
-    subtext: dark
-      ? "text-white/60"
-      : "text-black/60",
-
+      ? "bg-[#111726]/80 border-slate-800/80 backdrop-blur-xl shadow-2xl"
+      : "bg-white border-slate-200/80 shadow-xl shadow-slate-200/50",
+    border: dark ? "border-slate-800" : "border-slate-200",
+    subtext: dark ? "text-slate-400" : "text-slate-500",
     input: dark
-      ? "bg-white/[0.04]"
-      : "bg-[#f8fafc]",
-
-    glow1:
-      "bg-violet-500/20",
-
-    glow2:
-      "bg-cyan-500/20",
+      ? "bg-[#0B101D] border-slate-800 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+      : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
   };
 
   /* =========================================================
-     CONTACT OPTIONS
+     CONTACT CHANNELS DATA
   ========================================================= */
-
-  const contactOptions = [
+  const contactDetails = [
     {
+      key: "email",
       icon: Mail,
-      title: "Email Support",
-      value:
-        "support@unihelp.com",
-      desc: "Fast support for issues and inquiries",
-      color:
-        "from-violet-600 to-fuchsia-500",
+      label: "Official Email",
+      value: "support@unihelp.com",
+      actionType: "copy",
     },
-
     {
+      key: "phone",
       icon: Phone,
-      title: "Phone Number",
+      label: "Direct Phone Line",
       value: "+234 911 533 6339",
-      desc: "Available Mon - Fri",
-      color:
-        "from-cyan-500 to-blue-600",
+      actionType: "call",
+      href: "tel:+2349115336339",
     },
-
     {
-      icon: Instagram,
-      title: "Instagram",
-      value: "@unihelp",
-      desc: "Follow us for updates",
-      color:
-        "from-pink-500 to-orange-500",
-    },
-
-    {
-      icon: Linkedin,
-      title: "LinkedIn",
-      value: "Unihelp",
-      desc: "Professional updates",
-      color:
-        "from-blue-600 to-cyan-500",
-    },
-
-    {
-      icon: Globe,
-      title: "Website",
-      value:
-        "www.unihelp.com",
-      desc: "Visit our platform",
-      color:
-        "from-green-500 to-emerald-500",
-    },
-
-    {
+      key: "location",
       icon: MapPin,
-      title: "Location",
-      value:
-        "Lagos, Nigeria",
-      desc: "Serving students globally",
-      color:
-        "from-orange-500 to-red-500",
+      label: "Headquarters",
+      value: "Lagos, Nigeria",
+      actionType: "link",
+      href: "https://maps.google.com/?q=Lagos,+Nigeria",
+    },
+    {
+      key: "website",
+      icon: Globe,
+      label: "Official Website",
+      value: "www.unihelp.com",
+      actionType: "link",
+      href: "https://www.unihelp.com",
+    },
+    {
+      key: "linkedin",
+      icon: Linkedin,
+      label: "LinkedIn Profile",
+      value: "UniHelp Platform",
+      actionType: "link",
+      href: "https://linkedin.com/company/unihelp",
+    },
+    {
+      key: "instagram",
+      icon: Instagram,
+      label: "Instagram Account",
+      value: "@unihelp",
+      actionType: "link",
+      href: "https://instagram.com/unihelp",
     },
   ];
 
   return (
-    <div
-      className={`relative min-h-screen overflow-hidden px-4 md:px-8 py-10 ${theme.bg} ${theme.text}`}
-    >
-      {/* =========================================================
-         BACKGROUND GLOW
-      ========================================================= */}
-
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className={`absolute top-[-120px] left-[-120px] w-[320px] h-[320px] rounded-full blur-[120px] ${theme.glow1}`}
-        />
-
-        <div
-          className={`absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] rounded-full blur-[120px] ${theme.glow2}`}
-        />
+    <div className={`relative min-h-screen w-full transition-colors duration-300 ${theme.bg} font-sans py-8 md:py-16 overflow-hidden`}>
+      
+      {/* Brand Ambient Glow Effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] pointer-events-none opacity-30 blur-[140px] -z-0">
+        <div className="w-full h-full bg-indigo-500/30" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* =========================================================
-           HERO
-        ========================================================= */}
-
-        <div className="text-center mb-14">
-          <button onClick={()=> navigate(-1)} className="absolute left-2.5 top-2.5 p-2.5 bg-white/10 rounded-lg flex gap-0.5"> <ArrowLeft/>Back</button>
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-xl mb-6">
-            <Sparkles size={16} />
-
-            <span className="text-sm">
-              Unihelp Support
-            </span>
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-black leading-tight">
-            Contact{" "}
-            <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 bg-clip-text text-transparent">
-              Unihelp
-            </span>
-          </h1>
-
-          <p
-            className={`max-w-2xl mx-auto mt-5 text-lg leading-8 ${theme.subtext}`}
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6">
+        
+        {/* Header Bar */}
+        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-800/40">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
+              dark
+                ? "bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white"
+                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm"
+            }`}
           >
-            Have feedback,
-            complaints,
-            partnership ideas,
-            or technical issues?
-            Our team is here to
-            help you.
+            <ArrowLeft size={14} />
+            <span>Return</span>
+          </button>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-mono">
+            <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span>Desk SLA: Response &lt; 2hrs</span>
+          </div>
+        </div>
+
+        {/* Title Section */}
+        <div className="text-center max-w-xl mx-auto mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-400 text-xs font-semibold mb-3">
+            <Sparkles size={13} />
+            <span>Help & Support Center</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
+            Contact <span className="text-indigo-500">UniHelp</span>
+          </h1>
+          <p className={`text-sm mt-2 leading-relaxed ${theme.subtext}`}>
+            Have an inquiry regarding platform features, technical assistance, or institutional partnerships? We are here to assist you.
           </p>
         </div>
 
+        {/* Segmented Switch Toggle */}
+        <div className={`p-1.5 rounded-2xl border mb-8 grid grid-cols-2 max-w-md mx-auto backdrop-blur-md ${
+          dark ? "bg-slate-900/90 border-slate-800" : "bg-slate-200/70 border-slate-300"
+        }`}>
+          <button
+            type="button"
+            onClick={() => setActiveTab("form")}
+            className={`flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+              activeTab === "form"
+                ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <MessageSquare size={14} />
+            <span>Send Message</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("info")}
+            className={`flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+              activeTab === "info"
+                ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Building2 size={14} />
+            <span>Contact Information</span>
+          </button>
+        </div>
+
         {/* =========================================================
-           GRID
+           TAB 1: MESSAGE FORM
         ========================================================= */}
+        {activeTab === "form" && (
+          <div className={`rounded-3xl border p-6 sm:p-10 ${theme.card}`}>
+            
+            {/* Status Feedback */}
+            {success && (
+              <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-400 flex items-start gap-3">
+                <Check size={16} className="shrink-0 mt-0.5" />
+                <span>{success}</span>
+              </div>
+            )}
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* =========================================================
-             LEFT SIDE
-          ========================================================= */}
+            {error && (
+              <div className="mb-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-400 flex items-start gap-3">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
 
-          <div className="space-y-6">
-            {/* CONTACT CARDS */}
-
-            <div className="grid sm:grid-cols-2 gap-5">
-              {contactOptions.map(
-                (
-                  item,
-                  index
-                ) => {
-                  const Icon =
-                    item.icon;
-
-                  return (
-                    <div
-                      key={
-                        index
-                      }
-                      className={`group rounded-[28px] border p-5 backdrop-blur-2xl transition-all hover:scale-[1.02] hover:border-violet-500/30 shadow-2xl ${theme.border} ${theme.card}`}
-                    >
-                      <div
-                        className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-xl mb-4`}
-                      >
-                        <Icon
-                          size={
-                            24
-                          }
-                        />
-                      </div>
-
-                      <h3 className="font-bold text-lg">
-                        {
-                          item.title
-                        }
-                      </h3>
-
-                      <p className="mt-1 text-sm font-medium">
-                        {
-                          item.value
-                        }
-                      </p>
-
-                      <p
-                        className={`text-sm mt-2 leading-6 ${theme.subtext}`}
-                      >
-                        {
-                          item.desc
-                        }
-                      </p>
-                    </div>
-                  );
-                }
-              )}
-            </div>
-
-            {/* EXTRA INFO */}
-
-            <div
-              className={`rounded-[32px] border p-7 backdrop-blur-2xl shadow-2xl ${theme.border} ${theme.card}`}
-            >
-              <div className="flex items-center gap-3 mb-5">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-xl">
-                  <Headphones
-                    size={
-                      26
-                    }
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Name & Email Row */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-400">
+                    Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Alex Morgan"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={`w-full h-12 px-4 text-sm rounded-xl border outline-none transition-all ${theme.input}`}
                   />
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-black">
-                    Support Hours
-                  </h2>
-
-                  <p
-                    className={
-                      theme.subtext
-                    }
-                  >
-                    We usually reply
-                    within a few hours
-                  </p>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-400">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="student@university.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full h-12 px-4 text-sm rounded-xl border outline-none transition-all ${theme.input}`}
+                  />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Clock3
-                      size={
-                        18
-                      }
-                    />
-
-                    <span>
-                      Monday - Friday
-                    </span>
-                  </div>
-
-                  <span className="font-semibold">
-                    8AM - 8PM
-                  </span>
+              {/* Subject Category Pills & Custom Input */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-400">
+                  Topic Category <span className="text-rose-500">*</span>
+                </label>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                  {subjectCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSubject(cat)}
+                      className={`px-3 py-2 text-xs font-semibold rounded-xl border text-center transition-all ${
+                        subject === cat
+                          ? "bg-indigo-500/20 border-indigo-500 text-indigo-300 font-bold"
+                          : dark
+                          ? "bg-slate-900/50 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
+                          : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck
-                      size={
-                        18
-                      }
-                    />
+                <input
+                  type="text"
+                  required
+                  placeholder="Subject line..."
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className={`w-full h-12 px-4 text-sm rounded-xl border outline-none transition-all ${theme.input}`}
+                />
+              </div>
 
-                    <span>
-                      Response Time
-                    </span>
+              {/* Message Textarea */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-400">
+                  Message Details <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={5}
+                  required
+                  placeholder="Provide comprehensive details regarding your inquiry..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className={`w-full p-4 text-sm rounded-xl border outline-none resize-none transition-all ${theme.input}`}
+                />
+              </div>
+
+              {/* Submit Action Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full h-12 rounded-xl font-bold text-xs tracking-wider uppercase text-white transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] ${
+                  loading
+                    ? "bg-indigo-500/50 cursor-not-allowed"
+                    : "bg-indigo-500 hover:bg-indigo-600 shadow-indigo-500/25"
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Transmitting Message...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={15} />
+                    <span>Submit Inquiry</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* =========================================================
+           TAB 2: CONTACT INFORMATION
+        ========================================================= */}
+        {activeTab === "info" && (
+          <div className="space-y-6">
+            
+            {/* Direct Channels List */}
+            <div className={`rounded-3xl border divide-y divide-slate-800/40 overflow-hidden ${theme.card}`}>
+              {contactDetails.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.key} className="p-5 flex items-center justify-between gap-4 transition-colors hover:bg-indigo-500/[0.02]">
+                    <div className="flex items-center gap-4">
+                      <div className="h-11 w-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                        <Icon size={18} />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase font-bold tracking-wider text-indigo-400">
+                          {item.label}
+                        </p>
+                        <p className="text-sm font-semibold mt-0.5">{item.value}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      {item.actionType === "copy" && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(item.value, item.key)}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                            copiedKey === item.key
+                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                              : dark
+                              ? "border-slate-800 text-slate-300 hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-400"
+                              : "border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+                          }`}
+                        >
+                          {copiedKey === item.key ? (
+                            <>
+                              <Check size={13} />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {item.actionType === "call" && (
+                        <a
+                          href={item.href}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                            dark
+                              ? "border-slate-800 text-slate-300 hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-400"
+                              : "border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+                          }`}
+                        >
+                          <Phone size={13} />
+                          <span>Call</span>
+                        </a>
+                      )}
+
+                      {item.actionType === "link" && (
+                        <a
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                            dark
+                              ? "border-slate-800 text-slate-300 hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-400"
+                              : "border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+                          }`}
+                        >
+                          <ExternalLink size={13} />
+                          <span>Visit</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  <span className="font-semibold">
-                    Under 24hrs
-                  </span>
+            {/* Support SLA Box */}
+            <div className={`rounded-3xl border p-6 ${theme.card}`}>
+              <h3 className="text-xs font-bold tracking-wider uppercase text-indigo-400 mb-4">
+                Operations & Availability
+              </h3>
+
+              <div className="grid sm:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded-2xl border border-indigo-500/10 bg-indigo-500/[0.03]">
+                  <div className="flex items-center gap-2 text-indigo-400 mb-1 font-semibold">
+                    <Clock3 size={15} />
+                    <span>Operating Hours</span>
+                  </div>
+                  <p className="font-bold text-sm">Mon - Fri (08:00 - 20:00)</p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2
-                      size={
-                        18
-                      }
-                    />
-
-                    <span>
-                      Priority Support
-                    </span>
+                <div className="p-4 rounded-2xl border border-indigo-500/10 bg-indigo-500/[0.03]">
+                  <div className="flex items-center gap-2 text-indigo-400 mb-1 font-semibold">
+                    <ShieldCheck size={15} />
+                    <span>Average SLA</span>
                   </div>
+                  <p className="font-bold text-sm">Under 24 Hours</p>
+                </div>
 
-                  <span className="font-semibold">
-                    Premium Users
-                  </span>
+                <div className="p-4 rounded-2xl border border-indigo-500/10 bg-indigo-500/[0.03]">
+                  <div className="flex items-center gap-2 text-indigo-400 mb-1 font-semibold">
+                    <Headphones size={15} />
+                    <span>Support Desk</span>
+                  </div>
+                  <p className="font-bold text-sm">Tier-1 & Enterprise</p>
                 </div>
               </div>
             </div>
           </div>
+        )}
 
-          {/* =========================================================
-             FORM
-          ========================================================= */}
-
-          <div
-            className={`rounded-[35px] border p-7 md:p-8 backdrop-blur-3xl shadow-[0_20px_80px_rgba(0,0,0,0.35)] ${theme.border} ${theme.card}`}
-          >
-            {/* SUCCESS */}
-
-            {success && (
-              <div className="mb-5 rounded-2xl border border-green-500/30 bg-green-500/10 px-5 py-4 text-green-400">
-                {success}
-              </div>
-            )}
-
-            {/* ERROR */}
-
-            {error && (
-              <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-400">
-                {error}
-              </div>
-            )}
-
-            <form
-              onSubmit={
-                handleSubmit
-              }
-              className="space-y-5"
-            >
-              {/* NAME */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
-                  <User
-                    size={
-                      18
-                    }
-                  />
-
-                  Full Name
-                </label>
-
-                <input
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(
-                    e
-                  ) =>
-                    setName(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full h-14 rounded-2xl border px-5 outline-none transition-all focus:scale-[1.01] focus:border-violet-500 ${theme.border} ${theme.input}`}
-                />
-              </div>
-
-              {/* EMAIL */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
-                  <Mail
-                    size={
-                      18
-                    }
-                  />
-
-                  Email Address
-                </label>
-
-                <input
-                  type="email"
-                  placeholder="example@gmail.com"
-                  value={email}
-                  onChange={(
-                    e
-                  ) =>
-                    setEmail(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full h-14 rounded-2xl border px-5 outline-none transition-all focus:scale-[1.01] focus:border-violet-500 ${theme.border} ${theme.input}`}
-                />
-              </div>
-
-              {/* SUBJECT */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
-                  <MessageSquare
-                    size={
-                      18
-                    }
-                  />
-
-                  Subject
-                </label>
-
-                <input
-                  type="text"
-                  placeholder="Enter subject"
-                  value={subject}
-                  onChange={(
-                    e
-                  ) =>
-                    setSubject(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full h-14 rounded-2xl border px-5 outline-none transition-all focus:scale-[1.01] focus:border-violet-500 ${theme.border} ${theme.input}`}
-                />
-              </div>
-
-              {/* MESSAGE */}
-
-              <div>
-                <label className="mb-3 font-semibold block">
-                  Message
-                </label>
-
-                <textarea
-                  rows={6}
-                  placeholder="Write your message here..."
-                  value={message}
-                  onChange={(
-                    e
-                  ) =>
-                    setMessage(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full rounded-2xl border p-5 outline-none resize-none transition-all focus:scale-[1.01] focus:border-violet-500 ${theme.border} ${theme.input}`}
-                />
-              </div>
-
-              {/* BUTTON */}
-
-              <button
-                type="submit"
-                disabled={
-                  loading
-                }
-                className={`w-full h-14 rounded-2xl font-bold text-white transition-all shadow-2xl ${
-                  loading
-                    ? "bg-violet-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 hover:scale-[1.02]"
-                }`}
-              >
-                <span className="flex items-center justify-center gap-3">
-                  <Send
-                    size={
-                      18
-                    }
-                  />
-
-                  {loading
-                    ? "Sending..."
-                    : "Send Message"}
-                </span>
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
     </div>
   );

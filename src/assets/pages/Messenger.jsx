@@ -1057,7 +1057,7 @@ export default function Messenger({ dark = false }) {
 
   return (
     <div className={`min-h-screen md:mt-20 ${t.page}`}>
-      <div className="mx-auto grid max-w-8xl gap-0 px-0 py-0 sm:gap-4 sm:px-4 sm:py-6 md:px-6 lg:grid-cols-[400px_minmax(0,1fr)]">
+      <div className="mx-auto grid grid-cols-1 max-w-8xl gap-0 px-0 py-0 sm:gap-4 sm:px-4 sm:py-6 md:px-6 lg:grid-cols-[400px_minmax(0,1fr)]">
         {/* Left Panel — conversation list / tabs. Full-screen on mobile until a chat is opened. */}
         <aside
           className={`${activeId ? "hidden" : "flex"} lg:flex flex-col h-[calc(100vh-var(--nav-offset,0px))] lg:h-[90vh] rounded-none border-0 sm:rounded-3xl sm:border ${t.panel}`}>

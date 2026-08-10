@@ -11,6 +11,10 @@ import {
 } from "../../firebase/config";
 
 import {
+  deleteCurrentUserWithMedia,
+} from "../../services/mediaCleanup";
+
+import {
   collection,
   doc,
   getDoc,
@@ -60,6 +64,7 @@ import {
   Sparkles,
   Star,
   Trophy,
+  Trash2,
   User2,
   Users,
   WalletCards,
@@ -93,6 +98,9 @@ const Profile = ({
   const [uploading, setUploading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
 
   const [form, setForm] = useState({
@@ -280,6 +288,25 @@ const Profile = ({
   const handleLogout = async () => {
     try { await signOut(auth); navigate("/"); }
     catch (error) { console.log(error); }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deletingAccount) return;
+    setDeleteError("");
+    setDeletingAccount(true);
+
+    try {
+      await deleteCurrentUserWithMedia();
+      await signOut(auth);
+      navigate("/");
+    } catch (error) {
+      console.error("Delete account failed", error);
+      setDeleteError(
+        error?.message || "Unable to delete your account right now. Please try again."
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   // =====================================================
@@ -533,6 +560,23 @@ const Profile = ({
                     <ChevronDown size={16} className="opacity-40 -rotate-90" />
                   </div>
                 ))}
+
+                <div className={`mt-4 rounded-2xl border ${dark ? 'border-rose-500/30 bg-white/5' : 'border-rose-200 bg-rose-50'} p-4`}> 
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-sm font-black text-rose-600">Danger Zone</p>
+                      <p className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>Irreversible account actions are available here.</p>
+                    </div>
+                    <Trash2 size={20} className="text-rose-500" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40"
+                  >
+                    <Trash2 size={16} /> Delete Account
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -573,6 +617,65 @@ const Profile = ({
         </div>
       </div>
 
+      {showDeleteModal && (
+        <div
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteModal(false);
+              setDeleteError("");
+            }
+          }}
+          className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-xl flex items-center justify-center p-3"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-account-title"
+            className={`w-full max-w-md rounded-[20px] border shadow-2xl ${dark ? 'bg-slate-950 border-white/10' : 'bg-white border-slate-200'}`}
+          >
+            <div className={`px-5 py-4 border-b ${dark ? 'border-white/10' : 'border-slate-200'}`}>
+              <h2 id="delete-account-title" className="text-xl font-black">Delete Account?</h2>
+              <p className={`mt-1 text-sm ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                This will permanently delete your UniHelp account and associated personal data. This action cannot be undone.
+              </p>
+            </div>
+            <div className="px-5 py-5">
+              {deleteError && (
+                <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                  {deleteError}
+                </div>
+              )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteError("");
+                  }}
+                  className={`w-full sm:w-auto rounded-2xl border px-4 py-3 text-sm font-semibold transition ${dark ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500 bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 hover:bg-rose-600"
+                >
+                  {deletingAccount ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Deleting...
+                    </>
+                  ) : (
+                    "Delete Account"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     {editOpen && (
       <div

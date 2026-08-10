@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   FileWarning,
@@ -9,568 +9,379 @@ import {
   Ban,
   ShieldCheck,
   Clock3,
-  Sparkles,
   CheckCircle2,
   Siren,
   UserX,
-  ArrowBigLeft,
   ArrowLeft,
+  Info,
+  Check
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
-export default function Report({
-  dark
-}) {
-  const [category, setCategory] =
-    useState("");
+export default function Report({ dark = true }) {
+  const [category, setCategory] = useState("Scam");
+  const [reportedUser, setReportedUser] = useState("");
+  const [details, setDetails] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
-  const [reportedUser, setReportedUser] =
-    useState("");
+  const API_URL = (
+    import.meta.env.VITE_API_URL || "http://localhost:5000"
+  ).replace(/\/$/, "");
 
-  const [details, setDetails] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [success, setSuccess] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  const API_URL =
-    (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
   const navigate = useNavigate();
 
-  const handleSubmit = async (
-    e
-  ) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
     setSuccess("");
 
-    if (
-      !category ||
-      !details
-    ) {
-      setError(
-        "Please fill all required fields"
-      );
-
+    if (!category || !details.trim()) {
+      setError("Please fill in all required fields.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const res = await fetch(
-        `${API_URL}/api/reports/report`,
-        {
-          method: "POST",
+      const res = await fetch(`${API_URL}/api/reports/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category,
+          reportedUser,
+          details,
+        }),
+      });
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            category,
-            reportedUser,
-            details,
-          }),
-        }
-      );
-
-      const data =
-        await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(
-          data.message ||
-            "Failed to submit report"
-        );
-
+        setError(data.message || "Failed to submit report. Please try again.");
         return;
       }
 
-      setSuccess(
-        "Report submitted successfully 🚨"
-      );
-
-      setCategory("");
+      setSuccess("Report submitted successfully. Our team will review it shortly.");
+      setCategory("Scam");
       setReportedUser("");
       setDetails("");
     } catch (err) {
-      console.log(err);
-
-      setError(
-        "Something went wrong"
-      );
+      console.error(err);
+      setError("Something went wrong. Please check your connection.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* =========================================================
-     THEME
-  ========================================================= */
-
+  /* Dynamic Theme Rules */
   const theme = {
-    bg: dark
-      ? "bg-[#050816]"
-      : "bg-[#f5f7fb]",
-
-    card: dark
-      ? "bg-white/[0.05]"
-      : "bg-white",
-
-    border: dark
-      ? "border-white/10"
-      : "border-black/10",
-
-    text: dark
-      ? "text-white"
-      : "text-black",
-
-    subtext: dark
-      ? "text-white/60"
-      : "text-black/60",
-
+    bg: dark ? "bg-[#070913]" : "bg-[#f8fafc]",
+    card: dark ? "bg-white/[0.03]" : "bg-white",
+    cardHover: dark ? "hover:bg-white/[0.06]" : "hover:bg-slate-50",
+    border: dark ? "border-white/10" : "border-slate-200",
+    text: dark ? "text-white" : "text-slate-900",
+    subtext: dark ? "text-slate-400" : "text-slate-600",
     input: dark
-      ? "bg-white/[0.04]"
-      : "bg-[#f8fafc]",
+      ? "bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500 focus:border-red-500 focus:ring-red-500/20"
+      : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:ring-red-500/20",
+    optionBg: dark ? "bg-slate-900 text-white" : "bg-white text-slate-900",
   };
-
-  /* =========================================================
-     REPORT OPTIONS
-  ========================================================= */
 
   const reportTypes = [
     {
+      id: "Scam",
       icon: Ban,
-      title: "Scam",
-      desc: "Fraudulent activity or fake services",
-      color:
-        "from-red-500 to-orange-500",
+      title: "Scam & Fraud",
+      desc: "Fake services, phishing, or monetary deceit",
+      color: "from-rose-500 to-orange-500",
+      accent: "text-rose-500",
     },
-
     {
+      id: "Harassment",
       icon: ShieldAlert,
       title: "Harassment",
-      desc: "Bullying, threats or abuse",
-      color:
-        "from-pink-500 to-red-500",
+      desc: "Bullying, threats, hate speech, or abuse",
+      color: "from-pink-500 to-rose-500",
+      accent: "text-pink-500",
     },
-
     {
+      id: "Copyright",
       icon: FileWarning,
       title: "Copyright",
-      desc: "Unauthorized content usage",
-      color:
-        "from-violet-500 to-fuchsia-500",
+      desc: "Intellectual property or material theft",
+      color: "from-violet-500 to-purple-500",
+      accent: "text-violet-500",
     },
-
     {
+      id: "Spam",
       icon: Flag,
-      title: "Spam",
-      desc: "Repeated or unwanted messages",
-      color:
-        "from-cyan-500 to-blue-500",
+      title: "Spam & Misleading",
+      desc: "Repeated messages, bot activity, or rumors",
+      color: "from-blue-500 to-cyan-500",
+      accent: "text-blue-500",
     },
   ];
 
   return (
-    <div
-      className={`relative min-h-screen overflow-hidden px-4 md:px-8 py-10 ${theme.bg} ${theme.text}`}
-    >
-      {/* =========================================================
-         BACKGROUND GLOW
-      ========================================================= */}
-
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-120px] left-[-120px] w-[320px] h-[320px] rounded-full bg-red-500/20 blur-[120px]" />
-
-        <div className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] rounded-full bg-orange-500/20 blur-[120px]" />
+    <div className={`min-h-screen ${theme.bg} ${theme.text} relative overflow-x-hidden transition-colors duration-300`}>
+      {/* BACKGROUND GLOW ACCENTS */}
+      <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[400px] w-full max-w-7xl -translate-x-1/2 overflow-hidden opacity-40 blur-[120px]">
+        <div className="absolute top-[-100px] left-1/4 h-[300px] w-[300px] rounded-full bg-red-600" />
+        <div className="absolute top-[-50px] right-1/4 h-[250px] w-[250px] rounded-full bg-amber-600" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* =========================================================
-           HERO
-        ========================================================= */}
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:py-10 lg:px-8">
+        {/* NAV HEADER */}
+        <div className="mb-8 flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className={`group inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-95 ${theme.border} ${theme.card} ${theme.cardHover}`}
+          >
+            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+            <span>Back</span>
+          </button>
+        </div>
 
-        <div className="text-center mb-14">
-          <button onClick={()=> navigate(-1)} className="absolute left-2.5 top-2.5 p-2.5 bg-white/10 rounded-lg flex gap-0.5"> <ArrowLeft/>Back</button>
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-xl mb-6">
-            <Siren size={16} />
-
-            <span className="text-sm">
-              Safety Center
-            </span>
+        {/* HERO SECTION */}
+        <div className="mx-auto max-w-3xl text-center mb-10 sm:mb-14">
+          <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-1.5 text-xs font-semibold text-red-500 sm:text-sm mb-4">
+            <Siren size={15} className="animate-pulse" />
+            <span>Safety & Moderation Center</span>
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-black leading-tight">
+          <h1 className="text-3xl font-black tracking-tight sm:text-5xl lg:text-6xl">
             Report an{" "}
-            <span className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 bg-clip-text text-transparent">
               Issue
             </span>
           </h1>
 
-          <p
-            className={`max-w-2xl mx-auto mt-5 text-lg leading-8 ${theme.subtext}`}
-          >
-            Help keep Unihelp
-            safe by reporting
-            scams, harassment,
-            abuse, spam, or
-            inappropriate
-            behavior.
+          <p className={`mt-3 sm:mt-4 text-sm sm:text-base md:text-lg leading-relaxed ${theme.subtext}`}>
+            Help maintain a secure platform. Select a category below or fill out the report form directly to alert our moderation team.
           </p>
         </div>
 
-        {/* =========================================================
-           MAIN GRID
-        ========================================================= */}
+        {/* MAIN RESPONSIVE GRID */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+          
+          {/* LEFT SIDE: CATEGORY CARDS & SAFETY INFOGRAPHICS */}
+          <div className="space-y-6 lg:col-span-6 xl:col-span-5">
+            <div>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  1. Select Category
+                </h2>
+                <span className="text-xs text-slate-500">Click to pre-fill</span>
+              </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* =========================================================
-             LEFT
-          ========================================================= */}
-
-          <div className="space-y-6">
-            {/* REPORT TYPES */}
-
-            <div className="grid sm:grid-cols-2 gap-5">
-              {reportTypes.map(
-                (
-                  item,
-                  index
-                ) => {
-                  const Icon =
-                    item.icon;
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {reportTypes.map((item) => {
+                  const Icon = item.icon;
+                  const isSelected = category === item.id;
 
                   return (
-                    <div
-                      key={
-                        index
-                      }
-                      className={`rounded-[30px] border p-6 backdrop-blur-2xl transition-all hover:scale-[1.02] shadow-2xl ${theme.border} ${theme.card}`}
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setCategory(item.id)}
+                      className={`relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 outline-none ${
+                        isSelected
+                          ? "border-red-500/80 bg-red-500/[0.06] ring-2 ring-red-500/20"
+                          : `${theme.border} ${theme.card} ${theme.cardHover}`
+                      }`}
                     >
-                      <div
-                        className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-xl mb-5`}
-                      >
-                        <Icon
-                          size={
-                            24
-                          }
-                        />
+                      {isSelected && (
+                        <div className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white">
+                          <Check size={12} strokeWidth={3} />
+                        </div>
+                      )}
+
+                      <div className="mb-3">
+                        <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-md`}>
+                          <Icon size={20} />
+                        </div>
                       </div>
 
-                      <h3 className="text-xl font-bold">
-                        {
-                          item.title
-                        }
-                      </h3>
-
-                      <p
-                        className={`text-sm mt-3 leading-7 ${theme.subtext}`}
-                      >
-                        {
-                          item.desc
-                        }
-                      </p>
-                    </div>
+                      <div>
+                        <h3 className="font-bold text-sm sm:text-base">{item.title}</h3>
+                        <p className={`mt-1 text-xs leading-relaxed ${theme.subtext}`}>
+                          {item.desc}
+                        </p>
+                      </div>
+                    </button>
                   );
-                }
-              )}
+                })}
+              </div>
             </div>
 
-            {/* INFO CARD */}
-
-            <div
-              className={`rounded-[35px] border p-7 backdrop-blur-3xl shadow-2xl ${theme.border} ${theme.card}`}
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-16 w-16 rounded-3xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-xl">
-                  <ShieldCheck
-                    size={
-                      28
-                    }
-                  />
+            {/* SAFETY GUARANTEES CARD */}
+            <div className={`rounded-2xl border p-5 sm:p-6 shadow-sm ${theme.border} ${theme.card}`}>
+              <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
+                  <ShieldCheck size={22} />
                 </div>
-
                 <div>
-                  <h2 className="text-2xl font-black">
-                    Community Safety
-                  </h2>
+                  <h3 className="font-bold text-sm sm:text-base">Moderation Guarantee</h3>
+                  <p className={`text-xs ${theme.subtext}`}>How your report is handled</p>
+                </div>
+              </div>
 
-                  <p
-                    className={
-                      theme.subtext
-                    }
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 size={18} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-semibold">24-Hour Review Window</h4>
+                    <p className={`text-xs mt-0.5 ${theme.subtext}`}>Our safety team active monitors logs to review incoming tickets promptly.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <UserX size={18} className="text-rose-500 mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-semibold">Decisive Sanctions</h4>
+                    <p className={`text-xs mt-0.5 ${theme.subtext}`}>Offenders are subject to warnings, account restrictions, or permanent bans.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Clock3 size={18} className="text-amber-500 mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-semibold">Strict Privacy</h4>
+                    <p className={`text-xs mt-0.5 ${theme.subtext}`}>Your identity is kept completely anonymous from the accused user.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: REPORT FORM */}
+          <div className="lg:col-span-6 xl:col-span-7">
+            <div className={`rounded-2xl sm:rounded-3xl border p-5 sm:p-8 shadow-xl backdrop-blur-xl ${theme.border} ${theme.card}`}>
+              <div className="mb-6 border-b border-white/5 pb-4">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  2. Report Form
+                </h2>
+                <p className="text-sm font-semibold mt-1">
+                  Provide specific details to expedite investigation
+                </p>
+              </div>
+
+              {/* BANNERS */}
+              {success && (
+                <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400 text-sm font-medium">
+                  <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+                  <div>{success}</div>
+                </div>
+              )}
+
+              {error && (
+                <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-400 text-sm font-medium">
+                  <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                  <div>{error}</div>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* CATEGORY SELECTOR DROPDOWN */}
+                <div>
+                  <label className="mb-2 flex items-center justify-between text-xs sm:text-sm font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <AlertTriangle size={15} className="text-amber-500" />
+                      Category <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className={`w-full h-12 rounded-xl border px-4 text-sm font-medium outline-none transition-all focus:ring-2 ${theme.input}`}
                   >
-                    Unihelp moderation
-                    system
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="flex items-start gap-4">
-                  <CheckCircle2
-                    size={
-                      20
-                    }
-                    className="text-green-400 mt-1"
-                  />
-
-                  <div>
-                    <h4 className="font-semibold">
-                      Fast Review
-                    </h4>
-
-                    <p
-                      className={`text-sm leading-6 ${theme.subtext}`}
-                    >
-                      Reports are reviewed
-                      by moderators within
-                      24 hours.
-                    </p>
-                  </div>
+                    <option value="" disabled className={theme.optionBg}>
+                      Select a category
+                    </option>
+                    <option value="Scam" className={theme.optionBg}>
+                      Scam or Fraud
+                    </option>
+                    <option value="Harassment" className={theme.optionBg}>
+                      Harassment or Abuse
+                    </option>
+                    <option value="Copyright" className={theme.optionBg}>
+                      Copyright Violation
+                    </option>
+                    <option value="Spam" className={theme.optionBg}>
+                      Spam or Misleading Information
+                    </option>
+                    <option value="Other" className={theme.optionBg}>
+                      Other Safety Issue
+                    </option>
+                  </select>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <UserX
-                    size={
-                      20
-                    }
-                    className="text-red-400 mt-1"
+                {/* REPORTED USER INPUT */}
+                <div>
+                  <label className="mb-2 flex items-center justify-between text-xs sm:text-sm font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <FileWarning size={15} className="text-orange-400" />
+                      Reported User
+                    </span>
+                    <span className={`text-xs ${theme.subtext}`}>Optional</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="e.g. @username or user email"
+                    value={reportedUser}
+                    onChange={(e) => setReportedUser(e.target.value)}
+                    className={`w-full h-12 rounded-xl border px-4 text-sm font-medium outline-none transition-all focus:ring-2 ${theme.input}`}
                   />
-
-                  <div>
-                    <h4 className="font-semibold">
-                      Account Actions
-                    </h4>
-
-                    <p
-                      className={`text-sm leading-6 ${theme.subtext}`}
-                    >
-                      Violating users may
-                      be warned, suspended
-                      or banned.
-                    </p>
-                  </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <Clock3
-                    size={
-                      20
-                    }
-                    className="text-cyan-400 mt-1"
+                {/* DETAILS TEXTAREA */}
+                <div>
+                  <label className="mb-2 flex items-center justify-between text-xs sm:text-sm font-semibold">
+                    <span>
+                      Incident Details <span className="text-red-500">*</span>
+                    </span>
+                    <span className={`text-xs ${theme.subtext}`}>
+                      {details.length}/1000
+                    </span>
+                  </label>
+
+                  <textarea
+                    rows={5}
+                    maxLength={1000}
+                    placeholder="Please describe what happened in detail (links, timestamps, message content)..."
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    className={`w-full rounded-xl border p-4 text-sm font-medium outline-none transition-all focus:ring-2 resize-none ${theme.input}`}
                   />
-
-                  <div>
-                    <h4 className="font-semibold">
-                      Secure Reports
-                    </h4>
-
-                    <p
-                      className={`text-sm leading-6 ${theme.subtext}`}
-                    >
-                      Your report details
-                      remain private and
-                      protected.
-                    </p>
-                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* =========================================================
-             FORM
-          ========================================================= */}
-
-          <div
-            className={`rounded-[35px] border p-7 md:p-8 backdrop-blur-3xl shadow-[0_20px_80px_rgba(0,0,0,0.35)] ${theme.border} ${theme.card}`}
-          >
-            {/* SUCCESS */}
-
-            {success && (
-              <div className="mb-5 rounded-2xl border border-green-500/30 bg-green-500/10 px-5 py-4 text-green-400">
-                {success}
-              </div>
-            )}
-
-            {/* ERROR */}
-
-            {error && (
-              <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-400">
-                {error}
-              </div>
-            )}
-
-            <form
-              onSubmit={
-                handleSubmit
-              }
-              className="space-y-5"
-            >
-              {/* CATEGORY */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
-                  <AlertTriangle
-                    size={
-                      18
-                    }
-                  />
-
-                  Report Category
-                </label>
-
-                <select
-                  value={
-                    category
-                  }
-                  onChange={(
-                    e
-                  ) =>
-                    setCategory(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full h-14 rounded-2xl border px-5 outline-none transition-all ${theme.border} ${theme.input}`}
+                {/* SUBMIT BUTTON */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`group relative flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all duration-200 active:scale-[0.99] shadow-lg ${
+                    loading
+                      ? "bg-slate-700 cursor-not-allowed opacity-70"
+                      : "bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:opacity-95 shadow-red-500/20"
+                  }`}
                 >
-                  <option value="">
-                    Select category
-                  </option>
+                  <Send size={16} className={`transition-transform ${loading ? "animate-pulse" : "group-hover:translate-x-0.5 group-hover:-translate-y-0.5"}`} />
+                  <span>{loading ? "Submitting Report..." : "Submit Incident Report"}</span>
+                </button>
+              </form>
 
-                  <option value="Scam">
-                    Scam
-                  </option>
-
-                  <option value="Abuse">
-                    Abuse
-                  </option>
-
-                  <option value="Copyright">
-                    Copyright Violation
-                  </option>
-
-                  <option value="Harassment">
-                    Harassment
-                  </option>
-
-                  <option value="Spam">
-                    Spam
-                  </option>
-
-                  <option value="Other">
-                    Other
-                  </option>
-                </select>
+              {/* FOOTER NOTICE */}
+              <div className={`mt-6 flex items-center gap-2 border-t border-white/5 pt-4 text-xs ${theme.subtext}`}>
+                <Info size={14} className="shrink-0" />
+                <span>False reports violate our terms of service and may result in penalties.</span>
               </div>
-
-              {/* USER */}
-
-              <div>
-                <label className="mb-3 flex items-center gap-2 font-semibold">
-                  <FileWarning
-                    size={
-                      18
-                    }
-                  />
-
-                  Reported User
-                  (Optional)
-                </label>
-
-                <input
-                  type="text"
-                  placeholder="Username or email"
-                  value={
-                    reportedUser
-                  }
-                  onChange={(
-                    e
-                  ) =>
-                    setReportedUser(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full h-14 rounded-2xl border px-5 outline-none transition-all focus:border-red-500 ${theme.border} ${theme.input}`}
-                />
-              </div>
-
-              {/* DETAILS */}
-
-              <div>
-                <label className="mb-3 block font-semibold">
-                  Report Details
-                </label>
-
-                <textarea
-                  rows={7}
-                  placeholder="Explain the issue clearly..."
-                  value={
-                    details
-                  }
-                  onChange={(
-                    e
-                  ) =>
-                    setDetails(
-                      e.target
-                        .value
-                    )
-                  }
-                  className={`w-full rounded-2xl border p-5 outline-none resize-none transition-all focus:border-red-500 ${theme.border} ${theme.input}`}
-                />
-              </div>
-
-              {/* BUTTON */}
-
-              <button
-                type="submit"
-                disabled={
-                  loading
-                }
-                className={`w-full h-14 rounded-2xl font-bold text-white transition-all shadow-2xl ${
-                  loading
-                    ? "bg-red-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:scale-[1.02]"
-                }`}
-              >
-                <span className="flex items-center justify-center gap-3">
-                  <Send
-                    size={
-                      18
-                    }
-                  />
-
-                  {loading
-                    ? "Submitting..."
-                    : "Submit Report"}
-                </span>
-              </button>
-            </form>
-
-            {/* FOOTER */}
-
-            <div className="mt-6 pt-6 border-t border-white/10 flex items-center gap-3 text-sm opacity-70">
-              <Sparkles
-                size={16}
-              />
-
-              Unihelp prioritizes
-              community safety and
-              transparency.
             </div>
           </div>
+
         </div>
       </div>
     </div>

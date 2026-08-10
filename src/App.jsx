@@ -240,7 +240,7 @@ const App = () => {
           <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
 
         <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
-            <Route path="/" element={ <ProtectedRoute><Dashboard dark={dark} /></ProtectedRoute> }/>
+            <Route path="/" element={ <Dashboard dark={dark} /> }/>
             <Route path="/profile" element={ <ProtectedRoute> <Profile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
             <Route path="/profile/:uid" element={ <ProtectedRoute> <ViewProfile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
             <Route path="/announcements" element={<ProtectedRoute><Announcements dark={dark} /> </ProtectedRoute>}/>
