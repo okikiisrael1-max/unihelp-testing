@@ -11,288 +11,225 @@ import {
   ShieldCheck,
   Heart,
   ArrowLeft,
+  Sparkles,
+  Quote,
 } from "lucide-react";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 
-const About = ({ dark }) => {
-    const navigate = useNavigate();
-  const features = [
-    {
-      icon: <GraduationCap size={28} />,
-      title: "Academic Tools",
-      description:
-        "Powerful GPA & CGPA calculators, lecture notes, past questions, and productivity tools to help students excel.",
-    },
-    {
-      icon: <Brain size={28} />,
-      title: "AI Assistance",
-      description:
-        "Smart AI-powered learning support designed to help students understand concepts faster.",
-    },
-    {
-      icon: <BookOpen size={28} />,
-      title: "Learning Hub",
-      description:
-        "Access educational videos and student-created learning resources.",
-    },
-    {
-      icon: <ShoppingBag size={28} />,
-      title: "Student Marketplace",
-      description:
-        "Buy, sell, and discover products and services within your campus community.",
-    },
-    {
-      icon: <Home size={28} />,
-      title: "Hostel Finder",
-      description:
-        "Find verified hostels and accommodation opportunities around your institution.",
-    },
-    {
-      icon: <Users size={28} />,
-      title: "Community",
-      description:
-        "Connect with fellow students, share ideas, collaborate, and stay informed.",
-    },
-  ];
+const FEATURES = [
+  {
+    icon: GraduationCap,
+    title: "Academic Tools",
+    description:
+      "Powerful GPA & CGPA calculators, lecture notes, past questions, and productivity tools to help students excel.",
+  },
+  {
+    icon: Brain,
+    title: "AI Assistance",
+    description:
+      "Smart AI-powered learning support designed to help students understand complex concepts faster.",
+  },
+  {
+    icon: BookOpen,
+    title: "Learning Hub",
+    description:
+      "Access educational videos, peer-contributed study materials, and collaborative student resources.",
+  },
+  {
+    icon: ShoppingBag,
+    title: "Student Marketplace",
+    description:
+      "Safely buy, sell, and discover products and services within your campus community.",
+  },
+  {
+    icon: Home,
+    title: "Hostel Finder",
+    description:
+      "Locate and secure verified hostels and accommodation options tailored to your budget.",
+  },
+  {
+    icon: Users,
+    title: "Community Network",
+    description:
+      "Connect with fellow students across campuses, share ideas, collaborate, and stay updated.",
+  },
+];
+
+const VALUES = [
+  {
+    icon: ShieldCheck,
+    iconColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+    title: "Trusted Platform",
+    description:
+      "Engineered with high security, data privacy, and student accessibility at its core.",
+  },
+  {
+    icon: Video,
+    iconColor: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+    title: "Rich Learning Resources",
+    description:
+      "Explore high-quality educational videos, past questions, and peer-contributed study guides.",
+  },
+  {
+    icon: Heart,
+    iconColor: "text-pink-500 bg-pink-500/10 border-pink-500/20",
+    title: "Student-Centered",
+    description:
+      "Every tool and feature is crafted to directly solve genuine challenges faced on campus daily.",
+  },
+];
+
+export default function About({ dark }) {
+  const navigate = useNavigate();
+
+  /* Dynamic Dynamic Styling Tokens */
+  const pageBg = dark ? "bg-[#050816] text-slate-100" : "bg-[#f8fafc] text-slate-900";
+  const glassCard = dark
+    ? "bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl hover:border-slate-700/80"
+    : "bg-white/80 border border-slate-200/80 backdrop-blur-xl shadow-sm hover:border-slate-300";
+  const textMuted = dark ? "text-slate-400" : "text-slate-600";
+  const innerCard = dark ? "bg-white/5 border border-white/5" : "bg-slate-100/70 border border-slate-200/50";
 
   return (
     <>
-    <div
-      className={`min-h-screen py-12 px-4 md:px-8 ${
-        dark
-          ? "bg-slate-950 text-white"
-          : "bg-slate-50 text-slate-900"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto">
-        <span onClick={()=> navigate(-1)} className="flex cursor-pointer items-center gap-1 font-medium text-2xl"> <ArrowLeft size={22}/> Back</span>
-        {/* HERO */}
-        <div className="text-center mb-20">
-          <div className="flex justify-center mb-6">
-            <div className="bg-indigo-600 p-5 rounded-3xl">
-              <Rocket size={40} className="text-white" />
-            </div>
+      <div className={`min-h-screen md:mt-15 py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden ${pageBg}`}>
+        {/* BACKGROUND AMBIENT GLOWS */}
+        <div className="fixed -top-40 -left-40 h-[32rem] w-[32rem] rounded-full bg-indigo-600/15 blur-[140px] pointer-events-none" />
+        <div className="fixed top-1/2 -right-40 h-[32rem] w-[32rem] rounded-full bg-purple-600/15 blur-[140px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto space-y-16 relative z-10">
+          {/* BACK BUTTON */}
+          <div>
+            <button
+              onClick={() => navigate(-1)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                dark
+                  ? "bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-800"
+                  : "bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-sm"
+              }`}
+            >
+              <ArrowLeft size={18} />
+              <span>Back</span>
+            </button>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            About UniHelp
-          </h1>
+          {/* HERO SECTION */}
+          <div className="text-center max-w-4xl mx-auto space-y-6">
+            <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-500/20">
+              <Rocket size={38} />
+            </div>
 
-          <p
-            className={`max-w-3xl mx-auto text-lg md:text-xl ${
-              dark ? "text-zinc-400" : "text-slate-600"
-            }`}
-          >
-            UniHelp is an all-in-one student platform built to solve
-            everyday campus challenges through technology, learning,
-            collaboration, and innovation.
-          </p>
-        </div>
-
-        {/* MISSION */}
-        <div
-          className={`rounded-3xl p-8 md:p-12 mb-20 ${
-            dark
-              ? "bg-white/5 border border-white/10"
-              : "bg-white border border-slate-200"
-          }`}
-        >
-          <h2 className="text-3xl font-bold mb-6">
-            Our Mission
-          </h2>
-
-          <p
-            className={`leading-8 text-lg ${
-              dark ? "text-zinc-400" : "text-slate-600"
-            }`}
-          >
-            Our mission is to create a digital ecosystem where students
-            can learn, collaborate, access resources, find opportunities,
-            and solve academic challenges without switching between
-            multiple platforms.
-          </p>
-        </div>
-
-        {/* FEATURES */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            What UniHelp Offers
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className={`rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 ${
-                  dark
-                    ? "bg-white/5 border border-white/10"
-                    : "bg-white border border-slate-200"
-                }`}
-              >
-                <div className="text-indigo-500 mb-4">
-                  {feature.icon}
-                </div>
-
-                <h3 className="text-xl font-semibold mb-3">
-                  {feature.title}
-                </h3>
-
-                <p
-                  className={`${
-                    dark
-                      ? "text-zinc-400"
-                      : "text-slate-600"
-                  }`}
-                >
-                  {feature.description}
-                </p>
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <Sparkles size={14} />
+                Empowering Student Success
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* VISION */}
-        <div
-          className={`rounded-3xl p-8 md:p-12 mb-20 ${
-            dark
-              ? "bg-white/5 border border-white/10"
-              : "bg-white border border-slate-200"
-          }`}
-        >
-          <h2 className="text-3xl font-bold mb-6">
-            Our Vision
-          </h2>
-
-          <p
-            className={`leading-8 text-lg ${
-              dark ? "text-zinc-400" : "text-slate-600"
-            }`}
-          >
-            To become Africa's leading student-focused digital platform,
-            empowering millions of students with the tools, resources,
-            and opportunities needed for academic and personal success.
-          </p>
-        </div>
-
-        {/* WHY UNIHELP */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Why Students Love UniHelp
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div
-              className={`rounded-3xl p-6 ${
-                dark
-                  ? "bg-white/5 border border-white/10"
-                  : "bg-white border border-slate-200"
-              }`}
-            >
-              <ShieldCheck
-                size={35}
-                className="text-green-500 mb-4"
-              />
-              <h3 className="font-semibold text-xl mb-3">
-                Trusted Platform
-              </h3>
-              <p
-                className={
-                  dark
-                    ? "text-zinc-400"
-                    : "text-slate-600"
-                }
-              >
-                Built with security, reliability, and student needs in
-                mind.
-              </p>
-            </div>
-
-            <div
-              className={`rounded-3xl p-6 ${
-                dark
-                  ? "bg-white/5 border border-white/10"
-                  : "bg-white border border-slate-200"
-              }`}
-            >
-              <Video
-                size={35}
-                className="text-red-500 mb-4"
-              />
-              <h3 className="font-semibold text-xl mb-3">
-                Rich Learning Resources
-              </h3>
-              <p
-                className={
-                  dark
-                    ? "text-zinc-400"
-                    : "text-slate-600"
-                }
-              >
-                Access educational videos, notes, and learning resources
-                content from fellow students.
-              </p>
-            </div>
-
-            <div
-              className={`rounded-3xl p-6 ${
-                dark
-                  ? "bg-white/5 border border-white/10"
-                  : "bg-white border border-slate-200"
-              }`}
-            >
-              <Heart
-                size={35}
-                className="text-pink-500 mb-4"
-              />
-              <h3 className="font-semibold text-xl mb-3">
-                Student-Centered
-              </h3>
-              <p
-                className={
-                  dark
-                    ? "text-zinc-400"
-                    : "text-slate-600"
-                }
-              >
-                Every feature is designed to solve real problems faced
-                by students daily.
+              <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
+                About <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">UniHelp</span>
+              </h1>
+              <p className={`text-lg sm:text-xl leading-relaxed ${textMuted} max-w-2xl mx-auto`}>
+                UniHelp is an all-in-one student platform built to simplify everyday campus challenges through modern technology, learning resources, and community collaboration.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* FOUNDER MESSAGE */}
-        <div
-          className={`rounded-3xl p-8 md:p-12 ${
-            dark
-              ? "bg-indigo-950/40 border border-indigo-800"
-              : "bg-indigo-50 border border-indigo-200"
-          }`}
-        >
-          <h2 className="text-3xl font-bold mb-6">
-            A Message From The Founder
-          </h2>
+          {/* MISSION SECTION */}
+          <div className={`${glassCard} rounded-3xl p-8 sm:p-12 relative overflow-hidden transition-all duration-300`}>
+            <div className="max-w-3xl space-y-4">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
+                Our Mission
+              </h2>
+              <p className={`text-base sm:text-lg leading-relaxed ${textMuted}`}>
+                To engineer an interconnected digital ecosystem where students can learn, collaborate, access essential campus resources, unlock opportunities, and overcome academic hurdles without having to switch between disconnected platforms.
+              </p>
+            </div>
+          </div>
 
-          <p
-            className={`leading-8 text-lg ${
-              dark ? "text-zinc-300" : "text-slate-700"
+          {/* FEATURES GRID */}
+          <div className="space-y-10">
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-black tracking-tight">What UniHelp Offers</h2>
+              <p className={`text-sm sm:text-base ${textMuted}`}>Designed from the ground up for modern academic lifestyles.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {FEATURES.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div
+                    key={index}
+                    className={`${glassCard} rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between space-y-4`}
+                  >
+                    <div className="space-y-4">
+                      <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+                        <Icon size={24} />
+                      </div>
+                      <h3 className="text-xl font-bold tracking-tight">{feature.title}</h3>
+                      <p className={`text-sm leading-relaxed ${textMuted}`}>{feature.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* VISION SECTION */}
+          <div className={`${glassCard} rounded-3xl p-8 sm:p-12 relative overflow-hidden transition-all duration-300`}>
+            <div className="max-w-3xl space-y-4">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Our Vision</h2>
+              <p className={`text-base sm:text-lg leading-relaxed ${textMuted}`}>
+                To become Africa's leading student-focused digital infrastructure, empowering millions of tertiary students with the tools, resources, and networking opportunities required to achieve academic and personal growth.
+              </p>
+            </div>
+          </div>
+
+          {/* WHY UNIHELP */}
+          <div className="space-y-10">
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-black tracking-tight">Why Students Love UniHelp</h2>
+              <p className={`text-sm sm:text-base ${textMuted}`}>Built with passion, trust, and real campus insights.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {VALUES.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <div key={index} className={`${glassCard} rounded-3xl p-6 space-y-4 transition-all duration-300`}>
+                    <div className={`h-12 w-12 rounded-2xl border flex items-center justify-center ${item.iconColor}`}>
+                      <Icon size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold tracking-tight">{item.title}</h3>
+                    <p className={`text-sm leading-relaxed ${textMuted}`}>{item.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* FOUNDER MESSAGE */}
+          <div
+            className={`rounded-3xl p-8 sm:p-12 relative overflow-hidden border ${
+              dark
+                ? "bg-gradient-to-br from-indigo-950/50 via-slate-900/80 to-purple-950/40 border-indigo-800/50"
+                : "bg-gradient-to-br from-indigo-50 via-white to-purple-50 border-indigo-200"
             }`}
           >
-            UniHelp was created with one goal: making student life
-            easier. From academic resources to hostel search,
-            marketplace services, AI assistance, and community
-            engagement, UniHelp aims to become the digital home for
-            students everywhere.
-          </p>
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-3 text-indigo-500">
+                <Quote size={28} />
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                  A Message From The Founder
+                </h2>
+              </div>
+              <p className={`text-base sm:text-lg leading-relaxed ${dark ? "text-slate-300" : "text-slate-700"}`}>
+                UniHelp was born out of a simple mission: making student life easier and more productive. From academic calculators to hostel search engines, marketplace tools, AI assistance, and social community spaces, UniHelp is designed to be your ultimate digital campus companion.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-      
-    </div>
-    <Footer/>
+      <Footer />
     </>
-    
   );
-};
-
-export default About;
+}
