@@ -44,9 +44,6 @@ export default function MarketplaceAdmin({
   const [search, setSearch] =
     useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState("all");
-
   const [selectedItem, setSelectedItem] =
     useState(null);
 
@@ -123,23 +120,12 @@ export default function MarketplaceAdmin({
                 search.toLowerCase()
               );
 
-          const matchesStatus =
-            statusFilter ===
-            "all"
-              ? true
-              : item.status ===
-                statusFilter;
-
-          return (
-            matchesSearch &&
-            matchesStatus
-          );
+          return matchesSearch;
         }
       );
     }, [
       items,
       search,
-      statusFilter,
     ]);
 
   /* =========================================
@@ -152,20 +138,6 @@ export default function MarketplaceAdmin({
         total:
           items.length,
 
-        approved:
-          items.filter(
-            (i) =>
-              i.status ===
-              "approved"
-          ).length,
-
-        pending:
-          items.filter(
-            (i) =>
-              i.status ===
-              "pending"
-          ).length,
-
         premium:
           items.filter(
             (i) =>
@@ -174,75 +146,7 @@ export default function MarketplaceAdmin({
       };
     }, [items]);
 
-  /* =========================================
-     APPROVE
-  ========================================= */
 
-  const approveItem =
-    async (id) => {
-      try {
-        await updateDoc(
-          doc(
-            db,
-            "studentMarketplace",
-            id
-          ),
-          {
-            status:
-              "approved",
-          }
-        );
-
-        setItems((prev) =>
-          prev.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  status:
-                    "approved",
-                }
-              : item
-          )
-        );
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-  /* =========================================
-     REJECT
-  ========================================= */
-
-  const rejectItem =
-    async (id) => {
-      try {
-        await updateDoc(
-          doc(
-            db,
-            "studentMarketplace",
-            id
-          ),
-          {
-            status:
-              "rejected",
-          }
-        );
-
-        setItems((prev) =>
-          prev.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  status:
-                    "rejected",
-                }
-              : item
-          )
-        );
-      } catch (err) {
-        console.log(err);
-      }
-    };
 
   /* =========================================
      DELETE
@@ -346,37 +250,6 @@ export default function MarketplaceAdmin({
             </h2>
           </div>
 
-          <div
-            className={`${card} rounded-3xl p-5`}
-          >
-            <div className="flex justify-between">
-              <CheckCircle2 className="text-green-500" />
-
-              <span className="text-xs opacity-60">
-                Approved
-              </span>
-            </div>
-
-            <h2 className="text-3xl font-black mt-4">
-              {stats.approved}
-            </h2>
-          </div>
-
-          <div
-            className={`${card} rounded-3xl p-5`}
-          >
-            <div className="flex justify-between">
-              <Clock3 className="text-yellow-500" />
-
-              <span className="text-xs opacity-60">
-                Pending
-              </span>
-            </div>
-
-            <h2 className="text-3xl font-black mt-4">
-              {stats.pending}
-            </h2>
-          </div>
 
           <div
             className={`${card} rounded-3xl p-5`}
@@ -474,31 +347,6 @@ export default function MarketplaceAdmin({
                       className="h-56 w-full object-cover"
                     />
 
-                    {/* STATUS */}
-
-                    <div className="absolute top-3 left-3">
-
-                      {item.status ===
-                        "approved" && (
-                        <div className="bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-                          Approved
-                        </div>
-                      )}
-
-                      {item.status ===
-                        "pending" && (
-                        <div className="bg-yellow-500 text-black text-xs px-3 py-1 rounded-full">
-                          Pending
-                        </div>
-                      )}
-
-                      {item.status ===
-                        "rejected" && (
-                        <div className="bg-red-500 text-white text-xs px-3 py-1 rounded-full">
-                          Rejected
-                        </div>
-                      )}
-                    </div>
 
                     {/* PREMIUM */}
 
@@ -546,29 +394,6 @@ export default function MarketplaceAdmin({
                             View Details
                           </button>
 
-                          <button
-                            onClick={() =>
-                              approveItem(
-                                item.id
-                              )
-                            }
-                            className="w-full px-4 py-3 text-left hover:bg-green-500/20 text-green-400 flex items-center gap-2 text-sm"
-                          >
-                            <BadgeCheck size={15} />
-                            Approve
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              rejectItem(
-                                item.id
-                              )
-                            }
-                            className="w-full px-4 py-3 text-left hover:bg-yellow-500/20 text-yellow-400 flex items-center gap-2 text-sm"
-                          >
-                            <XCircle size={15} />
-                            Reject
-                          </button>
 
                           <button
                             onClick={() =>
@@ -749,27 +574,6 @@ export default function MarketplaceAdmin({
 
                   <div className="grid grid-cols-3 gap-3 pt-3">
 
-                    <button
-                      onClick={() =>
-                        approveItem(
-                          selectedItem.id
-                        )
-                      }
-                      className="bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl text-sm font-semibold"
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        rejectItem(
-                          selectedItem.id
-                        )
-                      }
-                      className="bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded-2xl text-sm font-semibold"
-                    >
-                      Reject
-                    </button>
 
                     <button
                       onClick={() =>
