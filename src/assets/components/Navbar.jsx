@@ -12,6 +12,7 @@ import {
   Home,
   Sparkles,
   Calculator,
+  MessageCircleMore,
 } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../firebase/config";
@@ -53,6 +54,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
     { type: 'link', title: 'Resources', desc: 'Browse Study Resources & PDFs', url: '/resources', icon: BookOpen, colorClass: 'bg-emerald-500/10 text-emerald-500', keywords: ['pdf', 'read', 'study', 'materials', 'handout', 'notes', 'resources'] },
     { type: 'link', title: 'Hostel Marketplace', desc: 'Find accommodations', url: '/hostelmarketplace', icon: Home, colorClass: 'bg-rose-500/10 text-rose-500', keywords: ['house', 'rent', 'lodge', 'accommodation', 'hostel'] },
     { type: 'link', title: 'Student Marketplace', desc: 'Buy and sell items', url: '/studentmarketplace', icon: Search, colorClass: 'bg-amber-500/10 text-amber-500', keywords: ['shop', 'store', 'buy', 'sell', 'products', 'market'] },
+    { type: 'link', title: 'Watch', desc: 'Watch educational videos', url: '/watch', icon: Search, colorClass: 'bg-amber-500/10 text-amber-500', keywords: ['video', 'youtube', 'tutorial', 'video', 'play', 'learn'] },
     { type: 'link', title: 'AI Assistance', desc: 'Get help from AI', url: '/ai', icon: Sparkles, colorClass: 'bg-purple-500/10 text-purple-500', keywords: ['bot', 'chat', 'help', 'artificial', 'intelligence', 'ai'] },
     { type: 'link', title: 'Community', desc: 'Connect with other students', url: '/community', icon: UserRound, colorClass: 'bg-blue-500/10 text-blue-500', keywords: ['forum', 'chat', 'group', 'social', 'friends'] },
     { type: 'link', title: 'Help & Support', desc: 'Get assistance', url: '/help-center', icon: Bell, colorClass: 'bg-slate-500/10 text-slate-500', keywords: ['contact', 'faq', 'help', 'support', 'customer'] },
@@ -69,13 +71,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
       })
     : searchDatabase.slice(0, 4); // Only show top 4 when empty
 
-  /* ------------------------------------------------ */
-  /* LIVE UNREAD NOTIFICATION COUNT */
-  /* ------------------------------------------------ */
-  // Mirrors the "notifications/{uid}/items" + `read` field convention used
-  // in NotificationsCenter.jsx. onSnapshot keeps this live: reading a
-  // notification anywhere in the app (or a new one arriving) updates the
-  // badge immediately, no refresh needed.
+
   useEffect(() => {
     if (!user?.uid) {
       setUnreadCount(0);
@@ -167,8 +163,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
             className={`w-full h-10 pl-10 pr-14 rounded-xl border outline-none text-sm transition-all duration-300 ${theme.input} ${isSearchFocused ? 'border-indigo-500 shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] bg-indigo-500/5' : 'group-hover:border-indigo-500/50 group-hover:bg-indigo-500/5'}`}
           />
           <span
-            className={`absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition-colors ${theme.kbd} ${isSearchFocused ? 'text-indigo-500 bg-indigo-500/10' : 'group-hover:text-indigo-500 group-hover:bg-indigo-500/10'}`}
-          >
+            className={`absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition-colors ${theme.kbd} ${isSearchFocused ? 'text-indigo-500 bg-indigo-500/10' : 'group-hover:text-indigo-500 group-hover:bg-indigo-500/10'}`}>
             Ctrl+K
           </span>
 
@@ -277,6 +272,11 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
                 aria-label="Search">
                 {searchOpen ? <X size={18} /> : <Search size={18} />}
               </button>
+              <Link
+                to="/messages"
+                className={`relative hidden md:flex w-10 h-10 rounded-xl border items-center justify-center transition text-indigo-500 ${theme.card}`}>
+                <MessageCircleMore size={20} />
+              </Link>
 
               <Link
                 to="/notifications"
@@ -285,8 +285,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
                   unreadCount > 0
                     ? `Notifications, ${unreadCount} unread`
                     : "Notifications"
-                }
-              >
+                }>
                 <Bell size={17} />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-indigo-500 px-1 text-[10px] font-bold text-white">
