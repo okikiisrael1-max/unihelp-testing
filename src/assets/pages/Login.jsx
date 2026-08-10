@@ -252,13 +252,13 @@ const Login = ({ dark }) => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <label className={`text-sm font-semibold block ${dark ? "text-slate-300" : "text-slate-700"}`}>
-                Email or Phone
+                Email
               </label>
               <input
-                type="text"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email or phone number"
+                placeholder="Enter your email address"
                 className={`w-full px-4 py-3.5 rounded-xl border text-[15px] transition-all focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   dark
                     ? "bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500"
