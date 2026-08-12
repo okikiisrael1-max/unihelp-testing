@@ -5,6 +5,7 @@ import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { toCloudinaryAsset, uploadImage } from '../../services/cloudinary';
+import { deleteCloudinaryAssets } from '../../services/mediaCleanup';
 import { ALL_NIGERIAN_SCHOOLS, COMMON_DEPARTMENTS } from '../data/nigerianSchools';
 import {
   Search,
@@ -345,16 +346,30 @@ const CompleteProfile = ({ dark = false }) => {
     try {
       const result = await uploadImage(file);
       const url = result.secure_url;
+      const nextAsset = toCloudinaryAsset(result);
+      const previousAsset = photoAsset || (photoUrl?.startsWith('http') ? { url: photoUrl, resourceType: 'image' } : null);
 
-      await updateProfile(user, { photoURL: url });
-      await setDoc(
-        doc(db, 'users', user.uid),
-        { photo: url, photoAsset: toCloudinaryAsset(result) },
-        { merge: true }
-      );
+      try {
+        await updateProfile(user, { photoURL: url });
+        await setDoc(
+          doc(db, 'users', user.uid),
+          { photo: url, photoURL: url, photoAsset: nextAsset },
+          { merge: true }
+        );
+      } catch (saveError) {
+        await deleteCloudinaryAssets({ assets: [nextAsset] }).catch((cleanupError) => {
+          console.warn('Unable to clean up newly uploaded profile photo', cleanupError);
+        });
+        throw saveError;
+      }
 
       setPhotoUrl(url);
-      setPhotoAsset(toCloudinaryAsset(result));
+      setPhotoAsset(nextAsset);
+      if (previousAsset?.publicId || previousAsset?.url) {
+        await deleteCloudinaryAssets({ assets: [previousAsset] }).catch((cleanupError) => {
+          console.warn('Unable to clean up previous profile photo', cleanupError);
+        });
+      }
       toast.success('Profile picture updated');
     } catch (err) {
       console.error(err);
@@ -374,6 +389,11 @@ const CompleteProfile = ({ dark = false }) => {
     try {
       await updateProfile(user, { photoURL: null });
       await setDoc(doc(db, 'users', user.uid), { photo: '', photoAsset: null }, { merge: true });
+      if (photoAsset?.publicId || photoAsset?.url) {
+        await deleteCloudinaryAssets({ assets: [photoAsset] }).catch((cleanupError) => {
+          console.warn('Unable to clean up removed profile photo', cleanupError);
+        });
+      }
     } catch (err) {
       console.error(err);
       toast.error('Failed to remove photo');

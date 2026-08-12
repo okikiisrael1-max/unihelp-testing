@@ -11,6 +11,7 @@ import {
 } from "../../firebase/config";
 
 import {
+  deleteCloudinaryAssets,
   deleteCurrentUserWithMedia,
 } from "../../services/mediaCleanup";
 
@@ -248,8 +249,24 @@ const Profile = ({
       setUploading(true);
       const result = await uploadImage(file);
       const url = result.secure_url;
-      await updateProfile(auth.currentUser, { photoURL: url });
-      await setDoc(doc(db, "users", auth.currentUser.uid), { photo: url, photoAsset: toCloudinaryAsset(result) }, { merge: true });
+      const nextAsset = toCloudinaryAsset(result);
+      const previousAsset = profile?.photoAsset || (profile?.photo ? { url: profile.photo, resourceType: "image" } : null);
+
+      try {
+        await updateProfile(auth.currentUser, { photoURL: url });
+        await setDoc(doc(db, "users", auth.currentUser.uid), { photo: url, photoURL: url, photoAsset: nextAsset }, { merge: true });
+      } catch (saveError) {
+        await deleteCloudinaryAssets({ assets: [nextAsset] }).catch((cleanupError) => {
+          console.warn("Unable to clean up newly uploaded profile photo", cleanupError);
+        });
+        throw saveError;
+      }
+
+      if (previousAsset?.publicId || previousAsset?.url) {
+        await deleteCloudinaryAssets({ assets: [previousAsset] }).catch((cleanupError) => {
+          console.warn("Unable to clean up previous profile photo", cleanupError);
+        });
+      }
       fetchProfile();
       setMessage("Profile picture updated");
     } catch (error) { console.log(error); }

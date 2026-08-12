@@ -36,7 +36,7 @@ import {
 } from "firebase/firestore";
 
 import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
-import { deleteMediaDocument } from "../../services/mediaCleanup";
+import { deleteCloudinaryAssets, deleteMediaDocument } from "../../services/mediaCleanup";
 import { buildShareUrl, shareContent } from "../utils/share";
 
 export default function HostelMarketplace({ dark }) {
@@ -240,6 +240,8 @@ export default function HostelMarketplace({ dark }) {
     }
 
     setUploading(true);
+    const newlyUploadedAssets = [];
+    const replacedAssets = images.length > 0 ? editingHostel?.imageAssets || [] : [];
 
     try {
       let imageUrls = editingHostel?.images || [];
@@ -254,7 +256,9 @@ export default function HostelMarketplace({ dark }) {
             setProgress(Math.round(percent));
           });
           imageUrls.push(result.secure_url);
-          imageAssets.push(toCloudinaryAsset(result));
+          const asset = toCloudinaryAsset(result);
+          imageAssets.push(asset);
+          newlyUploadedAssets.push(asset);
         }
       }
 
@@ -282,8 +286,18 @@ export default function HostelMarketplace({ dark }) {
       resetForm();
       fetchHostels();
       fetchUserPlan();
+      if (replacedAssets.length > 0) {
+        await deleteCloudinaryAssets({ assets: replacedAssets }).catch((cleanupError) => {
+          console.warn("Unable to clean up replaced hostel images", cleanupError);
+        });
+      }
     } catch (err) {
       console.error(err);
+      if (newlyUploadedAssets.length > 0) {
+        await deleteCloudinaryAssets({ assets: newlyUploadedAssets }).catch((cleanupError) => {
+          console.warn("Unable to clean up failed hostel upload", cleanupError);
+        });
+      }
       toast.error("Operation failed. Please try again.");
     } finally {
       setUploading(false);

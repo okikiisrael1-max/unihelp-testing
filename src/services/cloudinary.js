@@ -39,8 +39,7 @@ const isPdfFile = (file) =>
 
 export const isPreviewImageUrl = (url = "") =>
   typeof url === "string" &&
-  (url.startsWith("data:image/") ||
-    url.startsWith("blob:") ||
+  (url.startsWith("blob:") ||
     /\.(avif|gif|jpe?g|png|webp|svg)(\?.*)?$/i.test(url));
 
 const sanitizeAttachmentName = (value = "download.pdf") => {
@@ -197,41 +196,6 @@ const uploadToCloudinary = (
   });
 };
 
-const uploadToBase64 = (
-  file,
-  {
-    resourceType,
-    validationKind,
-    onProgress,
-  }
-) => {
-  return new Promise((resolve, reject) => {
-    const errors = validateFile(file, validationKind, false); // Don't require Cloudinary
-
-    if (errors.length > 0) {
-      reject({ errors, file, resourceType });
-      return;
-    }
-
-    if (onProgress) onProgress(50);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (onProgress) onProgress(100);
-      resolve({
-        secure_url: reader.result,
-        public_id: `base64_${Date.now()}`,
-        format: file.type.split('/')[1] || 'unknown',
-        bytes: file.size,
-        resource_type: resourceType,
-        original_filename: file.name,
-      });
-    };
-    reader.onerror = () => reject({ errors: ["Failed to read file as base64"] });
-    reader.readAsDataURL(file);
-  });
-};
-
 export const toCloudinaryAsset = (result, fallback = {}) => ({
   url: result?.secure_url || result?.url || fallback.url || "",
   publicId: result?.public_id || result?.publicId || fallback.publicId || "",
@@ -249,7 +213,7 @@ const optimizeFileForUpload = async (file) => {
 
 export const uploadImage = async (file, onProgress) => {
   const optimizedFile = await optimizeFileForUpload(file);
-  return uploadToBase64(optimizedFile, {
+  return uploadToCloudinary(optimizedFile, {
     resourceType: "image",
     validationKind: "image",
     onProgress,
@@ -268,7 +232,7 @@ export const uploadPDF = async (file, onProgress) => {
   const optimizedFile = await optimizePdfFile(file);
 
   return uploadToCloudinary(optimizedFile, {
-    resourceType: "image",
+    resourceType: "raw",
     validationKind: "pdf",
     onProgress,
   });

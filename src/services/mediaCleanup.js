@@ -23,6 +23,29 @@ const requestCleanupDelete = async (path) => {
   return data;
 };
 
+const requestCleanupPost = async (path, body) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Please log in before deleting this item.");
+
+  const token = await user.getIdToken();
+  const response = await fetch(`${API_URL}/api/media-cleanup${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || "Delete failed. Please try again.");
+  }
+
+  return data;
+};
+
 export const deleteMediaDocument = (type, id) =>
   requestCleanupDelete(`/documents/${encodeURIComponent(type)}/${encodeURIComponent(id)}`);
 
@@ -35,3 +58,6 @@ export const deleteGroupWithMedia = (groupId) =>
   requestCleanupDelete(`/groups/${encodeURIComponent(groupId)}`);
 
 export const deleteCurrentUserWithMedia = () => requestCleanupDelete("/users/me");
+
+export const deleteCloudinaryAssets = (options = {}) =>
+  requestCleanupPost("/delete-assets", options);

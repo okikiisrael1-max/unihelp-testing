@@ -34,7 +34,7 @@ import {
 } from "firebase/firestore";
 
 import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
-import { deleteMediaDocument } from "../../services/mediaCleanup";
+import { deleteCloudinaryAssets, deleteMediaDocument } from "../../services/mediaCleanup";
 import { buildShareUrl, shareContent } from "../utils/share";
 
 export default function StudentMarketplace({ dark }) {
@@ -262,6 +262,8 @@ export default function StudentMarketplace({ dark }) {
     }
 
     setUploading(true);
+    const newlyUploadedAssets = [];
+    const replacedAssets = images.length > 0 ? editingItem?.imageAssets || [] : [];
 
     try {
       let imageUrls = editingItem?.images || [];
@@ -277,7 +279,9 @@ export default function StudentMarketplace({ dark }) {
             setProgress(Math.round(percent));
           });
           imageUrls.push(result.secure_url);
-          imageAssets.push(toCloudinaryAsset(result));
+          const asset = toCloudinaryAsset(result);
+          imageAssets.push(asset);
+          newlyUploadedAssets.push(asset);
         }
       }
 
@@ -310,8 +314,18 @@ export default function StudentMarketplace({ dark }) {
       resetForm();
       fetchItems();
       fetchUserPlan();
+      if (replacedAssets.length > 0) {
+        await deleteCloudinaryAssets({ assets: replacedAssets }).catch((cleanupError) => {
+          console.warn("Unable to clean up replaced listing images", cleanupError);
+        });
+      }
     } catch (err) {
       console.error("Upload error:", err);
+      if (newlyUploadedAssets.length > 0) {
+        await deleteCloudinaryAssets({ assets: newlyUploadedAssets }).catch((cleanupError) => {
+          console.warn("Unable to clean up failed listing upload", cleanupError);
+        });
+      }
       toast.error("Operation failed. Please try again.");
     } finally {
       setUploading(false);
