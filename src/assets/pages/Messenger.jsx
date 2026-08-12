@@ -50,6 +50,7 @@ import {
   listenConversationMessages,
   markConversationRead,
   searchUsers,
+  suggestFriends,
   sendDirectMessage,
   startConversation,
 } from "../service/communityService";
@@ -159,6 +160,7 @@ export default function Messenger({ dark = false }) {
   // Find friend state
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [showFindModal, setShowFindModal] = useState(false);
 
   const activeConversation = useMemo(
@@ -267,6 +269,42 @@ export default function Messenger({ dark = false }) {
     }, 250);
     return () => clearTimeout(timer);
   }, [search, user]);
+
+  // Suggestions when the find modal is open and no active search
+  useEffect(() => {
+    let cancelled = false;
+    const loadSuggestions = async () => {
+      if (!showFindModal || !user?.uid) {
+        if (!cancelled) setSuggestions([]);
+        return;
+      }
+
+      const q = search.trim();
+      if (q.length >= 2) {
+        if (!cancelled) setSuggestions([]);
+        return;
+      }
+
+      try {
+        const list = await suggestFriends(profile || {}, user.uid, 12);
+        // Exclude existing friends and pending requests
+        const exclude = new Set([
+          ...(friends || []).map((f) => getFriendUid(f)),
+          ...(incomingRequests || []).map((r) => r.from),
+          ...(outgoingRequests || []).map((r) => r.to),
+          user.uid,
+        ].filter(Boolean));
+
+        const filtered = list.filter((u) => u.id && !exclude.has(u.id));
+        if (!cancelled) setSuggestions(filtered.slice(0, 8));
+      } catch (err) {
+        if (!cancelled) setSuggestions([]);
+      }
+    };
+
+    loadSuggestions();
+    return () => { cancelled = true; };
+  }, [showFindModal, profile, user, search, friends, incomingRequests, outgoingRequests]);
 
   // Typing indicator
   useEffect(() => {
@@ -896,42 +934,80 @@ export default function Messenger({ dark = false }) {
           </div>
 
           <div>
-            {results.length > 0 ? results.map((item) => {
-              const name = item.username || item.name || item.email || "Student";
-              const avatar = item.photo || item.avatar || "";
-              const detail = item.school || item.department || item.email || "";
-              return (
-                <div key={item.id} className={`mb-2 flex items-center gap-3 rounded-2xl border p-3 ${t.soft}`}>
-                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">
-                    {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-base font-extrabold text-indigo-500">{name[0]}</div>}
+            {results.length > 0 ? (
+              results.map((item) => {
+                const name = item.username || item.name || item.email || "Student";
+                const avatar = item.photo || item.avatar || "";
+                const detail = item.school || item.department || item.email || "";
+                return (
+                  <div key={item.id} className={`mb-2 flex items-center gap-3 rounded-2xl border p-3 ${t.soft}`}>
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">
+                      {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-base font-extrabold text-indigo-500">{name[0]}</div>}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm">{name}</p>
+                      {detail && <p className={`text-xs truncate ${t.muted}`}>{detail}</p>}
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => handleSendRequest(item)}
+                        className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition-colors"
+                      >
+                        <UserPlus size={14} />
+                        Add
+                      </button>
+                      <button
+                        onClick={() => openUser(item)}
+                        className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        style={{ borderColor: dark ? "rgba(255,255,255,0.1)" : "#E2E8F0" }}
+                      >
+                        <MessageCircle size={14} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm">{name}</p>
-                    {detail && <p className={`text-xs truncate ${t.muted}`}>{detail}</p>}
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button
-                      onClick={() => handleSendRequest(item)}
-                      className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition-colors"
-                    >
-                      <UserPlus size={14} />
-                      Add
-                    </button>
-                    <button
-                      onClick={() => openUser(item)}
-                      className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      style={{ borderColor: dark ? "rgba(255,255,255,0.1)" : "#E2E8F0" }}
-                    >
-                      <MessageCircle size={14} />
-                    </button>
-                  </div>
-                </div>
-              );
-            }) : search.length >= 2 ? (
+                );
+              })
+            ) : search.length >= 2 ? (
               <div className="py-10 text-center">
                 <Search className="mx-auto opacity-30" size={36} />
                 <p className={`mt-3 text-sm ${t.muted}`}>No students found</p>
               </div>
+            ) : suggestions.length > 0 ? (
+              <>
+                <p className={`text-sm font-bold mb-3 ${t.muted}`}>Suggested for you</p>
+                {suggestions.map((item) => {
+                  const name = item.username || item.name || item.email || "Student";
+                  const avatar = item.photo || item.avatar || "";
+                  const detail = item.school || item.department || item.email || "";
+                  return (
+                    <div key={item.id} className={`mb-2 flex items-center gap-3 rounded-2xl border p-3 ${t.soft}`}>
+                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl bg-indigo-500/10">
+                        {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-base font-extrabold text-indigo-500">{name[0]}</div>}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm">{name}</p>
+                        {detail && <p className={`text-xs truncate ${t.muted}`}>{detail}</p>}
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => handleSendRequest(item)}
+                          className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition-colors"
+                        >
+                          <UserPlus size={14} />
+                          Add
+                        </button>
+                        <button
+                          onClick={() => openUser(item)}
+                          className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          style={{ borderColor: dark ? "rgba(255,255,255,0.1)" : "#E2E8F0" }}
+                        >
+                          <MessageCircle size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             ) : (
               <div className="py-10 text-center">
                 <Users className="mx-auto opacity-30" size={36} />

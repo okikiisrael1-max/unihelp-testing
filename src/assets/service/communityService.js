@@ -86,6 +86,66 @@ export const searchUsers = async (term, currentUid, pageSize = 12) => {
     .slice(0, pageSize);
 };
 
+/**
+ * Suggest friends based on profile similarity (school, department, level).
+ * Returns a list of user objects (id + data) ordered by match score.
+ */
+export const suggestFriends = async (profile = {}, currentUid, limit = 8) => {
+  if (!currentUid) return [];
+
+  const usersRef = collection(db, "users");
+  const scores = new Map();
+
+  const addDocs = (snap, weight = 1) => {
+    snap.docs
+      .filter((entry) => entry.id !== currentUid)
+      .forEach((entry) => {
+        const id = entry.id;
+        const data = { id, ...entry.data() };
+        const prev = scores.get(id) || { data, score: 0 };
+        prev.score += weight;
+        scores.set(id, prev);
+      });
+  };
+
+  try {
+    // Prefer school matches (highest weight)
+    if (profile.school) {
+      const snap = await getDocs(query(usersRef, where("school", "==", profile.school), limit(50)));
+      addDocs(snap, 3);
+    }
+
+    // Department matches
+    if (profile.department) {
+      const snap = await getDocs(query(usersRef, where("department", "==", profile.department), limit(50)));
+      addDocs(snap, 2);
+    }
+
+    // Level matches
+    if (profile.level) {
+      const snap = await getDocs(query(usersRef, where("level", "==", profile.level), limit(50)));
+      addDocs(snap, 1);
+    }
+
+    // If we don't have enough candidates, fall back to querying by schoolType or university field
+    if (scores.size < 6 && profile.university) {
+      const snap = await getDocs(query(usersRef, where("university", "==", profile.university), limit(50)));
+      addDocs(snap, 2);
+    }
+
+    // Convert to array and sort by score desc
+    const arr = [...scores.values()]
+      .sort((a, b) => b.score - a.score)
+      .map((s) => s.data)
+      .slice(0, limit);
+
+    return arr;
+  } catch (err) {
+    console.error("[suggestFriends] Error fetching suggestions:", err?.message || err);
+    return [];
+  }
+};
+
 export const listGroups = async ({ search = "", category = "All", cursor = null } = {}) => {
   const groupsRef = collection(db, "groups");
   const clauses = [];
