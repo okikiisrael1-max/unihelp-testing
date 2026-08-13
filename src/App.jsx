@@ -24,7 +24,6 @@ import Signup from "./assets/pages/Signup";
 import ResetPassword from "./assets/pages/ResetPassword";
 import CGPA from "./assets/pages/CGPA";
 import Profile from "./assets/pages/Profile";
-import Question from "./assets/pages/Question";
 import Upload from "./assets/pages/Upload";
 import AiAssistance from "./assets/pages/AiAssistance";
 import GPA from "./assets/pages/GPA";

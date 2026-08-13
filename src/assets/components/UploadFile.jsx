@@ -193,7 +193,7 @@ export default function UploadFile({ dark }) {
       if (user?.uid) {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().role === "admin") {
+        if (docSnap.exists() && docSnap.data().admin === true) {
           setIsAdmin(true);
         }
       }
