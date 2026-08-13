@@ -5,8 +5,10 @@ import { db, auth } from '../../firebase/config';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Question = ({dark}) => {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [requestData, setRequestData] = useState({ courseCode: "", year: "", school: "", additionalInfo: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -44,14 +46,23 @@ const Question = ({dark}) => {
     <div className='relative w-full p-5 md:mt-20 min-h-screen'>
       <PastQuestions dark={dark}/>
       
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => setShowModal(true)}
-        className='fixed cursor-pointer flex items-center gap-2 p-3 px-5 bg-indigo-600 shadow-lg shadow-indigo-500/30 rounded-full text-white right-4 bottom-20 md:bottom-10 hover:bg-indigo-700 transition font-bold z-50'
-      >
-        <MessageSquarePlus size={24}/>
-        <span className="hidden sm:inline">Request Question</span>
-      </button>
+      {/* Floating Action Buttons */}
+      <div className="fixed right-4 bottom-20 md:bottom-10 z-50 flex flex-col gap-3">
+        <button 
+          onClick={() => navigate('/uploadquestion')}
+          className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'
+        >
+          <PlusCircleIcon size={24}/>
+          <span className="hidden sm:inline">Upload PDF</span>
+        </button>
+        <button 
+          onClick={() => setShowModal(true)}
+          className='flex items-center gap-2 p-3 px-5 bg-indigo-600 shadow-lg shadow-indigo-500/30 rounded-full text-white hover:bg-indigo-700 transition font-bold'
+        >
+          <MessageSquarePlus size={24}/>
+          <span className="hidden sm:inline">Request Question</span>
+        </button>
+      </div>
 
       {/* Request Modal */}
       {showModal && (
