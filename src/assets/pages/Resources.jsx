@@ -108,11 +108,11 @@ export default function Resources({ dark }) {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed right-4 bottom-20 md:bottom-10 z-50 flex flex-col gap-3">
-        <button 
-          onClick={() => navigate('/uploadquestion')}
-          className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'
-        >
+      {tab !== "notes" && (
+        <div className="fixed right-4 bottom-20 md:bottom-10 z-50 flex flex-col gap-3">
+          <button 
+            onClick={() => navigate('/uploadquestion')}
+            className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'>
           <PlusCircleIcon size={24}/>
           <span className="hidden sm:inline">Upload PDF</span>
         </button>
@@ -123,7 +123,7 @@ export default function Resources({ dark }) {
           <MessageSquarePlus size={24}/>
           <span className="hidden sm:inline">Request Material</span>
         </button>
-      </div>
+      </div>)}
 
       {/* Request Modal */}
       {showModal && (
