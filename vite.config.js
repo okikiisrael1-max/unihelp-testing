@@ -127,7 +127,19 @@ export default defineConfig({
           charts: [
             "chart.js",
             "react-chartjs-2",
+            "recharts"
           ],
+          plotly: [
+            "plotly.js",
+            "react-plotly.js"
+          ],
+          mathjs: [
+            "mathjs"
+          ],
+          icons: [
+            "lucide-react",
+            "react-icons"
+          ]
         },
       },
     },
