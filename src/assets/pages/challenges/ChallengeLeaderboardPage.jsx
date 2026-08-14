@@ -64,7 +64,6 @@ export default function ChallengeLeaderboardPage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Apply fallback classes if theme prop keys are undefined
   const cardBg = theme.card || "bg-white dark:bg-slate-900";
   const softBg = theme.soft || "bg-slate-100 dark:bg-slate-800";
   const textSoft = theme.textSoft || "text-slate-500 dark:text-slate-400";

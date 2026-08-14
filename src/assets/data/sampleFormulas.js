@@ -1,19 +1,12 @@
 export const formulas = [
-
-  // =========================
-  // MATHEMATICS
-  // =========================
-
   {
     id: 1,
     title: "Quadratic Formula",
     subject: "Mathematics",
     category: "Algebra",
     level: "Foundational",
-
     formula:
       "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
-
     explanation:
       "Used to solve quadratic equations of the form ax² + bx + c = 0.",
 
