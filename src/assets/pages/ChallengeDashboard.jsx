@@ -155,8 +155,13 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [timeLimit, setTimeLimit] = useState(25);
   const tickRef = useRef(null);
+  const statsRef = useRef(stats);
 
   const theme = getTheme(dark);
+
+  useEffect(() => {
+    statsRef.current = stats;
+  }, [stats]);
 
   const fetchStats = useCallback(async () => {
     if (!auth.currentUser?.uid) return;
@@ -170,24 +175,23 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
     }
   }, []);
 
-  const fetchLeaderboard = useCallback(
-    async (scope = "global") => {
-      try {
-        const snap = await getDocs(query(collection(db, USERS_COLLECTION), orderBy("xp", "desc"), limit(50)));
-        const rows = snap.docs
-          .map((item, index) => ({ id: item.id, ...item.data(), position: index + 1 }))
-          .filter((item) => {
-            if (scope === "university") return item.university && item.university === stats?.university;
-            if (scope === "department") return item.department && item.department === stats?.department;
-            return true;
-          });
-        setLeaderboard(rows);
-      } catch {
-        setLeaderboard([]);
-      }
-    },
-    [stats]
-  );
+  const fetchLeaderboard = useCallback(async (scope = "global", currentStats = statsRef.current) => {
+    try {
+      const snap = await getDocs(query(collection(db, USERS_COLLECTION), orderBy("xp", "desc"), limit(50)));
+      const rows = snap.docs
+        .map((item, index) => ({ id: item.id, ...item.data(), position: index + 1 }))
+        .filter((item) => {
+          if (scope === "university") return item.university && item.university === currentStats?.university;
+          if (scope === "department") return item.department && item.department === currentStats?.department;
+          return true;
+        });
+      setLeaderboard(rows);
+      return rows;
+    } catch {
+      setLeaderboard([]);
+      throw new Error("Leaderboard fetch failed");
+    }
+  }, []);
 
   const fetchHistory = useCallback(async () => {
     if (!auth.currentUser?.uid) return;
@@ -207,7 +211,7 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
     if (!user) return;
     Promise.all([fetchStats(), fetchHistory()])
       .then(([s]) => {
-        if (s) fetchLeaderboard("global");
+        if (s) fetchLeaderboard("global", s);
       })
       .finally(() => setLoading(false));
   }, [user, fetchStats, fetchHistory, fetchLeaderboard]);
@@ -444,7 +448,7 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
         department: statsUpdate.department,
       });
       await fetchStats();
-      await fetchLeaderboard(leaderboardScope);
+      await fetchLeaderboard(leaderboardScope, statsRef.current);
       await fetchHistory();
     } catch (err) {
       console.error("Failed to save result:", err);

@@ -71,11 +71,13 @@ export default function ChallengeLeaderboardPage({
   const ledgerLine = theme.ledgerLine || "divide-slate-200/60 dark:divide-slate-800";
 
   useEffect(() => {
+    if (!fetchLeaderboard) return;
+
     let cancelled = false;
     setIsLoading(true);
     setError(null);
 
-    Promise.resolve(fetchLeaderboard?.(leaderboardScope, period))
+    Promise.resolve(fetchLeaderboard(leaderboardScope, period))
       .catch((err) => {
         if (!cancelled) setError(err);
       })
@@ -111,7 +113,11 @@ export default function ChallengeLeaderboardPage({
   const restList = !isSearching ? leaderboard.slice(3) : filteredLeaderboard;
   const showStickyRank = Boolean(currentUserRow && currentUserRow.position > 3);
 
-  const retry = () => fetchLeaderboard?.(leaderboardScope, period);
+  const retry = () => {
+    setError(null);
+    setIsLoading(true);
+    return fetchLeaderboard?.(leaderboardScope, period);
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 pb-28 sm:pb-24">
