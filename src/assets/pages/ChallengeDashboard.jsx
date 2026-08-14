@@ -244,9 +244,6 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
     }
   };
 
-  // Local-only question pool. Firestore is never consulted for questions —
-  // CHALLENGE_QUESTIONS is the single source of truth so quizzes work offline
-  // and load instantly.
   const filterFallbackByProfile = (bank, category, profile = {}) => {
     const userLevel = profile?.level?.toLowerCase().replace("l", "") || "";
     const userDept = (profile?.department || profile?.departmentName || "").trim().toLowerCase();
