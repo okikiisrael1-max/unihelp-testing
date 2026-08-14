@@ -211,6 +211,24 @@ const FormulaHome = ({ dark }) => {
               <Home className="w-5 h-5" />
               Home
             </button>
+
+            {/* FLASHCARDS BUTTON */}
+            <button
+              onClick={() => navigate("/formula-hub/flashcards")}
+              className={`
+                h-14 px-5 rounded-2xl
+                flex items-center gap-3
+                font-semibold transition-all duration-300
+                hover:scale-[1.03]
+                ${
+                  dark
+                    ? "bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800"
+                    : "bg-white border border-zinc-200 text-black hover:bg-zinc-100"
+                }
+              `}>
+              <Brain className="w-5 h-5" />
+              Flash Cards
+            </button>
           </div>
 
           {/* RIGHT */}
