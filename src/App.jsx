@@ -68,6 +68,7 @@ import FormulaDetails from "./assets/pages/formulaHub/FormulaDetails";
 import SubjectPage from "./assets/pages/formulaHub/SubjectPage";
 import BookmarksPage from "./assets/pages/formulaHub/BookmarksPage";
 import FormulaSubjectsPage from "./assets/pages/formulaHub/FormulaSubjectsPage";
+import FlashCardsPage from "./assets/pages/formulaHub/FlashCardsPage";
 import ChallengeDashboard from "./assets/pages/ChallengeDashboard";
 import StreakDashboard from "./assets/pages/StreakDashboard";
 import FAQPage from "./assets/pages/FAQPage";
@@ -252,9 +253,10 @@ const App = () => {
             <Route path="/contact" element={<ProtectedRoute> <Contact dark={dark} /> </ProtectedRoute>}/>
             <Route  path="/report" element={ <ProtectedRoute> <Report dark={dark} /> </ProtectedRoute> } />
             <Route path="/formula-hub" element={<FormulaHome dark={dark} />} />
+            <Route path="/formula-hub/subjects" element={<FormulaSubjectsPage dark={dark} />} />
             <Route path="/formula-hub/subject/:subject" element={<SubjectPage dark={dark} />}/>
-            <Route path="/formula-hub/subjects" element={<FormulaSubjectsPage dark={dark} />}/>
             <Route path="/formula-hub/:id" element={<FormulaDetails dark={dark} />} />
+            <Route path="/formula-hub/flashcards" element={<FlashCardsPage dark={dark} />} />
             <Route path="/formula-hub/bookmarks" element={<BookmarksPage dark={dark} />}/>
             <Route path="/community" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute> } />
             <Route path="/community/:groupId" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute>}/>

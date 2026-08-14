@@ -167,7 +167,7 @@ const FormulaSubjectsPage = ({
                       </div>
 
                       <div>
-                        <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
+                        <h1 className={`text-3xl sm:text-5xl font-black tracking-tight ${dark ? "text-white" : "text-black"}`}>
                           Formula Subjects
                         </h1>
 
@@ -197,7 +197,7 @@ const FormulaSubjectsPage = ({
                   Total Subjects
                 </p>
 
-                <h2 className="mt-2 text-5xl font-black">
+                <h2 className={`mt-2 text-5xl font-black ${dark ? "text-white" : "text-black"}`}>
                   {
                     subjects.length
                   }
@@ -303,7 +303,7 @@ const FormulaSubjectsPage = ({
                       {/* CONTENT */}
 
                       <div className="mt-8">
-                        <h2 className="text-3xl font-black">
+                        <h2 className={`text-3xl font-black ${dark ? "text-white" : "text-black"}`}>
                           {
                             subject.title
                           }
@@ -339,7 +339,7 @@ const FormulaSubjectsPage = ({
                             Formulas
                           </p>
 
-                          <h3 className="text-2xl font-black mt-1">
+                          <h3 className={`text-2xl font-black mt-1 ${dark ? "text-white" : "text-black"}`}>
                             {
                               subject.count
                             }
@@ -359,7 +359,7 @@ const FormulaSubjectsPage = ({
             <div
               className={`rounded-[35px] p-10 text-center ${theme.card}`}
             >
-              <h2 className="text-3xl font-black">
+              <h2 className={`text-3xl font-black ${dark ? "text-white" : "text-black"}`}>
                 No Subjects Found
               </h2>
 
