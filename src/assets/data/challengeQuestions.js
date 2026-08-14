@@ -197,7 +197,7 @@ export const CHALLENGE_QUESTIONS = [
 
   // ─── GENERAL KNOWLEDGE & GEOGRAPHY ────────────────────────
   { id: 'gk-geo-1', category: 'general-knowledge', subject: 'Geography', difficulty: 'Easy', prompt: 'Which country has the largest population in the world?', answers: ['India', 'China', 'United States', 'Indonesia'], correctIndex: 0, explanation: 'India is currently the world\'s most populous country.' },
-  { id: 'gk-geo-2', category: 'general-knowledge', subject: 'Geography', difficulty: 'Medium', prompt: 'What is the capital city of Canada?', answers: ['Toronto', 'Vancouver', 'Montreal', 'Ottawa'], correctIndex: 3, explanation: 'Ottawa is the federal capital of Canada.' }
+  { id: 'gk-geo-2', category: 'general-knowledge', subject: 'Geography', difficulty: 'Medium', prompt: 'What is the capital city of Canada?', answers: ['Toronto', 'Vancouver', 'Montreal', 'Ottawa'], correctIndex: 3, explanation: 'Ottawa is the federal capital of Canada.' },
   // ─── FACULTY: Engineering ─────────────────────────────────
   { id: 'dept-eng-6', category: 'department', subject: 'Civil Engineering', difficulty: 'Medium', prompt: 'What is the primary stress experienced by a structural column under a downward load?', answers: ['Tension', 'Compression', 'Torsion', 'Shear'], correctIndex: 1, explanation: 'Columns primarily experience compressive stress pushing inward along their axis.' },
   { id: 'dept-eng-7', category: 'department', subject: 'Electrical Engineering', difficulty: 'Hard', prompt: 'Which device converts direct current (DC) to alternating current (AC)?', answers: ['Transformer', 'Rectifier', 'Inverter', 'Inductor'], correctIndex: 2, explanation: 'An inverter converts DC power to AC power, whereas a rectifier converts AC to DC.' },
