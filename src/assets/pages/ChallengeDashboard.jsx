@@ -32,7 +32,6 @@ import ChallengeCategoriesPage from "./challenges/ChallengeCategoriesPage";
 import ChallengeLeaderboardPage from "./challenges/ChallengeLeaderboardPage";
 import ChallengeAchievementsPage from "./challenges/ChallengeAchievementsPage";
 import ChallengeHistoryPage from "./challenges/ChallengeHistoryPage";
-import { CHALLENGE_QUESTIONS } from "../data/challengeQuestions";
 import { getTheme, RANK_COLORS, CATEGORY_TONES, getTimeLimit, colors } from "../data/theme";
 import CountdownRing from "../components/CountdownRing";
 
@@ -135,6 +134,7 @@ const defaultStats = (profile = {}) => ({
 export default function ChallengeDashboard({ dark = false, initialTab = "dashboard" }) {
   const { user } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [challengeQuestions, setChallengeQuestions] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -244,6 +244,12 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
     }
   };
 
+  useEffect(() => {
+    const response = fetch("https://unihelp-backend-vdps.onrender.com/api/challenge-questions");
+    response.then((res) => res.json())
+      .then((data) => setChallengeQuestions(data));
+  }, []);
+
   const filterFallbackByProfile = (bank, category, profile = {}) => {
     const userLevel = profile?.level?.toLowerCase().replace("l", "") || "";
     const userDept = (profile?.department || profile?.departmentName || "").trim().toLowerCase();
@@ -282,7 +288,7 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
 
   const fetchQuestions = async (categoryId) => {
     const profile = await fetchUserProfile();
-    const pool = filterFallbackByProfile(CHALLENGE_QUESTIONS, categoryId, profile);
+    const pool = filterFallbackByProfile(challengeQuestions, categoryId, profile);
     return [...pool].sort(() => Math.random() - 0.5).slice(0, 8);
   };
 
