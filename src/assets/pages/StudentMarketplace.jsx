@@ -420,8 +420,60 @@ export default function StudentMarketplace({ dark }) {
     ? "bg-white/5 border border-white/10 backdrop-blur-xl"
     : "bg-white border border-gray-200 shadow-sm";
 
+  const seedDatabase = async () => {
+    try {
+      if (!auth.currentUser) {
+        toast.error("Please login first to generate test data!");
+        return;
+      }
+      toast.info("Generating fake products & hostels...");
+      const dummyProducts = Array.from({ length: 10 }).map((_, i) => ({
+        title: `Test Product ${i + 1}`,
+        description: `This is a randomly generated fake product ${i + 1} for testing purposes.`,
+        price: Math.floor(Math.random() * 50000) + 1000,
+        category: "Gadgets",
+        condition: "Used - Like New",
+        phone: "+1234567890",
+        images: ["https://images.unsplash.com/photo-1523206489230-c012c64b2b48?q=80&w=600"],
+        imageAssets: [],
+        userId: auth.currentUser.uid,
+        createdAt: new Date(),
+        status: "approved",
+        verified: true,
+      }));
+      const dummyHostels = Array.from({ length: 10 }).map((_, i) => ({
+        title: `Test Hostel ${i + 1}`,
+        description: `This is a randomly generated fake hostel ${i + 1} for testing purposes.`,
+        price: Math.floor(Math.random() * 150000) + 20000,
+        location: "Test Location, University Area",
+        rentType: "Yearly",
+        amenities: ["WiFi", "Water supply", "Security"],
+        contactPhone: "+1234567890",
+        images: ["https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=600"],
+        imageAssets: [],
+        userId: auth.currentUser.uid,
+        createdAt: new Date(),
+        status: "approved",
+      }));
+
+      // Add to Firestore
+      for (const product of dummyProducts) {
+        await addDoc(collection(db, "studentMarketplace"), product);
+      }
+      for (const hostel of dummyHostels) {
+        await addDoc(collection(db, "hostels"), hostel);
+      }
+      toast.success("Successfully generated 10 products and 10 hostels!");
+      fetchItems();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate test data: " + err.message);
+    }
+  };
+
   return (
     <div className={`min-h-screen w-full md:pt-20 px-4 py-6 ${bg}`}>
+      <button onClick={seedDatabase} className="fixed bottom-20 left-4 z-[9999] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-black shadow-2xl border-4 border-white">🔥 SEED TEST DATA 🔥</button>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* HEADER */}
         <div className="flex gap-2.5 max-md:flex-col-reverse md:items-center md:justify-between">
