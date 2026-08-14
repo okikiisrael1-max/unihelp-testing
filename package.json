@@ -55,7 +55,6 @@
     "esbuild@0.28.1": true,
     "vite@7.3.6": true
   },
-  
   "overrides": {
     "axios": "$axios"
   }
