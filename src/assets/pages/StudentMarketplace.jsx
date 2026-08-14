@@ -473,7 +473,7 @@ export default function StudentMarketplace({ dark }) {
 
   return (
     <div className={`min-h-screen w-full md:pt-20 px-4 py-6 ${bg}`}>
-      <button onClick={seedDatabase} className="fixed bottom-20 left-4 z-[9999] bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-2xl font-black shadow-2xl border-4 border-white">🔥 SEED TEST DATA 🔥</button>
+      <button onClick={seedDatabase} className="w-full mb-6 z-[9999] bg-red-600 hover:bg-red-700 text-white px-6 py-6 rounded-2xl font-black shadow-2xl border-4 border-red-800 text-2xl uppercase tracking-widest text-center">🔥 Click Here to Seed Fake Test Data 🔥</button>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* HEADER */}
         <div className="flex gap-2.5 max-md:flex-col-reverse md:items-center md:justify-between">
