@@ -182,7 +182,7 @@ export default function Messenger({ dark = false }) {
   // Load profile
   useEffect(() => {
     getCurrentUserProfile(user).then((data) => setProfile(data || {}));
-  }, [user]);
+  }, [user?.uid]);
 
   // Listen conversations (no auto-open — WhatsApp always starts on the list)
   useEffect(() => {
@@ -197,7 +197,7 @@ export default function Messenger({ dark = false }) {
       const items = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
       setConversations(items);
     });
-  }, [user]);
+  }, [user?.uid]);
 
   // Handle URL params for opening a chat directly
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function Messenger({ dark = false }) {
         setSearchParams({}, { replace: true });
       })
       .catch(() => setNotice("Could not open that conversation."));
-  }, [searchParams, setSearchParams, user, activeId]);
+  }, [searchParams, setSearchParams, user?.uid, activeId]);
 
   // Listen messages for active conversation
   useEffect(() => {
@@ -235,7 +235,7 @@ export default function Messenger({ dark = false }) {
       setMessages(items);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
     });
-  }, [activeId, user]);
+  }, [activeId, user?.uid]);
 
   // Reset per-message UI state whenever the open chat changes
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function Messenger({ dark = false }) {
       setResults(found);
     }, 250);
     return () => clearTimeout(timer);
-  }, [search, user]);
+  }, [search, user?.uid]);
 
   // Suggestions when the find modal is open and no active search
   useEffect(() => {
@@ -304,7 +304,7 @@ export default function Messenger({ dark = false }) {
 
     loadSuggestions();
     return () => { cancelled = true; };
-  }, [showFindModal, profile, user, search, friends, incomingRequests, outgoingRequests]);
+  }, [showFindModal, profile, user?.uid, search, friends, incomingRequests, outgoingRequests]);
 
   // Typing indicator
   useEffect(() => {
@@ -317,28 +317,28 @@ export default function Messenger({ dark = false }) {
     setDoc(typingRef, { active: true, name: profile.username || user.displayName || "Student", updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
     const timer = setTimeout(() => setTyping(false), 1500);
     return () => clearTimeout(timer);
-  }, [activeId, profile, typing, user]);
+  }, [activeId, profile, typing, user?.uid]);
 
   // Listen friends
   useEffect(() => {
     if (!user?.uid) return;
     const unsub = listenFriends(user.uid, (data) => setFriends(data));
     return unsub;
-  }, [user]);
+  }, [user?.uid]);
 
   // Listen incoming requests
   useEffect(() => {
     if (!user?.uid) return;
     const unsub = listenIncomingFriendRequests(user.uid, (data) => setIncomingRequests(data));
     return unsub;
-  }, [user]);
+  }, [user?.uid]);
 
   // Listen outgoing requests
   useEffect(() => {
     if (!user?.uid) return;
     const unsub = listenOutgoingFriendRequests(user.uid, (data) => setOutgoingRequests(data));
     return unsub;
-  }, [user]);
+  }, [user?.uid]);
 
   const openUser = async (item) => {
     setNotice("");
@@ -1038,7 +1038,7 @@ export default function Messenger({ dark = false }) {
     return (
       <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
         {!mine && <ChatAvatar src={senderAvatar} name={senderName} />}
-        <div className={`relative max-w-[86%] rounded-3xl border px-3 py-1 ${mine ? "border-indigo-500 bg-indigo-600 text-white" : t.soft} ${message.deleted ? "opacity-70" : ""}`}>
+        <div className={`relative max-w-[85%] border px-4 py-2 ${mine ? "rounded-l-2xl rounded-tr-2xl rounded-br-sm border-indigo-500 bg-indigo-600 text-white" : "rounded-r-2xl rounded-tl-2xl rounded-bl-sm " + t.soft} ${message.deleted ? "opacity-70" : "shadow-sm"}`}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-[9px] font-bold opacity-75">
               {formatShortTime(message.createdAt)}

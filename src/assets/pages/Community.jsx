@@ -472,7 +472,7 @@ function GroupDiscovery() {
 
   useEffect(() => {
     getCurrentUserProfile(user).then((data) => setProfile(data || {}));
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
     const timer = setTimeout(() => load({ reset: true }), 250);
@@ -744,7 +744,7 @@ function GroupDetail({ groupId }) {
     } finally {
       setLoading(false);
     }
-  }, [groupId, user]);
+  }, [groupId, user?.uid]);
 
   useEffect(() => {
     refresh();
@@ -1002,7 +1002,7 @@ function GroupDetail({ groupId }) {
                                   <ChatAvatar src={senderAvatar} name={senderName} />
                                 </span>
                               )}
-                              <div className={`relative max-w-[86%] p-3 ${mine ? "rounded-2xl rounded-br-sm [background:var(--moss)] [color:var(--paper)]" : `rounded-2xl rounded-bl-sm ${cx.soft}`}`}>
+                              <div className={`relative max-w-[85%] px-4 py-2 border shadow-sm ${mine ? "rounded-l-2xl rounded-tr-2xl rounded-br-sm border-indigo-500 bg-indigo-600 text-white" : `rounded-r-2xl rounded-tl-2xl rounded-bl-sm border-slate-200 ${cx.soft}`}`}>
                                 <div className="flex items-center justify-between gap-3">
                                   <p className={`text-[11px] font-semibold opacity-80 ${FONT_MONO}`}>
                                     {senderName} · {formatShortTime(message.createdAt)}
