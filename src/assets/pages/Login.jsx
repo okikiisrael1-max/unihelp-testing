@@ -75,6 +75,10 @@ const Login = ({ dark }) => {
       setIsLoading(true);
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
       
+      // We are disabling the strict email verification check here
+      // so users can login immediately without being forced to
+      // use the "forgot password" flow if they missed the email.
+      /*
       if (!credential.user.emailVerified) {
         try {
           await sendEmailVerification(credential.user);
@@ -90,6 +94,7 @@ const Login = ({ dark }) => {
         setIsLoading(false);
         return;
       }
+      */
 
       const role = await getUserRole(credential.user.uid);
 
