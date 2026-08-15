@@ -27,10 +27,11 @@ import FormulaCard from "../../components/FormulaCard";
 import FormulaCategory from "../../components/FormulaCategory";
 import RecentlyViewed from "../../components/RecentlyViewed";
 
-import { formulas } from "../../data/sampleFormulas";
+import { useFormulas } from "../../hooks/useFormulas";
 
 const FormulaHome = ({ dark }) => {
   const navigate = useNavigate();
+  const { formulas, loading } = useFormulas();
 
   const [search, setSearch] = useState("");
 
@@ -49,7 +50,7 @@ const FormulaHome = ({ dark }) => {
     ).sort((a, b) => a.localeCompare(b));
 
     return ["All", ...uniqueCategories];
-  }, []);
+  }, [formulas]);
 
   // =========================
   // FILTERED FORMULAS
@@ -78,7 +79,7 @@ const FormulaHome = ({ dark }) => {
         matchesSearch && matchesCategory
       );
     });
-  }, [search, activeCategory]);
+  }, [search, activeCategory, formulas]);
 
   // =========================
   // SUBJECTS
@@ -134,7 +135,7 @@ const FormulaHome = ({ dark }) => {
             ?.count || 0,
       },
     ];
-  }, []);
+  }, [formulas]);
 
   const formulaOfDay =
     formulas[0] || null;

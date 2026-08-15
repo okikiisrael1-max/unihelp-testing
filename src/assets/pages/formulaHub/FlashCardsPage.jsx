@@ -2,13 +2,14 @@ import { useState, useMemo } from "react";
 import { ArrowLeft, ArrowRight, RotateCcw, Sparkles, Brain, Shuffle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { formulas } from "../../data/sampleFormulas";
+import { useFormulas } from "../../hooks/useFormulas";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import EmptyState from "../../components/EmptyState";
 
 const FlashCardsPage = ({ dark = false }) => {
   const navigate = useNavigate();
+  const { formulas, loading } = useFormulas();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -19,7 +20,7 @@ const FlashCardsPage = ({ dark = false }) => {
   const subjects = useMemo(() => {
     const allSubjects = formulas.map((f) => f.subject);
     return ["All", ...new Set(allSubjects)];
-  }, []);
+  }, [formulas]);
 
   // Filtered formulas
   const filteredFormulas = useMemo(() => {
@@ -33,7 +34,7 @@ const FlashCardsPage = ({ dark = false }) => {
       list = [...list].sort(() => Math.random() - 0.5);
     }
     return list;
-  }, [activeSubject, isShuffled]);
+  }, [activeSubject, isShuffled, formulas]);
 
   // Handle Next
   const handleNext = () => {
