@@ -96,6 +96,8 @@ const App = () => {
 
   const [loadingRole, setLoadingRole] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const lastPresenceWriteRef = React.useRef(new Map());
+  const PRESENCE_WRITE_COOLDOWN_MS = 5 * 60 * 1000;
 
   /* ================= THEME ================= */
 
@@ -114,6 +116,14 @@ const App = () => {
 
   const updateUserPresence = async (user) => {
     if (!user) return;
+
+    const now = Date.now();
+    const lastWriteAt = lastPresenceWriteRef.current.get(user.uid) || 0;
+    if (now - lastWriteAt < PRESENCE_WRITE_COOLDOWN_MS) {
+      return;
+    }
+
+    lastPresenceWriteRef.current.set(user.uid, now);
 
     try {
       await setDoc(
@@ -207,10 +217,21 @@ const App = () => {
 }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      updateUserPresence(currentUser);
-    }
-  }, [currentUser, location.pathname]);
+    if (!currentUser) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateUserPresence(currentUser);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    updateUserPresence(currentUser);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [currentUser]);
 
   /* ================= LOADING SCREEN ================= */
 
