@@ -42,38 +42,14 @@ export default function NotificationBell({ dark }) {
         where("userId", "==", user.uid)
       );
 
-      try {
-        // MOCKED NOTIFICATIONS to save Firebase quota
-        // Uncomment the onSnapshot code and remove this mock when quota resets
-        setNotifications([
-          {
-            id: 'mock-1',
-            message: 'Firebase quota exceeded for today. Showing mock notifications.',
-            createdAt: new Date().toISOString(),
-            read: false,
-          },
-          {
-            id: 'mock-2',
-            message: 'Welcome to UniHelp Dev Mode!',
-            createdAt: new Date().toISOString(),
-            read: true,
-          }
-        ]);
+      unsubscribeNotifications = onSnapshot(q, (snap) => {
+        const data = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
 
-        /* 
-        unsubscribeNotifications = onSnapshot(q, (snap) => {
-          const data = snap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-          }));
-          setNotifications(data);
-        }, (error) => {
-           console.error("Firestore Error in Notifications (Likely Quota Exceeded):", error);
-        });
-        */
-      } catch (err) {
-        console.error("Error setting up notifications:", err);
-      }
+        setNotifications(data);
+      });
     });
 
     return () => {
