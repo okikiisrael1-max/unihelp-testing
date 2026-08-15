@@ -20,13 +20,14 @@ import {
 
 import EmptyState from "../../components/EmptyState";
 
-import { formulas } from "../../data/sampleFormulas";
+import { useFormulas } from "../../hooks/useFormulas";
 
 const SubjectsPage = ({
   dark,
 }) => {
 
   const navigate = useNavigate();
+  const { formulas, loading } = useFormulas();
 
   const [search, setSearch] =
     useState("");
@@ -108,7 +109,7 @@ const SubjectsPage = ({
         )
       );
 
-  }, [search]);
+  }, [search, formulas]);
 
   /**
    * =========================

@@ -18,7 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { formulas } from "../../data/sampleFormulas";
+import { useFormulas } from "../../hooks/useFormulas";
 
 const FormulaSubjectsPage = ({
   dark = false,
@@ -93,7 +93,7 @@ const FormulaSubjectsPage = ({
           search.toLowerCase(),
         ),
     );
-  }, [search]);
+  }, [search, formulas]);
 
   // =========================================
   // THEME

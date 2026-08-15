@@ -21,7 +21,7 @@ import {
   useState,
 } from "react";
 
-import { formulas } from "../../data/sampleFormulas";
+import { useFormulas } from "../../hooks/useFormulas";
 
 import {
   BlockMath,
@@ -40,6 +40,7 @@ const FormulaDetails = ({
   const { id } = useParams();
 
   const navigate = useNavigate();
+  const { formulas, loading } = useFormulas();
 
   const [saved, setSaved] =
     useState(false);
@@ -54,7 +55,7 @@ const FormulaDetails = ({
         String(item.id) ===
         String(id)
     );
-  }, [id]);
+  }, [id, formulas]);
 
   // RELATED FORMULAS
   const relatedFormulas =
@@ -69,7 +70,7 @@ const FormulaDetails = ({
             item.id !== formula.id
         )
         .slice(0, 4);
-    }, [formula]);
+    }, [formula, formulas]);
 
   // LOAD BOOKMARK
   useEffect(() => {
@@ -85,7 +86,7 @@ const FormulaDetails = ({
     setSaved(
       bookmarks.includes(formula.id)
     );
-  }, [formula]);
+  }, [formula, formulas]);
 
   // FORMULA NOT FOUND
   if (!formula) {

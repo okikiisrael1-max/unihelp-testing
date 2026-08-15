@@ -9,13 +9,14 @@ import FormulaCard from "../../components/FormulaCard";
 
 import EmptyState from "../../components/EmptyState";
 
-import { formulas } from "../../data/sampleFormulas";
+import { useFormulas } from "../../hooks/useFormulas";
 import { useNavigate } from "react-router-dom";
 
 const BookmarksPage = ({ dark = false }) => {
 
   const [bookmarked, setBookmarked] = useState([]);
   const navigate = useNavigate();
+  const { formulas, loading } = useFormulas();
 
   // LOAD BOOKMARKS
   useEffect(() => {
@@ -33,7 +34,7 @@ const BookmarksPage = ({ dark = false }) => {
 
     setBookmarked(bookmarkedFormulas);
 
-  }, []);
+  }, [formulas]);
 
   // EMPTY STATE
   if (!bookmarked.length) {
