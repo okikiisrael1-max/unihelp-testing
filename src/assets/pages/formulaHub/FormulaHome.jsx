@@ -156,6 +156,49 @@ const FormulaHome = ({ dark }) => {
       `}
     >
       <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`relative overflow-hidden rounded-[28px] border mb-8 ${
+            dark ? "border-zinc-800 bg-gradient-to-r from-indigo-950 via-violet-950 to-sky-950" : "border-indigo-100 bg-gradient-to-r from-indigo-50 via-violet-50 to-cyan-50"
+          }`}
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.35),transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(34,211,238,0.24),transparent_36%)]" />
+          <div className="relative flex flex-col gap-6 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-8">
+            <div className="max-w-xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-100">
+                <Sparkles className="w-3.5 h-3.5" />
+                Formula power mode
+              </div>
+              <h2 className={`text-2xl font-bold md:text-4xl ${dark ? "text-white" : "text-slate-900"}`}>
+                Turn formulas into faster recall.
+              </h2>
+              <p className={`mt-3 text-sm md:text-base ${dark ? "text-indigo-100/80" : "text-slate-600"}`}>
+                Study smarter with flashcards, quick subject filters, and a clean formula library built for revision.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/formula-hub/flashcards")}
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5"
+              >
+                <Brain className="w-4 h-4" />
+                Open flashcards
+              </button>
+              <button
+                onClick={() => navigate("/formula-hub/subjects")}
+                className={`inline-flex items-center gap-2 rounded-2xl border px-5 py-3 text-sm font-semibold transition ${
+                  dark ? "border-white/15 bg-white/5 text-white hover:bg-white/10" : "border-slate-200 bg-white/60 text-slate-700 hover:bg-white"
+                }`}
+              >
+                Browse subjects
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
         {/* =========================
             TOP NAVIGATION
         ========================= */}

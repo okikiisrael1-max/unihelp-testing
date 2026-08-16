@@ -7,6 +7,15 @@ import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import EmptyState from "../../components/EmptyState";
 
+const shuffleArray = (items = []) => {
+  const next = [...items];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+  return next;
+};
+
 const FlashCardsPage = ({ dark = false }) => {
   const navigate = useNavigate();
   const { formulas, loading } = useFormulas();
@@ -22,17 +31,17 @@ const FlashCardsPage = ({ dark = false }) => {
     return ["All", ...new Set(allSubjects)];
   }, [formulas]);
 
-  // Filtered formulas
+  // Filtered formulas with a freshly randomized deck so order is never stale
   const filteredFormulas = useMemo(() => {
     let list = formulas;
     if (activeSubject !== "All") {
       list = list.filter((f) => f.subject === activeSubject);
     }
-    
-    // Create a copy to shuffle if needed
+
     if (isShuffled) {
-      list = [...list].sort(() => Math.random() - 0.5);
+      list = shuffleArray(list);
     }
+
     return list;
   }, [activeSubject, isShuffled, formulas]);
 
