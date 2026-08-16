@@ -245,7 +245,7 @@ export default function ChallengeDashboard({ dark = false, initialTab = "dashboa
   };
 
   useEffect(() => {
-    const response = fetch("https://unihelp-backend-vdps.onrender.com/api/challenge-questions");
+    const response = fetch("https://unihelp-backend-dg0o.onrender.com/api/challenge-questions");
     response.then((res) => res.json())
       .then((data) => setChallengeQuestions(data));
   }, []);

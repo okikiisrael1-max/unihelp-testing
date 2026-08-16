@@ -18,7 +18,7 @@ export const useFormulas = () => {
 
     const fetchFormulas = async () => {
       try {
-        const response = await axios.get('https://unihelp-backend-vdps.onrender.com/api/formulas');
+        const response = await axios.get('https://unihelp-backend-dg0o.onrender.com/api/formulas');
         cachedFormulas = response.data.formulas || response.data;
         // In case the API wraps it in an object like { success: true, formulas: [...] } 
         // we check response.data.formulas or fallback to response.data
