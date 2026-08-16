@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { ArrowLeft, ArrowRight, RotateCcw, Sparkles, Brain, Shuffle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFormulas } from "../../hooks/useFormulas";
+import { useFormulas } from "../../../hooks/useFormulas";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import EmptyState from "../../components/EmptyState";

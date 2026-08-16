@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+
+const API_URL = (import.meta.env.VITE_API_URL || 'https://unihelp-backend-vdps.onrender.com').replace(/\/$/, '');
 
 // Cache to prevent refetching multiple times when switching between pages
 let cachedFormulas = null;
@@ -18,11 +19,16 @@ export const useFormulas = () => {
 
     const fetchFormulas = async () => {
       try {
-        const response = await axios.get('https://unihelp-backend-dg0o.onrender.com/api/formulas');
-        cachedFormulas = response.data.formulas || response.data;
-        // In case the API wraps it in an object like { success: true, formulas: [...] } 
-        // we check response.data.formulas or fallback to response.data
-        setFormulas(cachedFormulas);
+        const response = await fetch(`${API_URL}/api/formulas`);
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload?.error || payload?.message || 'Failed to fetch formulas');
+        }
+
+        const data = Array.isArray(payload) ? payload : payload.formulas || payload.data || [];
+        cachedFormulas = data;
+        setFormulas(data);
       } catch (err) {
         console.error('Failed to fetch formulas:', err);
         setError(err);

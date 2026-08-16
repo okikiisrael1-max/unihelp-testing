@@ -21,7 +21,7 @@ import {
   useState,
 } from "react";
 
-import { useFormulas } from "../../hooks/useFormulas";
+import { useFormulas } from "../../../hooks/useFormulas";
 
 import {
   BlockMath,

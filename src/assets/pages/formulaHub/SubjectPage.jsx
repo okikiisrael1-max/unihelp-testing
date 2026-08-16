@@ -20,7 +20,7 @@ import {
 
 import EmptyState from "../../components/EmptyState";
 
-import { useFormulas } from "../../hooks/useFormulas";
+import { useFormulas } from "../../../hooks/useFormulas";
 
 const SubjectsPage = ({
   dark,

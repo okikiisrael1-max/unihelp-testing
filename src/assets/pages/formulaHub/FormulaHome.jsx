@@ -27,7 +27,7 @@ import FormulaCard from "../../components/FormulaCard";
 import FormulaCategory from "../../components/FormulaCategory";
 import RecentlyViewed from "../../components/RecentlyViewed";
 
-import { useFormulas } from "../../hooks/useFormulas";
+import { useFormulas } from "../../../hooks/useFormulas";
 
 const FormulaHome = ({ dark }) => {
   const navigate = useNavigate();

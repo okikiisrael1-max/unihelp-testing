@@ -18,7 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { useFormulas } from "../../hooks/useFormulas";
+import { useFormulas } from "../../../hooks/useFormulas";
 
 const FormulaSubjectsPage = ({
   dark = false,

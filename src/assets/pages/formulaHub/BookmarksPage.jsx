@@ -9,7 +9,7 @@ import FormulaCard from "../../components/FormulaCard";
 
 import EmptyState from "../../components/EmptyState";
 
-import { useFormulas } from "../../hooks/useFormulas";
+import { useFormulas } from "../../../hooks/useFormulas";
 import { useNavigate } from "react-router-dom";
 
 const BookmarksPage = ({ dark = false }) => {
