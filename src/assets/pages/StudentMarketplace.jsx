@@ -23,18 +23,13 @@ import {
 import ImageCarousel from "./../components/ImageCarousel";
 import { db, auth } from "../../firebase/config";
 import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  where,
   doc,
   getDoc,
-  updateDoc,
 } from "firebase/firestore";
 
-import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
-import { deleteCloudinaryAssets, deleteMediaDocument } from "../../services/mediaCleanup";
+import { toCloudinaryAsset } from "../../services/cloudinary";
+import { deleteJson, getJson, postJson, putJson, uploadFeatureMedia } from "../../services/api";
+import { deleteCloudinaryAssets } from "../../services/mediaCleanup";
 import { buildShareUrl, shareContent } from "../utils/share";
 
 export default function StudentMarketplace({ dark }) {
@@ -110,13 +105,8 @@ export default function StudentMarketplace({ dark }) {
         setUploadLimit(premium ? 10 : 3);
       }
 
-      const q = query(
-        collection(db, "studentMarketplace"),
-        where("userId", "==", auth.currentUser.uid)
-      );
-
-      const snap = await getDocs(q);
-      setUserUploads(snap.size);
+      const data = await getJson(`/api/marketplace?userId=${encodeURIComponent(auth.currentUser.uid)}&limit=1`);
+      setUserUploads(data.total || 0);
     } catch (err) {
       console.error("Error fetching user plan:", err);
     }
@@ -128,16 +118,11 @@ export default function StudentMarketplace({ dark }) {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const q =
-        view === "market"
-          ? query(collection(db, "studentMarketplace"))
-          : query(
-              collection(db, "studentMarketplace"),
-              where("userId", "==", auth.currentUser?.uid || "")
-            );
-
-      const snap = await getDocs(q);
-      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const path = view === "market"
+        ? "/api/marketplace?limit=100"
+        : `/api/marketplace?userId=${encodeURIComponent(auth.currentUser?.uid || "")}&limit=100`;
+      const data = await getJson(path);
+      setItems(data.items || []);
     } catch (err) {
       console.error("Error fetching marketplace items:", err);
     } finally {
@@ -275,9 +260,9 @@ export default function StudentMarketplace({ dark }) {
         imageAssets = [];
 
         for (let img of images) {
-          const result = await uploadImage(img, (percent) => {
+          const result = await uploadFeatureMedia(img, { feature: "marketplace", resourceType: "image", onProgress: (percent) => {
             setProgress(Math.round(percent));
-          });
+          }});
           imageUrls.push(result.secure_url);
           const asset = toCloudinaryAsset(result);
           imageAssets.push(asset);
@@ -297,13 +282,11 @@ export default function StudentMarketplace({ dark }) {
       };
 
       if (editingItem) {
-        await updateDoc(doc(db, "studentMarketplace", editingItem.id), payload);
+        await putJson(`/api/marketplace/${editingItem.id}`, payload);
         toast.success("Listing updated successfully 🚀");
       } else {
-        await addDoc(collection(db, "studentMarketplace"), {
+        await postJson("/api/marketplace", {
           ...payload,
-          userId: auth.currentUser.uid,
-          createdAt: new Date(),
           status: "pending",
           verified: isPremium,
           premiumUser: isPremium,
@@ -373,7 +356,7 @@ export default function StudentMarketplace({ dark }) {
     if (!window.confirm("Are you sure you want to delete this listing?")) return;
 
     try {
-      await deleteMediaDocument("studentMarketplace", id);
+      await deleteJson(`/api/marketplace/${id}`);
       setItems((prev) => prev.filter((item) => item.id !== id));
       fetchUserPlan();
       toast.success("Listing deleted successfully.");

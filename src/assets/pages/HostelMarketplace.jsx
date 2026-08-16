@@ -25,18 +25,13 @@ import {
 
 import { db, auth } from "../../firebase/config";
 import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  where,
   doc,
   getDoc,
-  updateDoc,
 } from "firebase/firestore";
 
-import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
-import { deleteCloudinaryAssets, deleteMediaDocument } from "../../services/mediaCleanup";
+import { toCloudinaryAsset } from "../../services/cloudinary";
+import { deleteJson, getJson, postJson, putJson, uploadFeatureMedia } from "../../services/api";
+import { deleteCloudinaryAssets } from "../../services/mediaCleanup";
 import { buildShareUrl, shareContent } from "../utils/share";
 
 export default function HostelMarketplace({ dark }) {
@@ -90,12 +85,8 @@ export default function HostelMarketplace({ dark }) {
         setUploadLimit(premium ? 10 : 5);
       }
 
-      const q = query(
-        collection(db, "hostels"),
-        where("userId", "==", auth.currentUser.uid)
-      );
-      const snap = await getDocs(q);
-      setUserUploads(snap.size);
+      const data = await getJson(`/api/hostels?userId=${encodeURIComponent(auth.currentUser.uid)}&limit=1`);
+      setUserUploads(data.total || 0);
     } catch (err) {
       console.error("Error fetching user plan:", err);
     }
@@ -105,16 +96,11 @@ export default function HostelMarketplace({ dark }) {
   const fetchHostels = async () => {
     setLoading(true);
     try {
-      const q =
-        view === "market"
-          ? query(collection(db, "hostels"))
-          : query(
-              collection(db, "hostels"),
-              where("userId", "==", auth.currentUser?.uid || "")
-            );
-
-      const snap = await getDocs(q);
-      setHostels(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const path = view === "market"
+        ? "/api/hostels?limit=100"
+        : `/api/hostels?userId=${encodeURIComponent(auth.currentUser?.uid || "")}&limit=100`;
+      const data = await getJson(path);
+      setHostels(data.items || []);
     } catch (err) {
       console.error("Error fetching hostels:", err);
     } finally {
@@ -252,9 +238,9 @@ export default function HostelMarketplace({ dark }) {
         imageAssets = [];
 
         for (const img of images) {
-          const result = await uploadImage(img, (percent) => {
+          const result = await uploadFeatureMedia(img, { feature: "hostels", resourceType: "image", onProgress: (percent) => {
             setProgress(Math.round(percent));
-          });
+          }});
           imageUrls.push(result.secure_url);
           const asset = toCloudinaryAsset(result);
           imageAssets.push(asset);
@@ -263,19 +249,17 @@ export default function HostelMarketplace({ dark }) {
       }
 
       if (editingHostel) {
-        await updateDoc(doc(db, "hostels", editingHostel.id), {
+        await putJson(`/api/hostels/${editingHostel.id}`, {
           ...form,
           images: imageUrls,
           imageAssets,
         });
         toast.success("Hostel updated successfully!");
       } else {
-        await addDoc(collection(db, "hostels"), {
+        await postJson("/api/hostels", {
           ...form,
           images: imageUrls,
           imageAssets,
-          userId: auth.currentUser.uid,
-          createdAt: new Date(),
           status: "pending",
           verified: isPremium,
           premiumUser: isPremium,
@@ -322,7 +306,7 @@ export default function HostelMarketplace({ dark }) {
     if (!window.confirm("Are you sure you want to delete this hostel?")) return;
 
     try {
-      await deleteMediaDocument("hostels", id);
+      await deleteJson(`/api/hostels/${id}`);
       setHostels((prev) => prev.filter((item) => item.id !== id));
       fetchUserPlan();
       toast.info("Hostel deleted");
