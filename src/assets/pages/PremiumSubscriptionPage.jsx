@@ -17,9 +17,6 @@ import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 import { auth, db } from "../../firebase/config";
 import {
   doc,
-  setDoc,
-  serverTimestamp,
-  Timestamp,
   getDoc,
 } from "firebase/firestore";
 
@@ -114,18 +111,6 @@ export default function PremiumSubscriptionPage({ dark = false }) {
         const now = new Date();
 
         if (expiryDate <= now) {
-          await setDoc(
-            userRef,
-            {
-              premium: false,
-              verified: false,
-              subscriptionStatus: "expired",
-              subscriptionExpired: true,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
-
           setSubscriptionData({
             ...data,
             premium: false,
@@ -207,10 +192,10 @@ export default function PremiumSubscriptionPage({ dark = false }) {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
+                  Authorization: `Bearer ${await auth.currentUser.getIdToken()}`,
                 },
                 body: JSON.stringify({
                   transaction_id: response.transaction_id,
-                  userId: auth.currentUser.uid,
                   plan: STUDENT_PLAN.name,
                   billing,
                   amount,
@@ -225,50 +210,7 @@ export default function PremiumSubscriptionPage({ dark = false }) {
             const data = await verify.json();
 
             if (data.success) {
-              const now = new Date();
-              const expiresAt = new Date();
-
-              if (billing === "monthly") {
-                expiresAt.setDate(expiresAt.getDate() + 30);
-              } else if (billing === "yearly") {
-                expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-              }
-
-              const userRef = doc(db, "users", auth.currentUser.uid);
-
-              await setDoc(
-                userRef,
-                {
-                  premium: true,
-                  verified: true,
-                  subscriptionPlan: "student-premium",
-                  subscriptionBilling: billing,
-                  subscriptionAmount: amount,
-                  subscriptionStatus: "active",
-                  subscriptionExpired: false,
-                  transactionId: response.transaction_id,
-                  paymentReference: response.tx_ref,
-                  subscriptionDate: serverTimestamp(),
-                  subscriptionStart: Timestamp.fromDate(now),
-                  subscriptionExpiresAt: Timestamp.fromDate(expiresAt),
-                  updatedAt: serverTimestamp(),
-                },
-                { merge: true }
-              );
-
-              setSubscriptionData({
-                premium: true,
-                verified: true,
-                subscriptionBilling: billing,
-                subscriptionStatus: "active",
-                subscriptionExpiresAt: Timestamp.fromDate(expiresAt),
-              });
-
-              const remainingDays = Math.ceil(
-                (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-              );
-
-              setDaysLeft(remainingDays);
+              await checkSubscriptionStatus();
               toast.success("Student Premium activated successfully 🚀");
             } else {
               toast.error(data.error || "Payment verification failed");

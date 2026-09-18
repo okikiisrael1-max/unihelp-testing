@@ -54,14 +54,10 @@ const SignUp = ({ dark }) => {
   const passwordsMismatch = confirmPassword.length > 0 && confirmPassword !== password;
 
   const createUserDoc = async (userId, data) => {
-    try {
-      await setDoc(doc(db, "users", userId), {
-        ...data,
-        createdAt: serverTimestamp(),
-      }, { merge: true });
-    } catch (err) {
-      console.error(err);
-    }
+    await setDoc(doc(db, "users", userId), {
+      ...data,
+      createdAt: serverTimestamp(),
+    }, { merge: true });
   };
 
   const validate = () => {
@@ -97,8 +93,10 @@ const SignUp = ({ dark }) => {
       const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await updateProfile(credential.user, { displayName: fullName.trim() });
       await createUserDoc(credential.user.uid, {
+        uid: credential.user.uid,
         name: fullName.trim(),
         email: email.trim(),
+        premium: false,
       });
       await sendEmailVerification(credential.user);
       await signOut(auth);
@@ -106,6 +104,12 @@ const SignUp = ({ dark }) => {
       toast.success("Account created! Please check your email to verify before logging in.");
       navigate("/login");
     } catch (error) {
+      if (auth.currentUser) {
+        await signOut(auth).catch((signOutError) => {
+          console.error("Unable to clear failed signup session", signOutError);
+        });
+      }
+
       switch (error.code) {
         case "auth/email-already-in-use":
           toast.error("An account already exists with this email");
@@ -116,8 +120,15 @@ const SignUp = ({ dark }) => {
         case "auth/weak-password":
           toast.error("Password is too weak");
           break;
+        case "permission-denied":
+          toast.error("Account created, but your profile could not be saved. Please check your Firebase permissions.");
+          break;
+        case "unavailable":
+          toast.error("Unable to reach the profile service. Please try again.");
+          break;
         default:
-          toast.error("Unable to create account");
+          console.error("Signup failed", error);
+          toast.error(error.message || "Unable to create account");
       }
     } finally {
       setIsLoading(false);

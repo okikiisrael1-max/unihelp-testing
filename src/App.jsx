@@ -198,6 +198,10 @@ const App = () => {
           doc(db, "users", user.uid),
           () => {
             setLoadingRole(false);
+          },
+          (error) => {
+            console.error("Unable to load user profile", error);
+            setLoadingRole(false);
           }
         );
       } catch (err) {

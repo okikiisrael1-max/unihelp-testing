@@ -32,6 +32,13 @@ export const putJson = async (path, payload) =>
     body: JSON.stringify(payload),
   }));
 
+export const patchJson = async (path, payload) =>
+  parse(await fetch(`${API_URL}${path}`, {
+    method: "PATCH",
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  }));
+
 export const deleteJson = async (path) =>
   parse(await fetch(`${API_URL}${path}`, {
     method: "DELETE",

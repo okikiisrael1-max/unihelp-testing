@@ -7,6 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 
 const ADMIN_EMAILS = new Set([
   "onakomayaokiki@gmail.com",
+  "iadejuwon77@gmail.com",
 ]);
 
 export default function useAdmin() {
@@ -46,7 +47,7 @@ export default function useAdmin() {
           : {};
 
         const hasAdminEmail = ADMIN_EMAILS.has(
-          user.email
+          String(user.email || "").trim().toLowerCase()
         );
         const hasAdminClaim = Boolean(
           tokenResult?.claims?.admin
