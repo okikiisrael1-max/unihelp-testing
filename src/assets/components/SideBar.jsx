@@ -327,7 +327,7 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
           {
             to: "/newsfeed",
 
-            label: "SmartFeeds",
+            label: "Feed",
 
             icon: (
               <Newspaper size={18} />

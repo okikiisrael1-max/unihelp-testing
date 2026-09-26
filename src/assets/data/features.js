@@ -61,7 +61,7 @@ export const featureSections = [
       { title: "Watch Videos", desc: "Watch educational content", icon: PlayCircle, link: "/watch" },
       { title: "Groups", desc: "Join student communities", icon: MessageCircle, link: "/community" },
       { title: "Messenger", desc: "Chat with classmates directly", icon: MessageCircle, link: "/messages" },
-      { title: "SmartFeeds", desc: "Catch useful education updates", icon: Newspaper, link: "/newsfeed" },
+      { title: "Feed", desc: "Share with friends around campus", icon: Newspaper, link: "/newsfeed" },
       { title: "Announcements", desc: "Read campus and app updates", icon: RadioTower, link: "/announcements" },
     ],
   },
