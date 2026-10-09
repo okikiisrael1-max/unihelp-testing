@@ -31,7 +31,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 
-import { db } from "../../firebase/config";
+import { auth, db } from "../../firebase/config";
 
 export default function AdminAnnouncements({
   dark,
@@ -246,6 +246,9 @@ export default function AdminAnnouncements({
           );
 
           try {
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) throw new Error("Authentication required.");
+
             await fetch(
               `${API_URL}/api/notifications/broadcast`,
               {
@@ -253,6 +256,7 @@ export default function AdminAnnouncements({
                 headers: {
                   "Content-Type":
                     "application/json",
+                  Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                   title: form.title,

@@ -81,6 +81,42 @@ import FeaturesCatalog from "./assets/pages/FeaturesCatalog";
 import ViewProfile from "./assets/pages/ViewProfile";
 import TutorialSearchPage from "./assets/pages/Tutorials";
 
+const SharedLinkFallback = ({ dark }) => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const postId = params.get("post") || params.get("id") || params.get("postId");
+  const title = postId ? "Open in UniHelp" : "Open UniHelp";
+
+  return (
+    <div className={`min-h-screen ${dark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+      <div className="mx-auto max-w-xl px-6 py-16">
+        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-600">UniHelp</p>
+          <h1 className="mt-4 text-3xl font-black">{title}</h1>
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+            This shared link opens directly in the UniHelp app when it is installed on your device.
+          </p>
+
+          <div className="mt-8 space-y-3">
+            <a
+              href="https://unihelp.app"
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500"
+            >
+              Open the app or web app
+            </a>
+            <a
+              href={postId ? `unihelp://feed?post=${encodeURIComponent(postId)}` : "unihelp://"}
+              className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 dark:border-slate-700 dark:text-slate-100"
+            >
+              Open in UniHelp app
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -293,7 +329,8 @@ const App = () => {
             <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
             <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
-            <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />     
+            <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />
+            <Route path="/feed" element={<SharedLinkFallback dark={dark} />} />
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
             <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />
             <Route path="/challenge" element={ <ProtectedRoute> <ChallengeDashboard dark={dark} /> </ProtectedRoute> } />

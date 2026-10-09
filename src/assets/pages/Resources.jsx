@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { BookOpen, ClipboardList, PlusCircleIcon, MessageSquarePlus, X } from "lucide-react";
+import { BookOpen, ClipboardList, PlusCircleIcon, MessageSquarePlus, X, Computer } from "lucide-react";
 import LectureNotesMarketplace from "./LectureNotesMarketplace";
 import PastQuestions from "../components/PastQuestions";
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../../firebase/config';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 const TABS = [
@@ -17,7 +17,7 @@ export default function Resources({ dark }) {
   const active = TABS.find((t) => t.key === tab);
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [requestData, setRequestData] = useState({ courseCode: "", year: "", school: "", additionalInfo: "" });
+  const [requestData, setRequestData] = useState({ type: "question", title: "", course: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -26,27 +26,34 @@ export default function Resources({ dark }) {
       toast.error("You must be logged in to request a resource");
       return;
     }
-    if (!requestData.courseCode || !requestData.school) {
-      toast.error("Course Code and School are required");
+    if (!requestData.title.trim()) {
+      toast.error("A request title is required");
       return;
     }
     
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "question_requests"), {
-        ...requestData,
+      const collectionName = requestData.type === "note" ? "noteRequests" : "questionRequests";
+      await addDoc(collection(db, collectionName), {
+        title: requestData.title.trim(),
+        description: requestData.description.trim(),
+        course: requestData.course.trim(),
+        type: requestData.type,
         userId: auth.currentUser.uid,
-        userEmail: auth.currentUser.email,
-        status: "pending",
+        userName: auth.currentUser.displayName || auth.currentUser.email || "Student",
+        status: "open",
         createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
       });
-      toast.success("Request submitted successfully! We'll notify you when it's available.");
+      toast.success("Request submitted. It will remain open for 48 hours.");
       setShowModal(false);
-      setRequestData({ courseCode: "", year: "", school: "", additionalInfo: "" });
+      setRequestData({ type: tab === "notes" ? "note" : "question", title: "", course: "", description: "" });
     } catch (err) {
+      console.error("Failed to submit resource request:", err);
       toast.error("Failed to submit request. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (
@@ -95,6 +102,16 @@ export default function Resources({ dark }) {
               );
             })}
           </div>
+          <button
+            type="button"
+            onClick={() => navigate("/cbt-practice")}
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+              dark ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <Computer size={16} />
+            CBT practice
+          </button>
         </div>
 
         {/* Content */}
@@ -108,22 +125,26 @@ export default function Resources({ dark }) {
       </div>
 
       {/* Floating Action Buttons */}
-      {tab !== "notes" && (
-        <div className="fixed right-4 bottom-20 md:bottom-10 z-50 flex flex-col gap-3">
-          <button 
-            onClick={() => navigate('/uploadquestion')}
-            className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'>
-          <PlusCircleIcon size={24}/>
-          <span className="hidden sm:inline">Upload PDF</span>
-        </button>
+      <div className="fixed right-4 bottom-20 md:bottom-10 z-50 flex flex-col gap-3">
+          {tab !== "notes" && (
+            <button 
+              onClick={() => navigate('/uploadquestion')}
+              className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'>
+              <PlusCircleIcon size={24}/>
+              <span className="hidden sm:inline">Upload PDF</span>
+            </button>
+          )}
         <button 
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setRequestData((current) => ({ ...current, type: tab === "notes" ? "note" : "question" }));
+            setShowModal(true);
+          }}
           className='flex items-center gap-2 p-3 px-5 bg-indigo-600 shadow-lg shadow-indigo-500/30 rounded-full text-white hover:bg-indigo-700 transition font-bold'
         >
           <MessageSquarePlus size={24}/>
           <span className="hidden sm:inline">Request Material</span>
         </button>
-      </div>)}
+      </div>
 
       {/* Request Modal */}
       {showModal && (
@@ -137,51 +158,60 @@ export default function Resources({ dark }) {
             </button>
 
             <h2 className="text-2xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">Request Material</h2>
-            <p className="opacity-70 text-sm mb-6">Can't find what you're looking for? Let us know and we'll try to find it.</p>
+            <p className="opacity-70 text-sm mb-6">Your request will be visible to the community for 48 hours.</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold mb-1 opacity-80">Course Code *</label>
+                <label className="block text-sm font-semibold mb-1 opacity-80">Request type *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[{ value: "note", label: "Lecture note" }, { value: "question", label: "Past question" }].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setRequestData({ ...requestData, type: option.value })}
+                      aria-pressed={requestData.type === option.value}
+                      className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                        requestData.type === option.value
+                          ? "border-indigo-500 bg-indigo-600 text-white"
+                          : dark ? "border-white/10 bg-[#1a2235]" : "border-gray-200 bg-gray-50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1 opacity-80">Title *</label>
+                <input 
+                  type="text" 
+                  placeholder={requestData.type === "note" ? "e.g. MTH 101 integration notes" : "e.g. MTH 101 past questions"}
+                  required
+                  value={requestData.title}
+                  onChange={(e) => setRequestData({...requestData, title: e.target.value})}
+                  className={`w-full px-4 py-3 rounded-xl outline-none border transition focus:border-indigo-500 ${dark ? "bg-[#1a2235] border-white/10" : "bg-gray-50 border-gray-200"}`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1 opacity-80">Course / Subject</label>
                 <input 
                   type="text" 
                   placeholder="e.g. MTH 101"
-                  required
-                  value={requestData.courseCode}
-                  onChange={(e) => setRequestData({...requestData, courseCode: e.target.value})}
+                  value={requestData.course}
+                  onChange={(e) => setRequestData({...requestData, course: e.target.value})}
                   className={`w-full px-4 py-3 rounded-xl outline-none border transition focus:border-indigo-500 ${dark ? "bg-[#1a2235] border-white/10" : "bg-gray-50 border-gray-200"}`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1 opacity-80">School *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. University of Lagos"
-                  required
-                  value={requestData.school}
-                  onChange={(e) => setRequestData({...requestData, school: e.target.value})}
-                  className={`w-full px-4 py-3 rounded-xl outline-none border transition focus:border-indigo-500 ${dark ? "bg-[#1a2235] border-white/10" : "bg-gray-50 border-gray-200"}`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1 opacity-80">Year (Optional)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. 2022/2023"
-                  value={requestData.year}
-                  onChange={(e) => setRequestData({...requestData, year: e.target.value})}
-                  className={`w-full px-4 py-3 rounded-xl outline-none border transition focus:border-indigo-500 ${dark ? "bg-[#1a2235] border-white/10" : "bg-gray-50 border-gray-200"}`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1 opacity-80">Additional Info</label>
+                <label className="block text-sm font-semibold mb-1 opacity-80">Description</label>
                 <textarea 
                   rows="3"
-                  placeholder="Any specific topic or lecturer?"
-                  value={requestData.additionalInfo}
-                  onChange={(e) => setRequestData({...requestData, additionalInfo: e.target.value})}
+                  placeholder="Add any specific details about the material you need."
+                  value={requestData.description}
+                  onChange={(e) => setRequestData({...requestData, description: e.target.value})}
                   className={`w-full px-4 py-3 rounded-xl outline-none border transition focus:border-indigo-500 resize-none ${dark ? "bg-[#1a2235] border-white/10" : "bg-gray-50 border-gray-200"}`}
                 ></textarea>
               </div>

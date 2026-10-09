@@ -784,9 +784,15 @@ function SupportPage({ kind, data, search, reload }) {
   const openDetail = async (item) => {
     setSelected(item);
     try {
-      const res = await getJson(`/api/${config.route}/${encodeURIComponent(item.id)}/notes`);
-      setNotes(res.notes || res.data || (Array.isArray(res) ? res : []));
-    } catch {
+      const notesRequest = getJson(`/api/${config.route}/${encodeURIComponent(item.id)}/notes`);
+      const detailRequest = kind === "reports"
+        ? getJson(`/api/reports/${encodeURIComponent(item.id)}`)
+        : Promise.resolve(item);
+      const [notesResponse, detail] = await Promise.all([notesRequest, detailRequest]);
+      setNotes(notesResponse.notes || notesResponse.data || (Array.isArray(notesResponse) ? notesResponse : []));
+      setSelected(detail);
+    } catch (error) {
+      console.error("Could not load support item details", error);
       setNotes([]);
     }
   };
@@ -811,6 +817,46 @@ function SupportPage({ kind, data, search, reload }) {
       setNoteText("");
       const res = await getJson(`/api/${config.route}/${encodeURIComponent(selected.id)}/notes`);
       setNotes(res.notes || res.data || (Array.isArray(res) ? res : []));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const legacyFeedPostId = selected?.title?.match(/^Feed post report:\s*([0-9a-f-]{36})$/i)?.[1];
+  const selectedTargetType = selected?.target_type || selected?.targetType;
+  const reportedFeedPostId = selectedTargetType === "feed_post"
+    ? selected?.target_id || selected?.targetId
+    : selectedTargetType ? null : legacyFeedPostId;
+
+  const actOnReport = async (action) => {
+    if (!selected) return;
+    const isDelete = action === "delete_reported_item";
+    const confirmed = window.confirm(
+      isDelete
+        ? "Permanently delete the reported feed post?"
+        : "Dismiss this report and mark it resolved?"
+    );
+    if (!confirmed) return;
+    setBusy("report_action");
+    try {
+      const result = await postJson(`/api/reports/${encodeURIComponent(selected.id)}/action`, { action });
+      setSelected(result.data || selected);
+      if (result.assetCleanup?.success === false) {
+        window.alert("The reported post was removed, but its image cleanup failed.");
+      }
+      await reload();
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const removeReport = async () => {
+    if (!selected || !window.confirm("Permanently delete this report?")) return;
+    setBusy("delete_report");
+    try {
+      await deleteJson(`/api/reports/${encodeURIComponent(selected.id)}`);
+      setSelected(null);
+      await reload();
     } finally {
       setBusy("");
     }
@@ -845,6 +891,37 @@ function SupportPage({ kind, data, search, reload }) {
               <p className="whitespace-pre-line text-sm">{selected[config.previewField] || selected.message || selected.description || "No message body."}</p>
               <div className="mt-3 text-xs opacity-60">{selected.email || selected.user_id || "No contact info"}</div>
             </div>
+            {kind === "reports" ? (
+              <>
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-sm">
+                  This report will be automatically deleted 3 days after an admin first views it.
+                </div>
+                {reportedFeedPostId ? (
+                  <ActionButton
+                    danger
+                    busy={busy === "report_action"}
+                    onClick={() => actOnReport("delete_reported_item")}
+                  >
+                    {selected.action_taken === "reported_item_deleted"
+                      ? "Reported post deleted"
+                      : selected.action_taken === "reported_item_already_missing"
+                        ? "Reported post is already deleted"
+                        : "Delete reported feed post"}
+                  </ActionButton>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <ActionButton
+                    busy={busy === "report_action"}
+                    onClick={() => actOnReport("dismiss")}
+                  >
+                    {selected.action_taken === "dismissed" ? "Report dismissed" : "Dismiss report"}
+                  </ActionButton>
+                  <ActionButton danger busy={busy === "delete_report"} onClick={removeReport}>
+                    Delete report now
+                  </ActionButton>
+                </div>
+              </>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {statusOptions.filter((item) => item !== "all").map((option) => (
                 <ActionButton key={option} onClick={() => updateStatus(option)} busy={busy === "status"}>{option.replace("_", " ")}</ActionButton>

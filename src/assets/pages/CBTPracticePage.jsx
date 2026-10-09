@@ -8,6 +8,88 @@ import {
   Computer
 } from 'lucide-react';
 
+const COURSES_URL = 'https://taired-cbt.puter.site/api/v1/courses.json';
+const FETCH_TIMEOUT_MS = 15000;
+const COURSES_CACHE_KEY = 'cbt_courses_cache_v1';
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const QUESTION_BANK_CACHE = new Map();
+
+async function fetchJson(url, { timeout = FETCH_TIMEOUT_MS, signal } = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const abortRequest = () => controller.abort();
+  signal?.addEventListener('abort', abortRequest, { once: true });
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`Question bank request failed (HTTP ${response.status}).`);
+    return await response.json();
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', abortRequest);
+  }
+}
+
+function validCourses(courses) {
+  return Array.isArray(courses)
+    ? courses.filter((course) =>
+        course &&
+        (typeof course.id === 'string' || typeof course.id === 'number') &&
+        typeof course.title === 'string' &&
+        typeof course.endpoint === 'string'
+      )
+    : [];
+}
+
+function shuffle(items) {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
+function normalizeQuestion(question, index, courseTitle) {
+  if (!question || !String(question.question || '').trim()) return null;
+
+  const fromArray = Array.isArray(question.options);
+  const options = (fromArray
+    ? question.options
+    : LETTERS.map((letter) => question[letter.toLowerCase()]).filter((option) => option != null && option !== '')
+  ).map((option) => String(option).trim());
+  if (options.length < 2 || options.length > LETTERS.length) return null;
+
+  const answer = question.answer ?? question.correct;
+  let correctIndex = -1;
+  if (typeof answer === 'string') {
+    const value = answer.trim();
+    if (/^[A-Fa-f]$/.test(value)) {
+      if (fromArray) {
+        correctIndex = value.toUpperCase().charCodeAt(0) - 65;
+      } else {
+        const correctOption = question[value.toLowerCase()];
+        correctIndex = correctOption == null
+          ? -1
+          : options.findIndex((option) => option === String(correctOption).trim());
+      }
+    } else {
+      correctIndex = options.findIndex((option) => option.toLowerCase() === value.toLowerCase());
+    }
+  }
+
+  if (correctIndex < 0 || correctIndex >= options.length) return null;
+
+  return {
+    id: `Q-${index}-${Math.random().toString(36).slice(2, 8)}`,
+    courseTitle,
+    question: String(question.question).trim(),
+    options,
+    correctIndex,
+    explanation: question.explanation ? String(question.explanation).trim() : 'No explanation available for this question.',
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Palette status helpers
 // ---------------------------------------------------------------------------
@@ -42,6 +124,7 @@ const CBTPracticePage = ({ dark = false }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [usingCachedCourses, setUsingCachedCourses] = useState(false);
 
   // ---- Navigation / stage -----------------------------------------------
   // stage: 'browse' | 'setup' | 'instructions' | 'exam' | 'results' | 'history'
@@ -60,6 +143,7 @@ const CBTPracticePage = ({ dark = false }) => {
   const [activeCourse, setActiveCourse] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [questionLoadError, setQuestionLoadError] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});     // { [index]: optionString }
   const [markedForReview, setMarkedForReview] = useState({}); // { [index]: true }
@@ -80,29 +164,62 @@ const CBTPracticePage = ({ dark = false }) => {
   const [history, setHistory] = useState([]);
 
   const timerRef = useRef(null);
+  const courseRequestRef = useRef(null);
+  const questionRequestRef = useRef(null);
+  const questionRequestIdRef = useRef(0);
 
   // -------------------------------------------------------------------
   // Load courses
   // -------------------------------------------------------------------
-  useEffect(() => {
-    const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
+    courseRequestRef.current?.abort();
+    const controller = new AbortController();
+    courseRequestRef.current = controller;
+    setLoading(true);
+    setLoadError(false);
+    setUsingCachedCourses(false);
+
+    try {
+      const data = await fetchJson(COURSES_URL, { signal: controller.signal });
+      const courseList = validCourses(data?.courses);
+      if (data?.status !== 'success' || !courseList.length) {
+        throw new Error('Question bank returned an invalid course list.');
+      }
+
+      setCourses(courseList);
       try {
-        const response = await fetch('https://taired-cbt.puter.site/api/v1/courses.json');
-        const data = await response.json();
-        if (data.status === 'success') {
-          setCourses(data.courses);
+        localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(courseList));
+      } catch (error) {
+        console.warn('Could not cache CBT course list:', error);
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.error('Error fetching CBT courses:', error);
+      try {
+        const cachedCourses = validCourses(JSON.parse(localStorage.getItem(COURSES_CACHE_KEY) || '[]'));
+        if (cachedCourses.length) {
+          setCourses(cachedCourses);
+          setUsingCachedCourses(true);
         } else {
           setLoadError(true);
         }
-      } catch (error) {
-        console.error('Error fetching courses:', error);
+      } catch (cacheError) {
+        console.error('Could not read cached CBT courses:', cacheError);
         setLoadError(true);
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchCourses();
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCourses();
+    return () => {
+      courseRequestRef.current?.abort();
+      questionRequestRef.current?.abort();
+      questionRequestIdRef.current += 1;
+    };
+  }, [fetchCourses]);
 
   // -------------------------------------------------------------------
   // Load history
@@ -160,7 +277,7 @@ const CBTPracticePage = ({ dark = false }) => {
   const filteredCourses = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return courses.filter(
-      (c) => c.title.toLowerCase().includes(term) || c.id.toLowerCase().includes(term)
+      (c) => c.title.toLowerCase().includes(term) || String(c.id).toLowerCase().includes(term)
     );
   }, [courses, searchTerm]);
 
@@ -168,7 +285,7 @@ const CBTPracticePage = ({ dark = false }) => {
 
   const statusFor = useCallback(
     (index) => {
-      const isAnswered = Boolean(answers[index]);
+      const isAnswered = answers[index] !== undefined;
       const isMarked = Boolean(markedForReview[index]);
       const isVisited = Boolean(visited[index]);
       if (isAnswered && isMarked) return STATUS.ANSWERED_MARKED;
@@ -192,7 +309,7 @@ const CBTPracticePage = ({ dark = false }) => {
   const progressPercent = questions.length ? ((currentIndex + 1) / questions.length) * 100 : 0;
 
   const score = useMemo(() => {
-    return questions.reduce((acc, q, idx) => (answers[idx] === q.correctAnswer ? acc + 1 : acc), 0);
+    return questions.reduce((acc, q, idx) => (answers[idx] === q.correctIndex ? acc + 1 : acc), 0);
   }, [questions, answers]);
 
   const completionPercent = questions.length ? Math.round((score / questions.length) * 100) : 0;
@@ -200,8 +317,8 @@ const CBTPracticePage = ({ dark = false }) => {
   const reviewList = useMemo(() => {
     return questions.map((q, idx) => {
       const selected = answers[idx];
-      const isSkipped = !selected;
-      const isCorrect = selected === q.correctAnswer;
+      const isSkipped = selected === undefined;
+      const isCorrect = selected === q.correctIndex;
       return { q, idx, selected, isSkipped, isCorrect };
     });
   }, [questions, answers]);
@@ -219,6 +336,7 @@ const CBTPracticePage = ({ dark = false }) => {
   const beginSetup = (courseId) => {
     const course = courses.find((c) => c.id === courseId);
     setSetupCourse(courseId);
+    setQuestionLoadError('');
     setNumQuestions(Math.min(20, course?.question_count || 20));
     setTimeLimit(18);
     setStage('setup');
@@ -232,50 +350,57 @@ const CBTPracticePage = ({ dark = false }) => {
   const startExam = async () => {
     const course = courses.find((c) => c.id === setupCourse);
     if (!course) return;
+    const requestId = questionRequestIdRef.current + 1;
+    questionRequestIdRef.current = requestId;
+    questionRequestRef.current?.abort();
+    const controller = new AbortController();
+    questionRequestRef.current = controller;
     setLoadingQuestions(true);
+    setQuestionLoadError('');
+    setStartedAt(null);
+    setTimeLeft(0);
     setStage('exam');
     try {
-      const response = await fetch(course.endpoint);
-      const data = await response.json();
-      if (data.status === 'success') {
-        const shuffled = [...data.data].sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, numQuestions);
-        const formatted = selected.map((q) => {
-          const options = [];
-          if (q.a) options.push(q.a);
-          if (q.b) options.push(q.b);
-          if (q.c) options.push(q.c);
-          if (q.d) options.push(q.d);
-          if (q.e) options.push(q.e);
-          const correctKey = q.correct?.toLowerCase();
-          const correctAnswer = correctKey && q[correctKey] ? q[correctKey] : '';
-          return {
-            id: Math.random().toString(36).substring(7),
-            courseTitle: course.title,
-            question: q.question,
-            options,
-            correctAnswer,
-            explanation: q.explanation || 'No explanation available for this question.',
-          };
-        });
-        setActiveCourse(course);
-        setQuestions(formatted);
-        setCurrentIndex(0);
-        setAnswers({});
-        setMarkedForReview({});
-        setVisited({ 0: true });
-        setAutoSubmitted(false);
-        const seconds = timeLimit * 60;
-        setTimeLeft(seconds);
-        setStartedAt(Date.now());
-      } else {
-        setStage('setup');
+      let bank = QUESTION_BANK_CACHE.get(course.id);
+      if (!bank) {
+        const data = await fetchJson(course.endpoint, { signal: controller.signal });
+        if (data?.status !== 'success' || !Array.isArray(data.data)) {
+          throw new Error('Question bank returned an invalid paper.');
+        }
+        bank = data.data;
+        QUESTION_BANK_CACHE.set(course.id, bank);
       }
+
+      if (requestId !== questionRequestIdRef.current) return;
+      const formatted = [];
+      for (const [index, question] of shuffle(bank).entries()) {
+        const normalized = normalizeQuestion(question, index + 1, course.title);
+        if (normalized) formatted.push(normalized);
+        if (formatted.length >= numQuestions) break;
+      }
+      if (!formatted.length) {
+        throw new Error('This paper has no valid questions right now. Please try another paper.');
+      }
+
+      setActiveCourse(course);
+      setQuestions(formatted);
+      setCurrentIndex(0);
+      setAnswers({});
+      setMarkedForReview({});
+      setVisited({ 0: true });
+      setAutoSubmitted(false);
+      const seconds = timeLimit * 60;
+      setTimeLeft(seconds);
+      setStartedAt(Date.now());
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      if (requestId !== questionRequestIdRef.current) return;
+      if (!controller.signal.aborted) {
+        console.error('Error fetching CBT questions:', error);
+        setQuestionLoadError(error?.message || 'Could not load this paper. Check your connection and try again.');
+      }
       setStage('setup');
     } finally {
-      setLoadingQuestions(false);
+      if (requestId === questionRequestIdRef.current) setLoadingQuestions(false);
     }
   };
 
@@ -285,8 +410,8 @@ const CBTPracticePage = ({ dark = false }) => {
     setShowPaletteMobile(false);
   };
 
-  const selectOption = (option) => {
-    setAnswers((prev) => ({ ...prev, [currentIndex]: option }));
+  const selectOption = (optionIndex) => {
+    setAnswers((prev) => ({ ...prev, [currentIndex]: optionIndex }));
   };
 
   const clearResponse = () => {
@@ -347,6 +472,7 @@ const CBTPracticePage = ({ dark = false }) => {
     setAnswers({});
     setMarkedForReview({});
     setVisited({});
+    setQuestionLoadError('');
     setShowSubmitConfirm(false);
     setAutoSubmitted(false);
     setCandidateName('');
@@ -405,7 +531,13 @@ const CBTPracticePage = ({ dark = false }) => {
       <div className={`min-h-screen px-4 mt-4 md:mt-24 pb-12 flex flex-col items-center justify-center gap-3 text-center ${pageBg}`}>
         <AlertTriangle size={36} className="text-rose-500" />
         <p className="font-semibold">Could not reach the question bank.</p>
-        <p className="text-sm opacity-70">Check your connection and reload the page.</p>
+        <p className="text-sm opacity-70">Check your connection, then try again.</p>
+        <button
+          onClick={fetchCourses}
+          className="mt-2 rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-500"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -503,6 +635,12 @@ const CBTPracticePage = ({ dark = false }) => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" size={18} />
           </div>
 
+          {usingCachedCourses && (
+            <p className="mb-5 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300" role="status">
+              Showing your saved course list because the question bank is temporarily unavailable.
+            </p>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredCourses.map((course) => (
               <div
@@ -551,6 +689,11 @@ const CBTPracticePage = ({ dark = false }) => {
           </div>
 
           <div className="space-y-5 mb-8">
+            {questionLoadError && (
+              <p className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-300" role="alert">
+                {questionLoadError}
+              </p>
+            )}
             <div>
               <label className="text-sm font-medium mb-2 block">Number of questions</label>
               <input
@@ -832,11 +975,11 @@ const CBTPracticePage = ({ dark = false }) => {
 
               <div className="space-y-3">
                 {currentQuestion.options.map((option, idx) => {
-                  const isSelected = answers[currentIndex] === option;
+                  const isSelected = answers[currentIndex] === idx;
                   return (
                     <button
                       key={`${option}-${idx}`}
-                      onClick={() => selectOption(option)}
+                      onClick={() => selectOption(idx)}
                       className={`flex w-full items-start rounded-2xl border px-4 py-3.5 text-left transition ${
                         isSelected
                           ? 'border-indigo-500 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
@@ -869,7 +1012,7 @@ const CBTPracticePage = ({ dark = false }) => {
                 </button>
                 <button
                   onClick={clearResponse}
-                  disabled={!answers[currentIndex]}
+                  disabled={answers[currentIndex] === undefined}
                   className={`flex items-center gap-2 rounded-2xl border px-4 py-2.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${ghostBtn}`}
                 >
                   <MinusCircle size={16} />
@@ -1124,8 +1267,8 @@ const CBTPracticePage = ({ dark = false }) => {
 
                   <div className="space-y-2 mb-4">
                     {activeReview.q.options.map((option, idx) => {
-                      const isCorrectOpt = option === activeReview.q.correctAnswer;
-                      const isSelectedOpt = option === activeReview.selected;
+                      const isCorrectOpt = idx === activeReview.q.correctIndex;
+                      const isSelectedOpt = idx === activeReview.selected;
                       return (
                         <div
                           key={idx}

@@ -12,6 +12,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -208,8 +209,11 @@ export default function LectureNotesMarketplace({ dark }) {
   const [requests, setRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [search, setSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [sort, setSort] = useState("newest");
   const [tab, setTab] = useState("notes");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [showUpload, setShowUpload] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -270,14 +274,16 @@ export default function LectureNotesMarketplace({ dark }) {
   }, [notes, requests, isPremium]);
 
   const loadNotes = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
     try {
-      setLoading(true);
       const snapshot = await getDocs(
         query(collection(db, "notes"), orderBy("createdAt", "desc"))
       );
       setNotes(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
     } catch (error) {
       console.error(error);
+      setLoadError(error.message || "Unable to load lecture notes. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -333,14 +339,45 @@ export default function LectureNotesMarketplace({ dark }) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
+    const unsubscribeLegacy = onSnapshot(
       query(collection(db, "requests"), orderBy("createdAt", "desc")),
       (snapshot) => {
-        setRequests(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
-      }
+        const legacyRequests = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+        setRequests((current) => {
+          const noteRequests = current.filter((request) => request.type === "note");
+          return [...legacyRequests, ...noteRequests];
+        });
+      },
+      (error) => console.error("Failed to load legacy resource requests:", error)
+    );
+    const unsubscribeNotes = onSnapshot(
+      query(collection(db, "noteRequests"), orderBy("createdAt", "desc")),
+      (snapshot) => {
+        const noteRequests = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data(), type: "note" }));
+        setRequests((current) => {
+          const otherRequests = current.filter((request) => request.type !== "note");
+          return [...otherRequests, ...noteRequests];
+        });
+      },
+      (error) => console.error("Failed to load note requests:", error)
+    );
+    const unsubscribeQuestions = onSnapshot(
+      query(collection(db, "questionRequests"), orderBy("createdAt", "desc")),
+      (snapshot) => {
+        const questionRequests = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data(), type: "question" }));
+        setRequests((current) => {
+          const otherRequests = current.filter((request) => request.type !== "question");
+          return [...otherRequests, ...questionRequests];
+        });
+      },
+      (error) => console.error("Failed to load past-question requests:", error)
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeLegacy();
+      unsubscribeNotes();
+      unsubscribeQuestions();
+    };
   }, []);
 
   useEffect(() => {
@@ -364,16 +401,28 @@ export default function LectureNotesMarketplace({ dark }) {
 
   const filteredNotes = useMemo(() => {
     const value = search.trim().toLowerCase();
-    if (!value) return notes;
-
-    return notes.filter((note) =>
-      [note.title, note.course, note.dept, note.lecturer, note.school]
+    const result = notes.filter((note) => {
+      const course = note.course || note.subject || note.courseCode || "";
+      if (courseFilter && course !== courseFilter) return false;
+      if (!value) return true;
+      return [note.title, course, note.dept, note.department, note.lecturer, note.school]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
-        .includes(value)
-    );
-  }, [notes, search]);
+        .includes(value);
+    });
+    result.sort((left, right) => {
+      if (sort === "title_asc") return String(left.title || "").localeCompare(String(right.title || ""));
+      if (sort === "title_desc") return String(right.title || "").localeCompare(String(left.title || ""));
+      const timestamp = (note) => note.createdAt?.toDate?.()?.getTime?.() || new Date(note.createdAt || 0).getTime() || 0;
+      return timestamp(right) - timestamp(left);
+    });
+    return result;
+  }, [notes, search, courseFilter, sort]);
+  const courses = useMemo(
+    () => [...new Set(notes.map((note) => note.course || note.subject || note.courseCode).filter(Boolean))].sort(),
+    [notes]
+  );
 
   const canDownload = useCallback(
     (note) => {
@@ -526,13 +575,19 @@ export default function LectureNotesMarketplace({ dark }) {
     if (!requestText.trim()) return;
 
     try {
-      await addDoc(collection(db, "requests"), {
-        text: requestText.trim(),
-        userId: currentUser?.uid || null,
+      await addDoc(collection(db, "noteRequests"), {
+        title: requestText.trim().split(/\r?\n/, 1)[0].slice(0, 120),
+        description: requestText.trim(),
+        course: "",
+        type: "note",
+        userId: currentUser?.uid || "anonymous",
+        userName: currentUser?.displayName || "Anonymous",
         status: "open",
         createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000),
       });
       setRequestText("");
+      toast.success("Your note request is open to the community for 48 hours.");
     } catch (error) {
       console.error(error);
       toast.error("Unable to submit request");
@@ -684,9 +739,69 @@ export default function LectureNotesMarketplace({ dark }) {
           </div>
         </div>
 
+        {tab === "notes" && (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <select
+              value={courseFilter}
+              onChange={(event) => setCourseFilter(event.target.value)}
+              aria-label="Filter notes by course"
+              className={`h-11 min-w-48 rounded-xl border px-3 text-sm outline-none ${
+                dark ? "border-white/10 bg-slate-950" : "border-slate-200 bg-white"
+              }`}
+            >
+              <option value="">All courses</option>
+              {courses.map((course) => <option key={course} value={course}>{course}</option>)}
+            </select>
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+              aria-label="Sort lecture notes"
+              className={`h-11 min-w-44 rounded-xl border px-3 text-sm outline-none ${
+                dark ? "border-white/10 bg-slate-950" : "border-slate-200 bg-white"
+              }`}
+            >
+              <option value="newest">Newest first</option>
+              <option value="title_asc">Title A - Z</option>
+              <option value="title_desc">Title Z - A</option>
+            </select>
+            <button
+              type="button"
+              onClick={loadNotes}
+              disabled={loading}
+              aria-label="Refresh lecture notes"
+              className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50 ${
+                dark ? "bg-white/5 hover:bg-white/10" : "bg-white ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+            {(search || courseFilter || sort !== "newest") && (
+              <button
+                type="button"
+                onClick={() => { setSearch(""); setCourseFilter(""); setSort("newest"); }}
+                className="text-sm font-semibold text-indigo-500 hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-24">
             <Loader2 className="h-10 w-10 animate-spin" />
+          </div>
+        ) : loadError && tab === "notes" ? (
+          <div className={`${card} mt-6 rounded-[32px] p-10 text-center`}>
+            <p className="font-semibold">{loadError}</p>
+            <button
+              type="button"
+              onClick={loadNotes}
+              className="mt-4 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Retry
+            </button>
           </div>
         ) : tab === "notes" ? (
           <div className="mt-6 w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
@@ -818,7 +933,12 @@ export default function LectureNotesMarketplace({ dark }) {
                             {request.status}
                           </span>
                         </div>
-                        <h3 className="text-lg font-semibold">{request.text}</h3>
+                        <span className="text-xs font-semibold uppercase tracking-wide opacity-60">
+                          {request.type === "question" ? "Past question" : "Lecture note"}
+                        </span>
+                        <h3 className="text-lg font-semibold">{request.title || request.text}</h3>
+                        {request.course && <p className="mt-1 text-sm opacity-60">{request.course}</p>}
+                        {request.description && <p className="mt-2 text-sm opacity-70">{request.description}</p>}
                       </div>
                       <button className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
                         <ChevronRight size={18} />

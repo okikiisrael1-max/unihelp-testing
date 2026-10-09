@@ -284,9 +284,10 @@ const Dashboard = ({ dark }) => {
 
             <div className="flex flex-wrap items-center gap-3 mt-7">
               <Link
-                to="/CGPA"
+                to="/messages"
                 className="px-5 py-3 text-sm rounded-2xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
-                Track your CGPA
+                Connect with Students
+                <ArrowRight size={15} />
               </Link>
               <a
                 href="#explore-tools"

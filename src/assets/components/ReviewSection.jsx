@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { db, auth } from "../../firebase/config";
 import {
   collection,
-  addDoc,
+  doc,
   query,
   where,
-  getDocs
+  getDocs,
+  setDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 export default function ReviewSection({ tutorialId, dark }) {
@@ -28,13 +30,15 @@ export default function ReviewSection({ tutorialId, dark }) {
   }, []);
 
   const submitReview = async () => {
-    await addDoc(collection(db, "reviews"), {
+    const userId = auth.currentUser?.uid;
+    if (!userId || !tutorialId) return;
+    await setDoc(doc(db, "reviews", `${tutorialId}_${userId}`), {
       tutorialId,
-      userId: auth.currentUser.uid,
+      userId,
       rating,
       comment,
-      createdAt: new Date()
-    });
+      createdAt: serverTimestamp(),
+    }, { merge: true });
 
     fetchReviews();
   };
@@ -56,7 +60,7 @@ export default function ReviewSection({ tutorialId, dark }) {
           min="1"
           max="5"
           value={rating}
-          onChange={e => setRating(e.target.value)}
+          onChange={e => setRating(Number(e.target.value))}
           className="input"
         />
 
