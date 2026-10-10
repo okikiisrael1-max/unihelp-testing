@@ -23,6 +23,7 @@ import {
 
 import { db } from "../../firebase/config";
 import { deleteGroupPostWithMedia } from "../../services/mediaCleanup";
+import { postJson } from "../../services/api";
 
 export const PAGE_SIZE = 20;
 export const MESSAGE_PAGE_SIZE = 25;
@@ -465,19 +466,26 @@ export const startConversation = async (currentUser, otherUser, profile) => {
     avatar: otherUser.photo || otherUser.avatar || "",
   };
 
-  // Check if they are already friends
-  const friendshipSnap = await getDoc(doc(db, "friends", conversationId));
-  const areFriends = friendshipSnap.exists();
+  const [friendshipSnap, currentBlock, otherBlock] = await Promise.all([
+    getDoc(doc(db, "friends", conversationId)),
+    getDoc(doc(db, "blockedUsers", `${currentUser.uid}_${otherUser.id}`)),
+    getDoc(doc(db, "blockedUsers", `${otherUser.id}_${currentUser.uid}`)),
+  ]);
+  if (currentBlock.exists() || otherBlock.exists()) {
+    throw new Error("You cannot message this student while either of you has blocked the other.");
+  }
+  if (!friendshipSnap.exists()) throw new Error("Become friends before chatting freely.");
 
   await setDoc(doc(db, "conversations", conversationId), {
     memberIds: members,
+    participants: members,
+    type: "direct",
+    access: "friends",
     memberInfo: {
       [currentUser.uid]: currentSummary,
       [otherUser.id]: otherSummary,
     },
     mutedBy: [],
-    areFriends,
-    messageCount: 0,
     updatedAt: serverTimestamp(),
   }, { merge: true });
 
@@ -495,62 +503,36 @@ export const canSendDirectMessage = async (conversation, uid) => {
   if (!conversation?.memberIds?.includes(uid)) return false;
   const otherUid = conversation.memberIds.find((id) => id !== uid);
   if (!otherUid) return false;
-  const friendshipSnap = await getDoc(doc(db, "friends", [uid, otherUid].sort().join("_")));
-  return friendshipSnap.exists();
+  const [friendshipSnap, currentBlock, otherBlock] = await Promise.all([
+    getDoc(doc(db, "friends", [uid, otherUid].sort().join("_"))),
+    getDoc(doc(db, "blockedUsers", `${uid}_${otherUid}`)),
+    getDoc(doc(db, "blockedUsers", `${otherUid}_${uid}`)),
+  ]);
+  return friendshipSnap.exists() && !currentBlock.exists() && !otherBlock.exists();
 };
 
 export const sendDirectMessage = async (conversation, user, profile, payload) => {
-  const summary = userSummary(user, profile);
-  const receiverId = conversation.memberIds.find((id) => id !== user.uid);
-  const batch = writeBatch(db);
-  const messageRef = doc(collection(db, "conversations", conversation.id, "messages"));
-  const now = serverTimestamp();
-
-  // Check friendship status
-  const friendshipSnap = await getDoc(doc(db, "friends", [user.uid, receiverId].sort().join("_")));
-  const areFriends = friendshipSnap.exists();
-
-  // If not friends, check message limit (max 1 message)
-  if (!areFriends) {
-    const convSnap = await getDoc(doc(db, "conversations", conversation.id));
-    const convData = convSnap.exists() ? convSnap.data() : {};
-    const currentCount = convData.messageCount || 0;
-    if (currentCount >= 1) {
-      throw new Error("You can only send 1 message to someone who is not your friend. Accept their friend request or send one first.");
+  const allowed = await canSendDirectMessage(conversation, user.uid);
+  if (!allowed) {
+    const otherUid = conversation?.memberIds?.find((id) => id !== user.uid);
+    if (otherUid) {
+      const [currentBlock, otherBlock] = await Promise.all([
+        getDoc(doc(db, "blockedUsers", `${user.uid}_${otherUid}`)),
+        getDoc(doc(db, "blockedUsers", `${otherUid}_${user.uid}`)),
+      ]);
+      if (currentBlock.exists() || otherBlock.exists()) {
+        throw new Error("You cannot message this student while either of you has blocked the other.");
+      }
     }
-    batch.update(doc(db, "conversations", conversation.id), {
-      messageCount: increment(1),
-      areFriends: false,
-    });
+    throw new Error("You can only send messages after becoming friends.");
   }
 
-  batch.set(messageRef, {
+  const summary = userSummary(user, profile);
+  await postJson(`/api/chat/${encodeURIComponent(conversation.id)}/messages`, {
     ...payload,
-    senderId: user.uid,
     senderName: summary.name,
     senderAvatar: summary.avatar,
-    deliveredTo: [user.uid],
-    readBy: [user.uid],
-    reactions: {},
-    createdAt: now,
   });
-  batch.update(doc(db, "conversations", conversation.id), {
-    lastMessage: payload.text || payload.attachments?.[0]?.name || "Attachment",
-    lastSenderId: user.uid,
-    updatedAt: now,
-    [`unread.${receiverId}`]: increment(1),
-  });
-  if (receiverId) {
-    batch.set(doc(collection(db, "notifications", receiverId, "items")), {
-      type: "direct_message",
-      title: summary.name,
-      body: payload.text || "Sent an attachment",
-      conversationId: conversation.id,
-      read: false,
-      createdAt: now,
-    });
-  }
-  await batch.commit();
 };
 
 export const markConversationRead = async (conversationId, uid) => {

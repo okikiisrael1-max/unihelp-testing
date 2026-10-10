@@ -40,6 +40,7 @@ import MyHostels from "./assets/pages/MyUploadedHostel";
 import Contact from "./assets/pages/Contact";
 import Report from "./assets/pages/Report";
 import StudentMarketplace from "./assets/pages/StudentMarketplace";
+import MarketplaceProductDetails from "./assets/pages/MarketplaceProductDetails";
 import AdminPanel from "./assets/pages/AdminPanel";
 import PremiumSubscriptionPage from "./assets/pages/PremiumSubscriptionPage";
 import Tasks from "./assets/pages/Tasks";
@@ -342,6 +343,7 @@ const App = () => {
             <Route path="/uploadquestion" element={ <ProtectedRoute> <Upload dark={dark} /> </ProtectedRoute> } />
             <Route path="/hostelmarketplace" element={ <ProtectedRoute> <HostelMarketplace dark={dark} /> </ProtectedRoute> } />
             <Route path="/resources" element={ <ProtectedRoute> <Resources dark={dark} /> </ProtectedRoute> } />
+            <Route path="/studentmarketplace/:id" element={ <ProtectedRoute> <MarketplaceProductDetails dark={dark} /> </ProtectedRoute> } />
             <Route path="/studentmarketplace" element={ <ProtectedRoute> <StudentMarketplace dark={dark} /> </ProtectedRoute> } />
             <Route path="/myhostels" element={ <ProtectedRoute> <MyHostels dark={dark} /> </ProtectedRoute> } />
             

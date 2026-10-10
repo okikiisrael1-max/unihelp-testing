@@ -139,6 +139,8 @@ export default function Messenger({ dark = false }) {
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(false);
   const [notice, setNotice] = useState("");
+  const [requestTarget, setRequestTarget] = useState(null);
+  const [requestSending, setRequestSending] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
   const openedUserRef = useRef("");
   const openedConversationRef = useRef("");
@@ -203,6 +205,7 @@ export default function Messenger({ dark = false }) {
   useEffect(() => {
     const targetConversation = searchParams.get("conversation") || searchParams.get("conversationId");
     const targetUid = searchParams.get("user");
+    const initialMessage = searchParams.get("message");
 
     if (targetConversation && activeId !== targetConversation && openedConversationRef.current !== targetConversation) {
       openedConversationRef.current = targetConversation;
@@ -221,8 +224,13 @@ export default function Messenger({ dark = false }) {
           setNotice("User profile was not found.");
           return;
         }
-        openUser({ id: snap.id, ...snap.data() });
-        setSearchParams({}, { replace: true });
+        const targetProfile = snap.data();
+        openUser({ id: snap.id, ...targetProfile }, targetProfile)
+          .then(() => {
+            if (initialMessage) setText(initialMessage);
+            setSearchParams({}, { replace: true });
+          })
+          .catch(() => setNotice("Could not open that conversation."));
       })
       .catch(() => setNotice("Could not open that conversation."));
   }, [searchParams, setSearchParams, user?.uid, activeId]);
@@ -340,14 +348,23 @@ export default function Messenger({ dark = false }) {
     return unsub;
   }, [user?.uid]);
 
-  const openUser = async (item) => {
+  const openUser = async (item, knownProfile = null) => {
     setNotice("");
-    const targetSnap = await getDoc(doc(db, "users", item.id));
-    const target = targetSnap.exists() ? targetSnap.data() : {};
+    setRequestTarget(null);
+    setActiveId("");
+    let target = knownProfile;
+    if (!target) {
+      const targetSnap = await getDoc(doc(db, "users", item.id));
+      if (!targetSnap.exists()) {
+        setNotice("User profile was not found.");
+        return false;
+      }
+      target = targetSnap.data();
+    }
 
     if (target.dmsDisabled) {
       setNotice("This user has disabled direct messages.");
-      return;
+      return false;
     }
 
     if (target.dmPolicy === "mutual_groups") {
@@ -360,16 +377,25 @@ export default function Messenger({ dark = false }) {
 
       if (!hasMutualGroup) {
         setNotice("This user only accepts DMs from mutual groups.");
-        return;
+        return false;
       }
     }
 
-    const id = await startConversation(user, item, profile);
-    setActiveId(id);
-    setActiveTab("chats");
-    setSearch("");
-    setResults([]);
-    setShowFindModal(false);
+    try {
+      const id = await startConversation(user, item, profile);
+      setActiveId(id);
+      setActiveTab("chats");
+      setSearch("");
+      setResults([]);
+      setShowFindModal(false);
+      return true;
+    } catch (error) {
+      setNotice(error.message || "Could not open that conversation.");
+      if (error.message?.includes("Become friends")) {
+        setRequestTarget({ ...item, ...target, id: item.id });
+      }
+      return false;
+    }
   };
 
   const send = async () => {
@@ -470,6 +496,7 @@ export default function Messenger({ dark = false }) {
   };
 
   const handleSendRequest = async (targetUser) => {
+    setRequestSending(true);
     try {
       await sendFriendRequest({
         currentUid: user.uid,
@@ -477,8 +504,12 @@ export default function Messenger({ dark = false }) {
         currentProfile: profile,
         targetProfile: targetUser,
       });
+      setNotice("Friend request sent. Your listing inquiry is still saved in the message box.");
+      setRequestTarget(null);
     } catch (err) {
-      console.log("Send request error:", err.message);
+      setNotice(err.message || "Could not send the friend request.");
+    } finally {
+      setRequestSending(false);
     }
   };
 
@@ -1154,6 +1185,15 @@ export default function Messenger({ dark = false }) {
             {notice && (
               <div className="mb-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm font-semibold text-amber-400">
                 {notice}
+                {requestTarget && (
+                  <button
+                    onClick={() => handleSendRequest(requestTarget)}
+                    disabled={requestSending}
+                    className="ml-3 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+                  >
+                    {requestSending ? "Sending…" : "Send friend request"}
+                  </button>
+                )}
               </div>
             )}
           </div>

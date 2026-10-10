@@ -19,7 +19,7 @@ export default function AffiliateBanner({
   const [copied, setCopied] = useState(false);
 
   /* ---------------- COPY LINK ---------------- */
-  const referralLink = `https://campusflow.app/ref/${referralCode}`;
+  const referralLink = `https://unihelp.app/ref/${referralCode}`;
 
   const copyLink = async () => {
     try {

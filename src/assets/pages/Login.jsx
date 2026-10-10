@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
 import customPadlock from "../images/padlock.png";
 import successVideo from "../images/success.mp4";
+import GoogleMobilePasswordModal from "../components/GoogleMobilePasswordModal";
 import { auth, db } from "../../firebase/config";
 import {
   GoogleAuthProvider,
@@ -14,7 +15,7 @@ import {
   sendEmailVerification,
   linkWithCredential,
 } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 
 const Login = ({ dark }) => {
@@ -40,6 +41,7 @@ const Login = ({ dark }) => {
   const [linkLoading, setLinkLoading] = useState(false);
   const [pendingCredential, setPendingCredential] = useState(null);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [passwordSetupUser, setPasswordSetupUser] = useState(null);
 
   const getUserRole = async (userId) => {
     try {
@@ -130,14 +132,27 @@ const Login = ({ dark }) => {
     try {
       setIsLoading(true);
       const result = await signInWithPopup(auth, provider);
-      const role = await getUserRole(result.user.uid);
+      const userRef = doc(db, "users", result.user.uid);
+      const userSnap = await getDoc(userRef);
+      const profile = userSnap.exists() ? userSnap.data() : {};
+      await setDoc(userRef, {
+        uid: result.user.uid,
+        name: profile.name || result.user.displayName || "",
+        displayName: profile.displayName || result.user.displayName || "",
+        email: result.user.email || profile.email || "",
+        photo: profile.photo || result.user.photoURL || "",
+        photoURL: profile.photoURL || result.user.photoURL || "",
+        photoThumb: profile.photoThumb || result.user.photoURL || "",
+        provider: profile.provider || "google",
+        ...(userSnap.exists() ? { updatedAt: serverTimestamp() } : { createdAt: serverTimestamp() }),
+      }, { merge: true });
 
       toast.success("Google login successful");
-      if (role) {
-        navigate("/");
-      } else {
-        navigate("/complete-profile");
+      if (!result.user.providerData.some((entry) => entry.providerId === "password")) {
+        setPasswordSetupUser(result.user);
+        return;
       }
+      navigate(profile.role ? "/" : "/complete-profile");
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
@@ -501,6 +516,24 @@ const Login = ({ dark }) => {
                     ) : (
                       "Send Reset Link"
                     )}
+
+                    {passwordSetupUser ? (
+                      <GoogleMobilePasswordModal
+                        user={passwordSetupUser}
+                        dark={dark}
+                        onComplete={() => {
+                          const userId = passwordSetupUser.uid;
+                          setPasswordSetupUser(null);
+                          getUserRole(userId).then((role) => navigate(role ? "/" : "/complete-profile"));
+                        }}
+                        onCancel={() => {
+                          const userId = passwordSetupUser.uid;
+                          setPasswordSetupUser(null);
+                          toast.info("You can set a password later by signing in with Google again.");
+                          getUserRole(userId).then((role) => navigate(role ? "/" : "/complete-profile"));
+                        }}
+                      />
+                    ) : null}
                   </button>
                 </form>
               </div>

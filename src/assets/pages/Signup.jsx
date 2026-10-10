@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff, Lock, User, Mail, Sparkles, ShieldCheck, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
+import GoogleMobilePasswordModal from "../components/GoogleMobilePasswordModal";
 import { auth, db } from "../../firebase/config";
 import {
   GoogleAuthProvider,
@@ -49,14 +50,16 @@ const SignUp = ({ dark }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordSetupUser, setPasswordSetupUser] = useState(null);
 
   const strength = getPasswordStrength(password);
   const passwordsMismatch = confirmPassword.length > 0 && confirmPassword !== password;
 
-  const createUserDoc = async (userId, data) => {
+  const createUserDoc = async (userId, data, isNew = false) => {
     await setDoc(doc(db, "users", userId), {
+      uid: userId,
       ...data,
-      createdAt: serverTimestamp(),
+      ...(isNew ? { createdAt: serverTimestamp() } : { updatedAt: serverTimestamp() }),
     }, { merge: true });
   };
 
@@ -93,11 +96,19 @@ const SignUp = ({ dark }) => {
       const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await updateProfile(credential.user, { displayName: fullName.trim() });
       await createUserDoc(credential.user.uid, {
+        firstName: fullName.trim().split(/\s+/)[0] || "",
+        lastName: fullName.trim().split(/\s+/).slice(1).join(" "),
         uid: credential.user.uid,
         name: fullName.trim(),
+        displayName: fullName.trim(),
+        username: fullName.trim(),
+        usernameLower: fullName.trim().toLowerCase(),
         email: email.trim(),
+        photo: credential.user.photoURL || "",
+        photoURL: credential.user.photoURL || "",
+        provider: "email",
         premium: false,
-      });
+      }, true);
       await sendEmailVerification(credential.user);
       await signOut(auth);
 
@@ -141,16 +152,24 @@ const SignUp = ({ dark }) => {
       const result = await signInWithPopup(auth, provider);
       const userSnap = await getDoc(doc(db, "users", result.user.uid));
       await createUserDoc(result.user.uid, {
+        firstName: result.user.displayName?.trim().split(/\s+/)[0] || "",
+        lastName: result.user.displayName?.trim().split(/\s+/).slice(1).join(" ") || "",
         name: result.user.displayName || "",
+        displayName: result.user.displayName || "",
         email: result.user.email || "",
-      });
+        photo: result.user.photoURL || "",
+        photoURL: result.user.photoURL || "",
+        photoThumb: result.user.photoURL || "",
+        provider: "google",
+        premium: false,
+      }, !userSnap.exists());
 
       toast.success("Google sign-up successful");
-      if (userSnap.exists()) {
-        navigate("/complete-profile");
-      } else {
-        navigate("/complete-profile");
+      if (!result.user.providerData.some((entry) => entry.providerId === "password")) {
+        setPasswordSetupUser(result.user);
+        return;
       }
+      navigate("/complete-profile");
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
@@ -450,6 +469,21 @@ const SignUp = ({ dark }) => {
           </div>
         </div>
       </div>
+      {passwordSetupUser ? (
+        <GoogleMobilePasswordModal
+          user={passwordSetupUser}
+          dark={dark}
+          onComplete={() => {
+            setPasswordSetupUser(null);
+            navigate("/complete-profile");
+          }}
+          onCancel={() => {
+            setPasswordSetupUser(null);
+            toast.info("You can set a password later by signing in with Google again.");
+            navigate("/complete-profile");
+          }}
+        />
+      ) : null}
     </div>
   );
 };

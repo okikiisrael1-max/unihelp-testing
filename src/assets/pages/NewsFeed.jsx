@@ -48,17 +48,104 @@ const audiences = [
   { value: "everyone", label: "Everyone", Icon: Globe2 },
 ];
 
-/* ---------- shared theme tokens (every light class has a dark: pair) ---------- */
-const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
-const cardCls =
-  "rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900";
-const fieldCls =
-  "border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500";
-const iconBtn = `rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 ${focusRing}`;
-const selectCls =
-  "bg-transparent py-1.5 text-xs font-semibold text-slate-700 outline-none dark:text-slate-200 [color-scheme:light] dark:[color-scheme:dark]";
-const optionCls = "bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100";
+/* ---------- theme tokens, driven by the `dark` prop ---------- */
+const getTheme = (dark) => ({
+  text: dark ? "text-slate-100" : "text-slate-900",
+  body: dark ? "text-slate-200" : "text-slate-800",
+  muted: dark ? "text-slate-400" : "text-slate-500",
+  faint: dark ? "text-slate-500" : "text-slate-400",
+  divider: dark ? "border-slate-800" : "border-slate-100",
+
+  focusRing: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+    dark ? "focus-visible:ring-offset-slate-900" : "focus-visible:ring-offset-white"
+  }`,
+
+  card: dark
+    ? "rounded-2xl border border-slate-800 bg-slate-900 shadow-sm"
+    : "rounded-2xl border border-slate-200 bg-white shadow-sm",
+
+  field: dark
+    ? "border border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500"
+    : "border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400",
+
+  iconBtn: dark
+    ? "rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100"
+    : "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800",
+
+  select: `bg-transparent py-1.5 text-xs font-semibold outline-none ${
+    dark ? "text-slate-200 [color-scheme:dark]" : "text-slate-700 [color-scheme:light]"
+  }`,
+  option: dark ? "bg-slate-800 text-slate-100" : "bg-white text-slate-900",
+
+  // neutral pills / segmented backgrounds
+  pillBg: dark ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500",
+  segmentBg: dark ? "bg-slate-800" : "bg-slate-100",
+  chipIdle: dark
+    ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+    : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+  ghostBtn: dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100",
+
+  // accents
+  primary: dark ? "bg-indigo-500 hover:bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700",
+  primarySolid: dark ? "bg-indigo-500" : "bg-indigo-600",
+  accentSoft: dark ? "bg-indigo-950 text-indigo-200" : "bg-indigo-100 text-indigo-700",
+  accentText: dark ? "text-indigo-300" : "text-indigo-600",
+  violetSoft: dark ? "bg-violet-950 text-violet-200" : "bg-violet-100 text-violet-700",
+  segmentActive: dark ? "bg-slate-700 text-indigo-200 shadow-sm" : "bg-white text-indigo-700 shadow-sm",
+  segmentIdle: dark ? "text-slate-400 hover:text-slate-100" : "text-slate-500 hover:text-slate-800",
+
+  // like / danger
+  liked: dark ? "text-rose-400" : "text-rose-600",
+  likeIdle: dark
+    ? "text-slate-400 hover:text-rose-400"
+    : "text-slate-500 hover:text-rose-600",
+  commentLikeIdle: dark
+    ? "text-slate-500 hover:text-rose-400"
+    : "text-slate-400 hover:text-rose-600",
+  commentIdle: dark
+    ? "text-slate-400 hover:text-indigo-300"
+    : "text-slate-500 hover:text-indigo-600",
+  commentOpen: dark ? "text-indigo-300" : "text-indigo-600",
+  dangerText: dark ? "text-red-400 hover:bg-red-950/40" : "text-red-600 hover:bg-red-50",
+  dangerIcon: dark ? "bg-red-950/50 text-red-300" : "bg-red-50 text-red-600",
+  dangerBtn: dark ? "bg-red-500 hover:bg-red-400" : "bg-red-600 hover:bg-red-700",
+
+  // alerts
+  alertError: dark
+    ? "border-red-900 bg-red-950/40 text-red-200"
+    : "border-red-200 bg-red-50 text-red-700",
+  alertOk: dark
+    ? "border-emerald-900 bg-emerald-950/40 text-emerald-200"
+    : "border-emerald-200 bg-emerald-50 text-emerald-800",
+  alertClose: dark ? "hover:bg-white/10" : "hover:bg-black/5",
+  warn: dark ? "text-amber-400" : "text-amber-600",
+
+  // menus
+  menu: dark
+    ? "border border-slate-700 bg-slate-800"
+    : "border border-slate-200 bg-white",
+  menuItem: dark ? "text-slate-200 hover:bg-slate-700" : "text-slate-700 hover:bg-slate-50",
+
+  // misc surfaces
+  skeleton: dark ? "bg-slate-800" : "bg-slate-200",
+  imageWell: dark ? "bg-slate-800" : "bg-slate-100",
+  commentBubble: dark ? "bg-slate-800" : "bg-slate-100",
+  swatchOffset: dark ? "ring-offset-slate-900" : "ring-offset-white",
+  swatchActive: dark ? "ring-white" : "ring-slate-900",
+  emptyCard: dark ? "border-slate-700 bg-slate-900" : "border-slate-300 bg-white",
+  emptyIcon: dark ? "bg-indigo-950 text-indigo-300" : "bg-indigo-50 text-indigo-600",
+  loadMore: dark
+    ? "border-slate-700 bg-slate-900 text-indigo-300 hover:bg-slate-800"
+    : "border-slate-200 bg-white text-indigo-700 hover:bg-indigo-50",
+  tipCard: dark ? "border-indigo-900/60 bg-indigo-950/40" : "border-indigo-100 bg-indigo-50/70",
+  tipTitle: dark ? "text-indigo-100" : "text-indigo-900",
+  tipText: dark ? "text-indigo-200/80" : "text-indigo-800/80",
+  header: dark
+    ? "from-indigo-800 via-violet-800 to-fuchsia-900"
+    : "from-indigo-600 via-violet-600 to-fuchsia-600 shadow-lg shadow-indigo-500/10",
+  headerGlow: dark ? "bg-white/5" : "bg-white/10",
+  avatar: dark ? "bg-indigo-950 text-indigo-200" : "bg-indigo-100 text-indigo-700",
+});
 
 /* ---------- helpers ---------- */
 function toDate(value) {
@@ -109,15 +196,17 @@ function setBusy(setter, id, on) {
   });
 }
 
-function Avatar({ src, name, className = "h-11 w-11 text-sm" }) {
+function Avatar({ src, name, t, className = "h-11 w-11 text-sm" }) {
   return (
-    <div className={`flex flex-none items-center justify-center overflow-hidden rounded-full bg-indigo-100 font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200 ${className}`}>
+    <div className={`flex flex-none items-center justify-center overflow-hidden rounded-full font-bold ${t.avatar} ${className}`}>
       {src ? <img src={src} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : initials(name)}
     </div>
   );
 }
 
-export default function NewsFeed({dark}) {
+export default function NewsFeed({ dark = false }) {
+  const t = useMemo(() => getTheme(dark), [dark]);
+
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   const [items, setItems] = useState([]);
   const [content, setContent] = useState("");
@@ -511,9 +600,9 @@ export default function NewsFeed({dark}) {
 
   /* ---------- render ---------- */
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 text-slate-900 dark:text-slate-100 sm:px-6 sm:py-8">
-      <header className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 px-6 py-8 text-white shadow-lg shadow-indigo-500/10 dark:from-indigo-800 dark:via-violet-800 dark:to-fuchsia-900 dark:shadow-none sm:px-9 sm:py-10">
-        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl dark:bg-white/5" />
+    <main className={`mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 ${t.text}`}>
+      <header className={`relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br px-6 py-8 text-white sm:px-9 sm:py-10 ${t.header}`}>
+        <div className={`pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full blur-2xl ${t.headerGlow}`} />
         <div className="relative">
           <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Campus feed</h1>
           <p className="mt-2 max-w-xl text-sm text-indigo-50 sm:text-base">
@@ -525,9 +614,9 @@ export default function NewsFeed({dark}) {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className="min-w-0">
           {/* ---------- composer ---------- */}
-          <form onSubmit={createPost} className={`mb-5 p-4 sm:p-5 ${cardCls}`}>
+          <form onSubmit={createPost} className={`mb-5 p-4 sm:p-5 ${t.card}`}>
             <div className="flex gap-3">
-              <Avatar src={currentUser?.photoURL} name={currentUser?.displayName} />
+              <Avatar src={currentUser?.photoURL} name={currentUser?.displayName} t={t} />
               <div className="min-w-0 flex-1">
                 <textarea
                   ref={textareaRef}
@@ -542,11 +631,11 @@ export default function NewsFeed({dark}) {
                   className={`w-full resize-y rounded-xl p-3 text-sm leading-6 outline-none transition focus:ring-2 focus:ring-indigo-500/30 ${
                     postType === "colored"
                       ? "min-h-40 border border-transparent text-center text-xl font-bold text-white placeholder:text-white/70"
-                      : `min-h-24 focus:border-indigo-500 ${fieldCls}`
+                      : `min-h-24 focus:border-indigo-500 ${t.field}`
                   }`}
                   style={postType === "colored" ? { backgroundColor: presets[preset] } : undefined}
                 />
-                <div className={`mt-1 text-right text-xs ${content.length > 450 ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-500"}`}>
+                <div className={`mt-1 text-right text-xs ${content.length > 450 ? t.warn : t.faint}`}>
                   {content.length}/500
                 </div>
 
@@ -559,8 +648,8 @@ export default function NewsFeed({dark}) {
                         aria-label={`${name} background`}
                         aria-pressed={preset === name}
                         onClick={() => setPreset(name)}
-                        className={`h-7 w-7 rounded-full ring-2 ring-offset-2 ring-offset-white transition dark:ring-offset-slate-900 ${
-                          preset === name ? "ring-slate-900 dark:ring-white" : "ring-transparent"
+                        className={`h-7 w-7 rounded-full ring-2 ring-offset-2 transition ${t.swatchOffset} ${
+                          preset === name ? t.swatchActive : "ring-transparent"
                         }`}
                         style={{ backgroundColor: color }}
                       />
@@ -575,7 +664,7 @@ export default function NewsFeed({dark}) {
                       type="button"
                       onClick={clearImage}
                       aria-label="Remove selected image"
-                      className={`absolute right-2 top-2 rounded-full bg-slate-950/70 p-1.5 text-white hover:bg-slate-950 ${focusRing}`}
+                      className={`absolute right-2 top-2 rounded-full bg-slate-950/70 p-1.5 text-white hover:bg-slate-950 ${t.focusRing}`}
                     >
                       <X size={16} />
                     </button>
@@ -584,11 +673,11 @@ export default function NewsFeed({dark}) {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+            <div className={`mt-4 flex flex-wrap items-center gap-2 border-t pt-3 ${t.divider}`}>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 ${focusRing}`}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${t.ghostBtn} ${t.focusRing}`}
               >
                 <ImagePlus size={17} /> Photo
               </button>
@@ -599,16 +688,14 @@ export default function NewsFeed({dark}) {
                 onClick={() => setColored((value) => !value)}
                 aria-pressed={colored}
                 title={image ? "Remove the photo to use a background" : undefined}
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40 ${focusRing} ${
-                  colored
-                    ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40 ${t.focusRing} ${
+                  colored ? t.accentSoft : t.ghostBtn
                 }`}
               >
                 <Palette size={17} /> Background
               </button>
 
-              <div role="radiogroup" aria-label="Post audience" className="ml-auto flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              <div role="radiogroup" aria-label="Post audience" className={`ml-auto flex rounded-xl p-1 ${t.segmentBg}`}>
                 {audiences.map(({ value, label, Icon }) => (
                   <button
                     key={value}
@@ -616,10 +703,8 @@ export default function NewsFeed({dark}) {
                     role="radio"
                     aria-checked={audience === value}
                     onClick={() => setAudience(value)}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${focusRing} ${
-                      audience === value
-                        ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-indigo-200"
-                        : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${t.focusRing} ${
+                      audience === value ? t.segmentActive : t.segmentIdle
                     }`}
                   >
                     <Icon size={14} /> <span className="hidden min-[420px]:inline">{label}</span>
@@ -629,7 +714,7 @@ export default function NewsFeed({dark}) {
 
               <button
                 disabled={!canSubmit || posting}
-                className={`inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${focusRing}`}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${t.primary} ${t.focusRing}`}
               >
                 <Send size={15} /> {posting ? "Posting…" : "Post"}
               </button>
@@ -637,30 +722,35 @@ export default function NewsFeed({dark}) {
           </form>
 
           {/* ---------- filters ---------- */}
-          <div className={`mb-4 p-3 ${cardCls}`}>
+          <div className={`mb-4 p-3 ${t.card}`}>
             <div className="mb-3 flex items-center justify-between px-1">
               <h2 className="text-sm font-bold">Community posts</h2>
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => loadFeed()}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 ${focusRing}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold disabled:opacity-50 ${t.muted} ${t.ghostBtn} ${t.focusRing}`}
               >
                 <RefreshCw size={14} className={loading ? "motion-safe:animate-spin" : ""} /> Refresh
               </button>
             </div>
 
-            <label className={`flex items-center gap-2 rounded-xl px-3 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 ${fieldCls}`}>
-              <Search size={18} className="flex-none text-slate-400 dark:text-slate-500" />
+            <label className={`flex items-center gap-2 rounded-xl px-3 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 ${t.field}`}>
+              <Search size={18} className={`flex-none ${t.faint}`} />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 aria-label="Search posts"
                 placeholder="Search posts, people, or #hashtags"
-                className="h-11 min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className={`h-11 min-w-0 flex-1 bg-transparent text-sm outline-none ${t.text} ${dark ? "placeholder:text-slate-500" : "placeholder:text-slate-400"}`}
               />
               {query && (
-                <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="p-1 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white">
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                  className={`p-1 ${t.faint} ${dark ? "hover:text-white" : "hover:text-slate-700"}`}
+                >
                   <X size={16} />
                 </button>
               )}
@@ -674,10 +764,8 @@ export default function NewsFeed({dark}) {
                     type="button"
                     onClick={() => setTypeFilter(option.value)}
                     aria-pressed={typeFilter === option.value}
-                    className={`flex-none rounded-full px-3 py-1.5 text-xs font-bold transition ${focusRing} ${
-                      typeFilter === option.value
-                        ? "bg-indigo-600 text-white dark:bg-indigo-500"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    className={`flex-none rounded-full px-3 py-1.5 text-xs font-bold transition ${t.focusRing} ${
+                      typeFilter === option.value ? `${t.primarySolid} text-white` : t.chipIdle
                     }`}
                   >
                     {option.label}
@@ -685,31 +773,29 @@ export default function NewsFeed({dark}) {
                 ))}
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-                <label className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <label className={`flex items-center gap-1.5 rounded-full px-3 ${t.pillBg}`}>
                   <Clock3 size={14} />
-                  <select aria-label="Filter by time" value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)} className={selectCls}>
-                    <option className={optionCls} value="all">Any time</option>
-                    <option className={optionCls} value="today">Today</option>
-                    <option className={optionCls} value="week">This week</option>
-                    <option className={optionCls} value="month">This month</option>
+                  <select aria-label="Filter by time" value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)} className={t.select}>
+                    <option className={t.option} value="all">Any time</option>
+                    <option className={t.option} value="today">Today</option>
+                    <option className={t.option} value="week">This week</option>
+                    <option className={t.option} value="month">This month</option>
                   </select>
                 </label>
-                <label className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <label className={`flex items-center gap-1.5 rounded-full px-3 ${t.pillBg}`}>
                   <ArrowDownWideNarrow size={14} />
-                  <select aria-label="Sort posts" value={sort} onChange={(event) => setSort(event.target.value)} className={selectCls}>
-                    <option className={optionCls} value="latest">Latest</option>
-                    <option className={optionCls} value="oldest">Oldest</option>
-                    <option className={optionCls} value="popular">Popular</option>
+                  <select aria-label="Sort posts" value={sort} onChange={(event) => setSort(event.target.value)} className={t.select}>
+                    <option className={t.option} value="latest">Latest</option>
+                    <option className={t.option} value="oldest">Oldest</option>
+                    <option className={t.option} value="popular">Popular</option>
                   </select>
                 </label>
                 <button
                   type="button"
                   onClick={() => setMyPostsOnly((value) => !value)}
                   aria-pressed={myPostsOnly}
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${focusRing} ${
-                    myPostsOnly
-                      ? "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${t.focusRing} ${
+                    myPostsOnly ? t.violetSoft : t.chipIdle
                   }`}
                 >
                   My posts
@@ -717,7 +803,7 @@ export default function NewsFeed({dark}) {
               </div>
             </div>
             {filtersActive && hasMore && (
-              <p className="mt-3 px-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className={`mt-3 px-1 text-xs ${t.muted}`}>
                 Filters apply to the {items.length} posts loaded so far. Load more to search further back.
               </p>
             )}
@@ -727,11 +813,7 @@ export default function NewsFeed({dark}) {
           {(error || notice) && (
             <div
               role={error ? "alert" : "status"}
-              className={`mb-4 flex items-center gap-3 rounded-xl border p-3 text-sm ${
-                error
-                  ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
-              }`}
+              className={`mb-4 flex items-center gap-3 rounded-xl border p-3 text-sm ${error ? t.alertError : t.alertOk}`}
             >
               {!error && <Check size={16} className="flex-none" />}
               <span className="min-w-0 flex-1">{error || notice}</span>
@@ -740,7 +822,12 @@ export default function NewsFeed({dark}) {
                   Retry feed
                 </button>
               )}
-              <button type="button" onClick={() => { setError(""); setNotice(""); }} aria-label="Dismiss message" className="flex-none rounded-full p-1 hover:bg-black/5 dark:hover:bg-white/10">
+              <button
+                type="button"
+                onClick={() => { setError(""); setNotice(""); }}
+                aria-label="Dismiss message"
+                className={`flex-none rounded-full p-1 ${t.alertClose}`}
+              >
                 <X size={16} />
               </button>
             </div>
@@ -750,15 +837,15 @@ export default function NewsFeed({dark}) {
           {loading && items.length === 0 && (
             <div className="space-y-4" aria-label="Loading feed" aria-busy="true">
               {[0, 1].map((key) => (
-                <div key={key} className={`p-5 ${cardCls}`}>
+                <div key={key} className={`p-5 ${t.card}`}>
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
+                    <div className={`h-11 w-11 rounded-full motion-safe:animate-pulse ${t.skeleton}`} />
                     <div className="flex-1 space-y-2">
-                      <div className="h-3 w-1/3 rounded bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
-                      <div className="h-3 w-1/4 rounded bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
+                      <div className={`h-3 w-1/3 rounded motion-safe:animate-pulse ${t.skeleton}`} />
+                      <div className={`h-3 w-1/4 rounded motion-safe:animate-pulse ${t.skeleton}`} />
                     </div>
                   </div>
-                  <div className="mt-4 h-32 rounded-xl bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
+                  <div className={`mt-4 h-32 rounded-xl motion-safe:animate-pulse ${t.skeleton}`} />
                 </div>
               ))}
             </div>
@@ -766,20 +853,20 @@ export default function NewsFeed({dark}) {
 
           {/* ---------- empty state ---------- */}
           {!loading && filteredItems.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+            <div className={`rounded-2xl border border-dashed px-6 py-12 text-center ${t.emptyCard}`}>
+              <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${t.emptyIcon}`}>
                 <MessageCircle size={22} />
               </div>
               <h2 className="mt-4 font-bold">{items.length ? "No posts match these filters" : "Your feed is quiet"}</h2>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              <p className={`mt-2 text-sm ${t.muted}`}>
                 {items.length ? "Try a different search or clear your filters." : "Share something with your campus community to get the conversation started."}
               </p>
               {items.length > 0 ? (
-                <button type="button" onClick={clearFilters} className="mt-4 text-sm font-bold text-indigo-600 hover:underline dark:text-indigo-300">
+                <button type="button" onClick={clearFilters} className={`mt-4 text-sm font-bold hover:underline ${t.accentText}`}>
                   Clear filters
                 </button>
               ) : (
-                <button type="button" onClick={focusComposer} className="mt-4 text-sm font-bold text-indigo-600 hover:underline dark:text-indigo-300">
+                <button type="button" onClick={focusComposer} className={`mt-4 text-sm font-bold hover:underline ${t.accentText}`}>
                   Write the first post
                 </button>
               )}
@@ -798,13 +885,13 @@ export default function NewsFeed({dark}) {
                 <article
                   key={item.id}
                   id={`post-${item.id}`}
-                  className={`scroll-mt-24 transition-shadow hover:shadow-md ${cardCls} ${highlightId === item.id ? "ring-2 ring-indigo-500" : ""}`}
+                  className={`scroll-mt-24 transition-shadow hover:shadow-md ${t.card} ${highlightId === item.id ? "ring-2 ring-indigo-500" : ""}`}
                 >
                   <div className="flex items-center gap-3 p-4 sm:px-5">
-                    <Avatar src={item.authorAvatar} name={item.authorName} />
+                    <Avatar src={item.authorAvatar} name={item.authorName} t={t} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-bold">{item.authorName || "UniHelp student"}</p>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                      <div className={`mt-0.5 flex items-center gap-1.5 text-xs ${t.muted}`}>
                         <span className="flex-none">{timeAgo(item.createdAt)}</span>
                         <span aria-hidden="true">·</span>
                         <AudienceIcon size={13} className="flex-none" />
@@ -817,7 +904,7 @@ export default function NewsFeed({dark}) {
                         )}
                       </div>
                     </div>
-                    <button type="button" onClick={() => sharePost(item)} aria-label="Share post" className={iconBtn}>
+                    <button type="button" onClick={() => sharePost(item)} aria-label="Share post" className={`${t.iconBtn} ${t.focusRing}`}>
                       <Share2 size={18} />
                     </button>
                     <div className="relative" data-post-menu>
@@ -827,18 +914,18 @@ export default function NewsFeed({dark}) {
                         aria-label="Post options"
                         aria-haspopup="menu"
                         aria-expanded={menuFor === item.id}
-                        className={iconBtn}
+                        className={`${t.iconBtn} ${t.focusRing}`}
                       >
                         <MoreHorizontal size={18} />
                       </button>
                       {menuFor === item.id && (
-                        <div role="menu" className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                        <div role="menu" className={`absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl py-1 shadow-lg ${t.menu}`}>
                           {own ? (
                             <button
                               type="button"
                               role="menuitem"
                               onClick={() => { setMenuFor(""); setDeleteId(item.id); }}
-                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                              className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold ${t.dangerText}`}
                             >
                               <Trash2 size={16} /> Delete post
                             </button>
@@ -847,7 +934,7 @@ export default function NewsFeed({dark}) {
                               type="button"
                               role="menuitem"
                               onClick={() => reportPost(item.id)}
-                              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
+                              className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold ${t.menuItem}`}
                             >
                               <Flag size={16} /> Report post
                             </button>
@@ -871,7 +958,7 @@ export default function NewsFeed({dark}) {
                     <button
                       type="button"
                       onClick={() => setPreviewUrl(item.imageUrl)}
-                      className={`block w-full cursor-zoom-in overflow-hidden bg-slate-100 dark:bg-slate-800 ${focusRing}`}
+                      className={`block w-full cursor-zoom-in overflow-hidden ${t.imageWell} ${t.focusRing}`}
                       aria-label="Open full image"
                     >
                       <img src={item.imageUrl} alt={item.content ? `Photo: ${item.content.slice(0, 80)}` : "Post photo"} loading="lazy" className="max-h-[34rem] w-full object-cover" />
@@ -880,16 +967,16 @@ export default function NewsFeed({dark}) {
 
                   <div className="px-4 pb-4 sm:px-5">
                     {item.type !== "colored" && item.content && (
-                      <p className="whitespace-pre-wrap break-words pt-3 text-sm leading-6 text-slate-800 dark:text-slate-200">{item.content}</p>
+                      <p className={`whitespace-pre-wrap break-words pt-3 text-sm leading-6 ${t.body}`}>{item.content}</p>
                     )}
-                    <div className="mt-4 flex items-center gap-5 border-t border-slate-100 pt-3 dark:border-slate-800">
+                    <div className={`mt-4 flex items-center gap-5 border-t pt-3 ${t.divider}`}>
                       <button
                         type="button"
                         onClick={() => toggleLike(item)}
                         aria-pressed={Boolean(item.likedByMe)}
                         aria-label={item.likedByMe ? "Unlike post" : "Like post"}
-                        className={`inline-flex items-center gap-2 rounded-md text-sm font-bold transition active:scale-95 ${focusRing} ${
-                          item.likedByMe ? "text-rose-600 dark:text-rose-400" : "text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400"
+                        className={`inline-flex items-center gap-2 rounded-md text-sm font-bold transition active:scale-95 ${t.focusRing} ${
+                          item.likedByMe ? t.liked : t.likeIdle
                         }`}
                       >
                         <Heart size={18} fill={item.likedByMe ? "currentColor" : "none"} /> {compact(item.likesCount)}
@@ -898,8 +985,8 @@ export default function NewsFeed({dark}) {
                         type="button"
                         onClick={() => toggleComments(item.id)}
                         aria-expanded={open}
-                        className={`inline-flex items-center gap-2 rounded-md text-sm font-bold transition ${focusRing} ${
-                          open ? "text-indigo-600 dark:text-indigo-300" : "text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300"
+                        className={`inline-flex items-center gap-2 rounded-md text-sm font-bold transition ${t.focusRing} ${
+                          open ? t.commentOpen : t.commentIdle
                         }`}
                       >
                         <MessageCircle size={18} /> {compact(item.commentsCount)} <span className="hidden sm:inline">Comments</span>
@@ -907,47 +994,47 @@ export default function NewsFeed({dark}) {
                     </div>
 
                     {open && (
-                      <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <div className={`mt-3 border-t pt-3 ${t.divider}`}>
                         <form onSubmit={(event) => addComment(event, item)} className="flex items-center gap-2">
-                          <Avatar src={currentUser?.photoURL} name={currentUser?.displayName} className="h-8 w-8 text-xs" />
+                          <Avatar src={currentUser?.photoURL} name={currentUser?.displayName} t={t} className="h-8 w-8 text-xs" />
                           <input
                             value={commentDrafts[item.id] || ""}
                             onChange={(event) => setCommentDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
                             maxLength={500}
                             aria-label="Write a comment"
                             placeholder="Write a comment…"
-                            className={`min-w-0 flex-1 rounded-full px-4 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${fieldCls}`}
+                            className={`min-w-0 flex-1 rounded-full px-4 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ${t.field}`}
                           />
                           <button
                             type="submit"
                             disabled={!commentDrafts[item.id]?.trim() || commentPosting === item.id}
-                            className={`rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${focusRing}`}
+                            className={`rounded-full px-4 py-2 text-sm font-bold text-white disabled:opacity-40 ${t.primary} ${t.focusRing}`}
                           >
                             {commentPosting === item.id ? "Sending…" : "Send"}
                           </button>
                         </form>
-                        {commentsLoading === item.id && <p className="py-4 text-center text-sm text-slate-500 dark:text-slate-400">Loading comments…</p>}
+                        {commentsLoading === item.id && <p className={`py-4 text-center text-sm ${t.muted}`}>Loading comments…</p>}
                         {commentsLoading !== item.id && comments.length === 0 && (
-                          <p className="py-4 text-center text-sm text-slate-500 dark:text-slate-400">No comments yet. Start the conversation.</p>
+                          <p className={`py-4 text-center text-sm ${t.muted}`}>No comments yet. Start the conversation.</p>
                         )}
                         <div className="mt-3 space-y-3">
                           {comments.map((comment) => (
                             <div key={comment.id} className="flex items-start gap-2.5">
-                              <Avatar src={comment.authorAvatar} name={comment.authorName} className="h-8 w-8 text-xs" />
-                              <div className="min-w-0 flex-1 rounded-2xl bg-slate-100 px-3 py-2 dark:bg-slate-800">
+                              <Avatar src={comment.authorAvatar} name={comment.authorName} t={t} className="h-8 w-8 text-xs" />
+                              <div className={`min-w-0 flex-1 rounded-2xl px-3 py-2 ${t.commentBubble}`}>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-bold">{comment.authorName || "Student"}</span>
-                                  <span className="text-[11px] text-slate-400 dark:text-slate-500">{timeAgo(comment.createdAt)}</span>
+                                  <span className={`text-[11px] ${t.faint}`}>{timeAgo(comment.createdAt)}</span>
                                 </div>
-                                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-800 dark:text-slate-200">{comment.text || comment.content}</p>
+                                <p className={`mt-1 whitespace-pre-wrap break-words text-sm ${t.body}`}>{comment.text || comment.content}</p>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => toggleCommentLike(comment)}
                                 aria-pressed={Boolean(comment.liked)}
                                 aria-label={comment.liked ? "Unlike comment" : "Like comment"}
-                                className={`mt-2 flex flex-none items-center gap-1 rounded-md text-xs ${focusRing} ${
-                                  comment.liked ? "text-rose-600 dark:text-rose-400" : "text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400"
+                                className={`mt-2 flex flex-none items-center gap-1 rounded-md text-xs ${t.focusRing} ${
+                                  comment.liked ? t.liked : t.commentLikeIdle
                                 }`}
                               >
                                 <Heart size={14} fill={comment.liked ? "currentColor" : "none"} />
@@ -969,7 +1056,7 @@ export default function NewsFeed({dark}) {
               type="button"
               disabled={loadingMore}
               onClick={() => loadFeed({ append: true, offset: nextOffset })}
-              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-300 dark:hover:bg-slate-800 ${focusRing}`}
+              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold shadow-sm disabled:opacity-50 ${t.loadMore} ${t.focusRing}`}
             >
               <RefreshCw size={16} className={loadingMore ? "motion-safe:animate-spin" : ""} /> {loadingMore ? "Loading…" : "Load more posts"}
             </button>
@@ -978,22 +1065,22 @@ export default function NewsFeed({dark}) {
 
         {/* ---------- sidebar ---------- */}
         <aside className="hidden space-y-4 lg:sticky lg:top-6 lg:block">
-          <div className={`p-5 ${cardCls}`}>
+          <div className={`p-5 ${t.card}`}>
             <h2 className="font-bold">Your community</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+            <p className={`mt-2 text-sm leading-6 ${t.muted}`}>
               Share updates, celebrate campus life, and connect with fellow students.
             </p>
             <button
               type="button"
               onClick={focusComposer}
-              className={`mt-4 w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${focusRing}`}
+              className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-bold text-white transition ${t.primary} ${t.focusRing}`}
             >
               Create a post
             </button>
           </div>
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/40">
-            <h2 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Check your audience</h2>
-            <p className="mt-2 text-sm leading-6 text-indigo-800/80 dark:text-indigo-200/80">
+          <div className={`rounded-2xl border p-5 ${t.tipCard}`}>
+            <h2 className={`text-sm font-bold ${t.tipTitle}`}>Check your audience</h2>
+            <p className={`mt-2 text-sm leading-6 ${t.tipText}`}>
               Choose who sees a post before you share it: friends, only you, or everyone.
             </p>
           </div>
@@ -1009,13 +1096,13 @@ export default function NewsFeed({dark}) {
             aria-labelledby="delete-title"
             aria-describedby="delete-desc"
             onClick={(event) => event.stopPropagation()}
-            className={`w-full max-w-sm p-6 shadow-xl ${cardCls}`}
+            className={`w-full max-w-sm p-6 shadow-xl ${t.card} ${t.text}`}
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-300">
+            <div className={`flex h-11 w-11 items-center justify-center rounded-full ${t.dangerIcon}`}>
               <Trash2 size={20} />
             </div>
             <h2 id="delete-title" className="mt-4 text-lg font-bold">Delete this post?</h2>
-            <p id="delete-desc" className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p id="delete-desc" className={`mt-1 text-sm ${t.muted}`}>
               The post and its comments will be removed. This can't be undone.
             </p>
             <div className="mt-6 flex justify-end gap-2">
@@ -1023,14 +1110,14 @@ export default function NewsFeed({dark}) {
                 type="button"
                 autoFocus
                 onClick={() => setDeleteId("")}
-                className={`rounded-lg px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 ${focusRing}`}
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${dark ? "text-slate-200 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-100"} ${t.focusRing}`}
               >
                 Keep post
               </button>
               <button
                 type="button"
                 onClick={confirmRemove}
-                className={`rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400 ${focusRing}`}
+                className={`rounded-lg px-4 py-2 text-sm font-bold text-white ${t.dangerBtn} ${t.focusRing}`}
               >
                 Delete post
               </button>

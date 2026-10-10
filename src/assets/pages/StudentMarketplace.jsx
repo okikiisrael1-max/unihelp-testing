@@ -1,14 +1,14 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   ShoppingBag,
   Search,
-  DollarSign,
   Phone,
   Loader2,
-  PlusCircle,
+  Plus,
   X,
   Trash2,
   CheckCircle2,
@@ -19,234 +19,715 @@ import {
   Pencil,
   MoreVertical,
   Share2,
+  Megaphone,
+  Star,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+  Package,
+  Clock,
+  AlertTriangle,
+  Eye,
 } from "lucide-react";
 import ImageCarousel from "./../components/ImageCarousel";
 import { db, auth } from "../../firebase/config";
-import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 import { toCloudinaryAsset } from "../../services/cloudinary";
 import { deleteJson, getJson, postJson, putJson, uploadFeatureMedia } from "../../services/api";
 import { deleteCloudinaryAssets } from "../../services/mediaCleanup";
 import { buildShareUrl, shareContent } from "../utils/share";
 
+/* =====================================================
+   CONSTANTS & HELPERS
+===================================================== */
+const FREE_LIMIT = 3;
+const PREMIUM_LIMIT = 10;
+const MAX_IMAGES = 5;
+const BUDGET_CEILING = 20000;
+const DESCRIPTION_MAX = 600;
+
+const MARKETPLACE_CATEGORIES = [
+  "Electronics",
+  "Furniture",
+  "Books & study materials",
+  "Clothing & fashion",
+  "Kitchen & appliances",
+  "Sports & fitness",
+  "Beauty & personal care",
+  "Other",
+];
+
+const CONDITION_OPTIONS = ["New", "Like new", "Fairly used", "Needs repair"];
+const AVAILABILITY_OPTIONS = ["Available now", "Reserved", "Negotiable"];
+
+const STATUS_STYLES = {
+  pending: ["Pending review", "bg-amber-500/10 text-amber-600"],
+  approved: ["Live", "bg-emerald-500/10 text-emerald-600"],
+  active: ["Live", "bg-emerald-500/10 text-emerald-600"],
+  rejected: ["Rejected", "bg-red-500/10 text-red-500"],
+};
+
+const EMPTY_FORM = {
+  title: "",
+  category: "",
+  condition: "",
+  price: "",
+  location: "",
+  availability: "",
+  phone: "",
+  description: "",
+};
+
+const formatPrice = (value) => `₦${Number(value || 0).toLocaleString("en-NG")}`;
+
+const toTime = (value) => {
+  if (!value) return 0;
+  if (typeof value === "object" && typeof value.seconds === "number") return value.seconds * 1000;
+  const t = new Date(value).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
+// wa.me needs the international format without "+" (e.g. 0801... -> 234801...)
+const toWhatsAppNumber = (phone = "") => {
+  const digits = String(phone).replace(/\D/g, "");
+  if (digits.startsWith("234")) return digits;
+  if (digits.startsWith("0")) return `234${digits.slice(1)}`;
+  if (digits.length === 10) return `234${digits}`;
+  return digits;
+};
+
+const isValidPhone = (phone = "") => {
+  const digits = String(phone).replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 13;
+};
+
+const getTheme = (dark) => ({
+  page: dark ? "bg-[#0b0f1a] text-white" : "bg-[#f6f8fc] text-gray-900",
+  card: dark
+    ? "bg-white/5 border border-white/10 backdrop-blur-xl"
+    : "bg-white border border-gray-200 shadow-sm",
+  field: dark
+    ? "bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:border-indigo-400 [&>option]:text-gray-900"
+    : "bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-indigo-500",
+  muted: dark ? "text-white/60" : "text-gray-500",
+  subtle: dark ? "bg-white/10 hover:bg-white/15 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700",
+  menu: dark
+    ? "bg-[#111827] border border-white/10 text-white shadow-2xl"
+    : "bg-white border border-gray-200 text-gray-800 shadow-xl",
+  menuHover: dark ? "hover:bg-white/10" : "hover:bg-gray-100",
+  skeleton: dark ? "bg-white/10" : "bg-gray-200",
+});
+
+/* =====================================================
+   SMALL PRESENTATIONAL COMPONENTS
+===================================================== */
+function Field({ label, required, error, hint, theme, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </span>
+      {children}
+      {error ? (
+        <span className="mt-1 block text-xs text-red-500">{error}</span>
+      ) : hint ? (
+        <span className={`mt-1 block text-xs ${theme.muted}`}>{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+function SkeletonCard({ theme }) {
+  return (
+    <div className={`${theme.card} animate-pulse overflow-hidden rounded-2xl`}>
+      <div className={`h-48 ${theme.skeleton}`} />
+      <div className="space-y-3 p-4">
+        <div className={`h-4 w-2/3 rounded ${theme.skeleton}`} />
+        <div className={`h-3 w-full rounded ${theme.skeleton}`} />
+        <div className={`h-3 w-4/5 rounded ${theme.skeleton}`} />
+        <div className={`mt-4 h-10 w-full rounded-xl ${theme.skeleton}`} />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, title, text, action, theme }) {
+  return (
+    <div className={`${theme.card} flex flex-col items-center rounded-2xl px-6 py-16 text-center`}>
+      <div className="mb-4 rounded-2xl bg-indigo-500/10 p-4 text-indigo-500">
+        <Icon size={28} />
+      </div>
+      <h3 className="text-base font-semibold">{title}</h3>
+      <p className={`mt-1 max-w-sm text-sm ${theme.muted}`}>{text}</p>
+      {action ? (
+        <button
+          onClick={action.onClick}
+          className="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+        >
+          {action.label}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function ListingCard({
+  item,
+  theme,
+  dark,
+  mode,
+  layout = "grid",
+  menuOpen,
+  onToggleMenu,
+  onEdit,
+  onDelete,
+  onShare,
+  onContact,
+  onDetails,
+  anchor = false,
+  highlighted = false,
+}) {
+  const isList = layout === "list" && mode === "market";
+  const status = mode === "my" ? STATUS_STYLES[item.status] : null;
+
+  return (
+    <article
+      id={anchor ? `product-${item.id}` : undefined}
+      className={`${theme.card} flex overflow-hidden rounded-2xl transition hover:shadow-lg ${
+        isList ? "flex-col sm:flex-row" : "flex-col"
+      } ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
+    >
+      <div className={`relative ${isList ? "shrink-0 sm:w-64 md:w-72" : ""}`}>
+        <ImageCarousel
+          images={item.images}
+          title={item.title}
+          dark={dark}
+          offsetTopRight={mode === "my"}
+          verifiedBadge={
+            item.verified ? (
+              <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white shadow">
+                <CheckCircle2 size={12} />
+                Verified
+              </div>
+            ) : null
+          }
+          menuButton={
+            mode === "my" ? (
+              <div className="absolute right-3 top-3 z-10" data-menu-id={item.id}>
+                <button
+                  onClick={() => onToggleMenu(item.id)}
+                  aria-label="Listing options"
+                  aria-expanded={menuOpen}
+                  className="rounded-full bg-black/60 p-2 text-white backdrop-blur-md transition hover:bg-black/80"
+                >
+                  <MoreVertical size={16} />
+                </button>
+                {menuOpen ? (
+                  <div className={`absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-2xl ${theme.menu}`}>
+                    <button
+                      onClick={() => onEdit(item)}
+                      className={`flex w-full items-center gap-2 px-4 py-3 text-left text-sm ${theme.menuHover}`}
+                    >
+                      <Pencil size={15} />
+                      Edit listing
+                    </button>
+                    <button
+                      onClick={() => onDelete(item)}
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-500 hover:bg-red-500/10"
+                    >
+                      <Trash2 size={15} />
+                      Delete listing
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null
+          }
+        />
+        {mode === "market" && item.isSponsored ? (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-xs font-semibold text-slate-950 shadow">
+            <Megaphone size={12} /> Sponsored
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex flex-1 flex-col justify-between">
+        <div className="space-y-2.5 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => onDetails(item)}
+              className="line-clamp-1 text-left text-base font-semibold transition hover:text-indigo-500 sm:text-lg"
+            >
+              {item.title}
+            </button>
+            {item.category ? (
+              <span className="flex shrink-0 items-center gap-1 rounded-lg bg-indigo-500/10 px-2 py-1 text-xs text-indigo-500">
+                <Tag size={11} />
+                {item.category}
+              </span>
+            ) : null}
+          </div>
+
+          {status ? (
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status[1]}`}>
+              {item.status === "pending" ? <Clock size={12} /> : null}
+              {status[0]}
+            </span>
+          ) : null}
+
+          <p className={`line-clamp-2 text-sm ${theme.muted}`}>{item.description}</p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+            <p className="text-lg font-bold text-indigo-500">{formatPrice(item.price)}</p>
+            {Number(item.reviewCount) > 0 ? (
+              <span className={`inline-flex items-center gap-1 text-xs ${theme.muted}`}>
+                <Star size={13} className="fill-amber-400 text-amber-500" />
+                {Number(item.ratingAverage || 0).toFixed(1)} ({item.reviewCount})
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 p-4 pt-0">
+          {mode === "market" ? (
+            <button
+              onClick={() => onDetails(item)}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-500/10 py-2.5 text-sm font-medium transition hover:bg-slate-500/20"
+            >
+              <Eye size={15} />
+              Details
+            </button>
+          ) : null}
+          <button
+            onClick={() => onShare(item)}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-500/10 py-2.5 text-sm font-medium text-indigo-500 transition hover:bg-indigo-500/20"
+          >
+            <Share2 size={15} />
+            Share
+          </button>
+          {mode === "market" && item.phone ? (
+            <button
+              onClick={() => onContact(item)}
+              className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-emerald-500 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-600"
+            >
+              <Phone size={15} />
+              WhatsApp
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/* =====================================================
+   MAIN COMPONENT
+===================================================== */
 export default function StudentMarketplace({ dark }) {
-  /* =====================================================
-     STATES
-  ===================================================== */
+  const theme = useMemo(() => getTheme(dark), [dark]);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sharedProductId = searchParams.get("product");
+
+  /* ---------- state ---------- */
+  const [uid, setUid] = useState(auth.currentUser?.uid || null);
   const [view, setView] = useState("market");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterPrice, setFilterPrice] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [viewMode, setViewMode] = useState("grid");
+  const [sponsoredOnly, setSponsoredOnly] = useState(false);
 
-  // Modal & Upload
+  // Modal & upload
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [, setCompressing] = useState(false);
-  const [, setProgress] = useState(0);
-  const [, setSavedSpace] = useState(0);
+  const [compressing, setCompressing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [savedSpace, setSavedSpace] = useState(0);
+  const [errors, setErrors] = useState({});
 
-  // Files & Previews
+  // Files & previews
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
-  const previewUrlsRef = useRef([]); // Track ObjectURLs for memory cleanup
+  const previewUrlsRef = useRef([]);
 
-  // Plan & User Limits
+  // Plan & limits
   const [isPremium, setIsPremium] = useState(false);
-  const [uploadLimit, setUploadLimit] = useState(3);
+  const [uploadLimit, setUploadLimit] = useState(FREE_LIMIT);
   const [userUploads, setUserUploads] = useState(0);
+  const [sellerName, setSellerName] = useState("");
 
-  // Editing & UI Controls
+  // Editing, menus, delete
   const [editingItem, setEditingItem] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const navigate = useNavigate();
+  // Deep link highlight
+  const [highlightedId, setHighlightedId] = useState(null);
+  const deepLinkHandled = useRef(false);
 
-  const [form, setForm] = useState({
-    title: "",
-    category: "",
-    price: "",
-    phone: "",
-    description: "",
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const requestRef = useRef(0);
+  const pageRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(false);
 
-  /* =====================================================
-     CLEANUP OBJECT URLS (MEMORY LEAK FIX)
-  ===================================================== */
-  const clearObjectUrls = () => {
+  /* ---------- object URL cleanup ---------- */
+  const clearObjectUrls = useCallback(() => {
     previewUrlsRef.current.forEach((url) => {
-      if (url.startsWith("blob:")) {
-        URL.revokeObjectURL(url);
-      }
+      if (url.startsWith("blob:")) URL.revokeObjectURL(url);
     });
     previewUrlsRef.current = [];
-  };
+  }, []);
 
-  /* =====================================================
-     FETCH USER PLAN
-  ===================================================== */
-  const fetchUserPlan = async () => {
+  useEffect(() => clearObjectUrls, [clearObjectUrls]);
+
+  const resetForm = useCallback(() => {
+    clearObjectUrls();
+    setForm(EMPTY_FORM);
+    setImages([]);
+    setPreviews([]);
+    setProgress(0);
+    setSavedSpace(0);
+    setErrors({});
+    setEditingItem(null);
+    setShowUpload(false);
+  }, [clearObjectUrls]);
+
+  /* ---------- auth ---------- */
+  useEffect(() => onAuthStateChanged(auth, (user) => setUid(user?.uid || null)), []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  /* ---------- data ---------- */
+  const fetchUserPlan = useCallback(async () => {
+    if (!uid) return;
     try {
-      if (!auth.currentUser) return;
-
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      const userSnap = await getDoc(userRef);
-
+      const userSnap = await getDoc(doc(db, "users", uid));
       if (userSnap.exists()) {
-        const data = userSnap.data();
-        const premium = data.premium === true;
+        const userData = userSnap.data();
+        const premium = userData.premium === true;
+        setSellerName(
+          userData.username ||
+            userData.fullName ||
+            userData.name ||
+            userData.displayName ||
+            auth.currentUser?.displayName ||
+            auth.currentUser?.email ||
+            ""
+        );
         setIsPremium(premium);
-        setUploadLimit(premium ? 10 : 3);
+        setUploadLimit(premium ? PREMIUM_LIMIT : FREE_LIMIT);
+      } else {
+        setSellerName(auth.currentUser?.displayName || auth.currentUser?.email || "");
       }
-
-      const data = await getJson(`/api/marketplace?userId=${encodeURIComponent(auth.currentUser.uid)}&limit=1`);
+      const data = await getJson(`/api/marketplace?userId=${encodeURIComponent(uid)}&limit=1`);
       setUserUploads(data.total || 0);
     } catch (err) {
       console.error("Error fetching user plan:", err);
     }
-  };
+  }, [uid]);
 
-  /* =====================================================
-     FETCH ITEMS
-  ===================================================== */
-  const fetchItems = async () => {
-    setLoading(true);
+  const fetchItems = useCallback(async ({ reset = true } = {}) => {
+    if (!reset && (loadingMoreRef.current || !hasMoreRef.current)) return;
+    const requestId = reset ? ++requestRef.current : requestRef.current;
+
+    if (view === "my" && !uid) {
+      setItems([]);
+      setLoading(false);
+      hasMoreRef.current = false;
+      setHasMore(false);
+      return;
+    }
+
+    if (reset) {
+      pageRef.current = 0;
+      hasMoreRef.current = false;
+      setHasMore(false);
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+      setLoading(true);
+      setLoadError(false);
+    } else {
+      loadingMoreRef.current = true;
+      setLoadingMore(true);
+    }
+    setLoadMoreError(false);
+
+    const page = reset ? 1 : pageRef.current + 1;
+    const params = new URLSearchParams({ page: String(page), limit: "20" });
+    if (view === "my") {
+      params.set("userId", uid);
+    } else {
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (filterCategory) params.set("category", filterCategory);
+      if (filterPrice) params.set("maxPrice", filterPrice);
+      if (sort !== "newest") params.set("sort", sort);
+      if (sponsoredOnly) params.set("sponsored", "active");
+    }
+
     try {
-      const path = view === "market"
-        ? "/api/marketplace?limit=100"
-        : `/api/marketplace?userId=${encodeURIComponent(auth.currentUser?.uid || "")}&limit=100`;
-      const data = await getJson(path);
-      setItems(data.items || []);
+      const data = await getJson(`/api/marketplace?${params.toString()}`);
+      if (requestId !== requestRef.current) return; // a newer request superseded this one
+      const pageItems = Array.isArray(data.items) ? data.items : [];
+      setItems((current) => {
+        if (reset) return pageItems;
+        const seen = new Set(current.map((item) => item.id));
+        return [...current, ...pageItems.filter((item) => !seen.has(item.id))];
+      });
+      pageRef.current = Number(data.page) || page;
+      hasMoreRef.current = Boolean(data.hasMore);
+      setHasMore(hasMoreRef.current);
     } catch (err) {
       console.error("Error fetching marketplace items:", err);
+      if (requestId === requestRef.current) {
+        if (reset) setLoadError(true);
+        else setLoadMoreError(true);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestRef.current) {
+        if (reset) setLoading(false);
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
     }
-  };
+  }, [view, uid, debouncedSearch, filterCategory, filterPrice, sort, sponsoredOnly]);
 
   useEffect(() => {
     fetchItems();
-    fetchUserPlan();
-  }, [view]);
+  }, [fetchItems]);
 
-  /* =====================================================
-     OUTSIDE CLICK LISTENER FOR MENU
-  ===================================================== */
   useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (!e.target.closest(".menu-container")) {
-        setActiveMenu(null);
-      }
+    fetchUserPlan();
+  }, [fetchUserPlan]);
+
+  /* ---------- menus, escape, scroll lock ---------- */
+  useEffect(() => {
+    if (!activeMenu) return undefined;
+    const onPointerDown = (e) => {
+      if (!e.target.closest?.(`[data-menu-id="${activeMenu}"]`)) setActiveMenu(null);
     };
-    document.addEventListener("click", handleOutsideClick);
-    return () => document.removeEventListener("click", handleOutsideClick);
-  }, []);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [activeMenu]);
 
-  /* =====================================================
-     FILTER LOGIC
-  ===================================================== */
-  const filteredItems = items.filter((item) => {
-    const matchSearch =
-      item.title?.toLowerCase().includes(search.toLowerCase()) ||
-      item.category?.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    if (!showUpload && !deleteTarget) return undefined;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (deleteTarget && !deleting) setDeleteTarget(null);
+      else if (showUpload && !uploading) resetForm();
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showUpload, deleteTarget, uploading, deleting, resetForm]);
 
-    const matchCategory = filterCategory
-      ? item.category?.toLowerCase().includes(filterCategory.toLowerCase())
-      : true;
+  /* ---------- derived lists ---------- */
+  const categories = useMemo(() => {
+    const map = new Map();
+    items.forEach((item) => {
+      const c = item.category?.trim();
+      if (c && !map.has(c.toLowerCase())) map.set(c.toLowerCase(), c);
+    });
+    return [...map.values()].sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
-    const matchPrice = filterPrice
-      ? Number(item.price) <= Number(filterPrice)
-      : true;
+  const filteredItems = useMemo(() => {
+    const q = debouncedSearch.toLowerCase();
+    const cat = filterCategory.trim().toLowerCase();
+    return items.filter((item) => {
+      const matchSearch =
+        !q ||
+        item.title?.toLowerCase().includes(q) ||
+        item.category?.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q);
+      const matchCategory = !cat || item.category?.trim().toLowerCase() === cat;
+      const matchPrice = !filterPrice || Number(item.price) <= Number(filterPrice);
+      return matchSearch && matchCategory && matchPrice && (!sponsoredOnly || item.isSponsored);
+    });
+  }, [items, debouncedSearch, filterCategory, filterPrice, sponsoredOnly]);
 
-    return matchSearch && matchCategory && matchPrice;
-  });
+  const sortedItems = useMemo(() => {
+    const list = [...filteredItems];
+    if (sort === "price_asc") return list.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+    if (sort === "price_desc") return list.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+    if (sort === "rating_desc") {
+      return list.sort(
+        (a, b) =>
+          Number(b.ratingAverage || 0) - Number(a.ratingAverage || 0) ||
+          Number(b.reviewCount || 0) - Number(a.reviewCount || 0)
+      );
+    }
+    return list.sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
+  }, [filteredItems, sort]);
 
-  /* =====================================================
-     IMAGE COMPRESSION & SELECTION
-  ===================================================== */
+  const shelves = useMemo(
+    () => ({
+      sponsored: filteredItems
+        .filter((i) => i.isSponsored)
+        .sort((a, b) => Number(b.sponsoredPriority || 0) - Number(a.sponsoredPriority || 0))
+        .slice(0, 3),
+      fresh: [...filteredItems].sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt)).slice(0, 6),
+      budget: filteredItems
+        .filter((i) => Number(i.price) > 0 && Number(i.price) <= BUDGET_CEILING)
+        .sort((a, b) => Number(a.price) - Number(b.price))
+        .slice(0, 6),
+      verified: filteredItems.filter((i) => i.verified).slice(0, 6),
+    }),
+    [filteredItems]
+  );
+
+  const hasFilters = Boolean(search || filterCategory || filterPrice || sponsoredOnly);
+  const listedItems = view === "market" ? sortedItems : items;
+  const usagePercent = Math.min(100, Math.round((userUploads / uploadLimit) * 100));
+  const limitReached = userUploads >= uploadLimit;
+
+  const clearFilters = () => {
+    setSearch("");
+    setFilterCategory("");
+    setFilterPrice("");
+    setSponsoredOnly(false);
+  };
+
+  /* ---------- deep link (?product=ID) ---------- */
+  useEffect(() => {
+    if (!sharedProductId || deepLinkHandled.current || loading || view !== "market") return;
+    if (!items.some((i) => i.id === sharedProductId)) return;
+    deepLinkHandled.current = true;
+    setHighlightedId(sharedProductId);
+    requestAnimationFrame(() => {
+      document.getElementById(`product-${sharedProductId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const timer = setTimeout(() => setHighlightedId(null), 4000);
+    return () => clearTimeout(timer);
+  }, [sharedProductId, items, loading, view]);
+
+  /* ---------- image handling ---------- */
   const compressImage = async (file) => {
     try {
-      const options = {
+      return await imageCompression(file, {
         maxSizeMB: 0.5,
         maxWidthOrHeight: 1400,
         useWebWorker: true,
         fileType: "image/webp",
-      };
-      return await imageCompression(file, options);
+      });
     } catch (err) {
       console.warn("Compression failed, using original file:", err);
       return file;
     }
   };
 
-  const handleImages = async (files) => {
-    if (!files || !files.length) return;
+  const handleImages = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = ""; // allow re-selecting the same file
+    if (!files.length) return;
+
+    const pictures = files.filter((f) => f.type.startsWith("image/"));
+    if (!pictures.length) {
+      toast.error("Please choose image files only.");
+      return;
+    }
+    if (pictures.length > MAX_IMAGES) toast.info(`Only the first ${MAX_IMAGES} photos were kept.`);
+    const selected = pictures.slice(0, MAX_IMAGES);
 
     setCompressing(true);
-    clearObjectUrls();
-
     try {
-      const selected = Array.from(files);
-      const compressedFiles = [];
-      const previewUrls = [];
+      const original = selected.reduce((sum, f) => sum + f.size, 0);
+      const optimized = await Promise.all(selected.map(compressImage));
+      const compressed = optimized.reduce((sum, f) => sum + f.size, 0);
 
-      let original = 0;
-      let compressed = 0;
+      clearObjectUrls();
+      const urls = optimized.map((f) => URL.createObjectURL(f));
+      previewUrlsRef.current = urls;
 
-      for (let file of selected) {
-        original += file.size;
-        const optimized = await compressImage(file);
-        compressed += optimized.size;
-
-        compressedFiles.push(optimized);
-        const objectUrl = URL.createObjectURL(optimized);
-        previewUrls.push(objectUrl);
-        previewUrlsRef.current.push(objectUrl);
-      }
-
-      setSavedSpace(
-        Math.round(((original - compressed) / (original || 1)) * 100)
-      );
-      setImages(compressedFiles);
-      setPreviews(previewUrls);
+      setSavedSpace(Math.max(0, Math.round(((original - compressed) / (original || 1)) * 100)));
+      setImages(optimized);
+      setPreviews(urls);
+      setErrors((prev) => ({ ...prev, images: undefined }));
     } catch (err) {
       console.error("Error processing images:", err);
-      toast.error("Failed to process images.");
+      toast.error("Couldn't process those images. Try different files.");
     } finally {
       setCompressing(false);
     }
   };
 
-  /* =====================================================
-     HANDLE UPLOAD / UPDATE
-  ===================================================== */
+  const removeImage = (index) => {
+    const url = previews[index];
+    if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+    previewUrlsRef.current = previewUrlsRef.current.filter((u) => u !== url);
+
+    const nextImages = images.filter((_, i) => i !== index);
+    setImages(nextImages);
+    // If every new photo was removed while editing, fall back to the saved ones
+    setPreviews(nextImages.length === 0 ? editingItem?.images || [] : previews.filter((_, i) => i !== index));
+  };
+
+  /* ---------- upload / update ---------- */
+  const updateForm = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const validate = () => {
+    const next = {};
+    const price = Number(form.price);
+    if (!form.title.trim()) next.title = "Give your item a title.";
+    if (!form.category.trim()) next.category = "Choose or type a category.";
+    if (!form.condition.trim()) next.condition = "Choose the item's condition.";
+    if (!form.price || !Number.isFinite(price) || price <= 0) next.price = "Enter a price greater than 0.";
+    if (!form.location.trim()) next.location = "Enter a pickup location.";
+    if (!isValidPhone(form.phone)) next.phone = "Enter a valid WhatsApp number, e.g. 08012345678.";
+    if (!editingItem && images.length === 0) next.images = "Add at least one photo.";
+    return next;
+  };
+
   const handleUpload = async () => {
     if (!auth.currentUser) {
-      toast.error("Please login first.");
+      toast.error("Please log in first.");
       return;
     }
 
     if (!editingItem && userUploads >= uploadLimit) {
       toast.error(
         isPremium
-          ? "Premium upload limit reached (10/10)."
-          : "Free tier limit reached (3/3). Upgrade to upload more."
+          ? `Premium upload limit reached (${PREMIUM_LIMIT}/${PREMIUM_LIMIT}).`
+          : `Free limit reached (${FREE_LIMIT}/${FREE_LIMIT}). Upgrade to list more.`
       );
       return;
     }
 
-    if (!form.title || !form.category || !form.price || !form.phone) {
-      toast.error("Please fill in all required fields.");
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      toast.error("Check the highlighted fields.");
       return;
     }
 
     setUploading(true);
+    setProgress(0);
     const newlyUploadedAssets = [];
     const replacedAssets = images.length > 0 ? editingItem?.imageAssets || [] : [];
 
@@ -254,15 +735,16 @@ export default function StudentMarketplace({ dark }) {
       let imageUrls = editingItem?.images || [];
       let imageAssets = editingItem?.imageAssets || [];
 
-      // If new images were selected, upload them
       if (images.length > 0) {
         imageUrls = [];
         imageAssets = [];
 
-        for (let img of images) {
-          const result = await uploadFeatureMedia(img, { feature: "marketplace", resourceType: "image", onProgress: (percent) => {
-            setProgress(Math.round(percent));
-          }});
+        for (let i = 0; i < images.length; i += 1) {
+          const result = await uploadFeatureMedia(images[i], {
+            feature: "marketplace",
+            resourceType: "image",
+            onProgress: (percent) => setProgress(Math.round(((i + percent / 100) / images.length) * 100)),
+          });
           imageUrls.push(result.secure_url);
           const asset = toCloudinaryAsset(result);
           imageAssets.push(asset);
@@ -273,9 +755,15 @@ export default function StudentMarketplace({ dark }) {
       const payload = {
         title: form.title.trim(),
         category: form.category.trim(),
+        condition: form.condition.trim(),
         price: Number(form.price),
+        location: form.location.trim(),
+        availability: form.availability.trim(),
         phone: form.phone.trim(),
         description: form.description.trim(),
+        sellerName: sellerName || auth.currentUser?.displayName || "",
+        ownerName: sellerName || auth.currentUser?.displayName || "",
+        postedBy: sellerName || auth.currentUser?.displayName || "",
         images: imageUrls,
         imageAssets,
         updatedAt: new Date(),
@@ -283,7 +771,7 @@ export default function StudentMarketplace({ dark }) {
 
       if (editingItem) {
         await putJson(`/api/marketplace/${editingItem.id}`, payload);
-        toast.success("Listing updated successfully 🚀");
+        toast.success("Listing updated.");
       } else {
         await postJson("/api/marketplace", {
           ...payload,
@@ -291,7 +779,7 @@ export default function StudentMarketplace({ dark }) {
           verified: isPremium,
           premiumUser: isPremium,
         });
-        toast.success("Listing published successfully 🚀");
+        toast.success("Listing submitted.");
       }
 
       resetForm();
@@ -309,407 +797,730 @@ export default function StudentMarketplace({ dark }) {
           console.warn("Unable to clean up failed listing upload", cleanupError);
         });
       }
-      toast.error("Operation failed. Please try again.");
+      toast.error("Couldn't save your listing. Check your connection and try again.");
     } finally {
       setUploading(false);
     }
   };
 
-  /* =====================================================
-     RESET FORM
-  ===================================================== */
-  const resetForm = () => {
-    clearObjectUrls();
-    setForm({
-      title: "",
-      category: "",
-      price: "",
-      phone: "",
-      description: "",
-    });
-    setImages([]);
-    setPreviews([]);
-    setProgress(0);
-    setEditingItem(null);
-    setShowUpload(false);
+  /* ---------- edit & delete ---------- */
+  const openNewListing = () => {
+    if (limitReached) {
+      toast.error(
+        isPremium
+          ? `Premium upload limit reached (${PREMIUM_LIMIT}/${PREMIUM_LIMIT}).`
+          : `Free limit reached (${FREE_LIMIT}/${FREE_LIMIT}). Upgrade to list more.`
+      );
+      return;
+    }
+    resetForm();
+    setShowUpload(true);
   };
 
-  /* =====================================================
-     EDIT & DELETE
-  ===================================================== */
   const handleEdit = (item) => {
     clearObjectUrls();
     setEditingItem(item);
     setForm({
       title: item.title || "",
       category: item.category || "",
+      condition: item.condition || "",
       price: item.price || "",
+      location: item.location || item.pickupLocation || "",
+      availability: item.availability || "",
       phone: item.phone || "",
       description: item.description || "",
     });
+    setImages([]);
+    setErrors({});
+    setSavedSpace(0);
     setPreviews(item.images || []);
     setShowUpload(true);
     setActiveMenu(null);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this listing?")) return;
+  const requestDelete = (item) => {
+    setActiveMenu(null);
+    setDeleteTarget(item);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteJson(`/api/marketplace/${id}`);
-      setItems((prev) => prev.filter((item) => item.id !== id));
+      await deleteJson(`/api/marketplace/${deleteTarget.id}`);
+      setItems((prev) => prev.filter((item) => item.id !== deleteTarget.id));
       fetchUserPlan();
-      toast.success("Listing deleted successfully.");
+      toast.success("Listing deleted.");
+      setDeleteTarget(null);
     } catch (err) {
       console.error("Delete error:", err);
-      toast.error("Failed to delete product.");
+      toast.error("Couldn't delete this listing. Try again.");
+    } finally {
+      setDeleting(false);
     }
   };
 
-  /* =====================================================
-     SHARE & WHATSAPP
-  ===================================================== */
-  const openWhatsApp = (phone, title) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    const message = `Hi, I'm interested in "${title}" on UniHelp Marketplace.`;
+  /* ---------- share & whatsapp ---------- */
+  const openWhatsApp = (item) => {
+    const message = `Hi, I'm interested in "${item.title}" on UniHelp Marketplace.`;
     window.open(
-      `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`,
-      "_blank"
+      `https://wa.me/${toWhatsAppNumber(item.phone)}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer"
     );
   };
 
   const shareProduct = async (item) => {
-    const shareUrl = buildShareUrl("/studentmarketplace", { product: item.id });
+    const shareUrl = buildShareUrl(`/studentmarketplace/${encodeURIComponent(item.id)}`);
     try {
       await shareContent({
         title: item.title,
         text: `Check out this product on UniHelp: ${item.title}`,
         url: shareUrl,
       });
-      if (!navigator.share) {
-        toast.success("Product link copied to clipboard.");
-      }
+      if (!navigator.share) toast.success("Link copied to clipboard.");
     } catch (error) {
       console.error("Share error:", error);
-      toast.error("Unable to share this product right now.");
+      toast.error("Couldn't share this listing right now.");
     }
   };
 
-  /* =====================================================
-     THEME STYLES
-  ===================================================== */
-  const bg = dark ? "bg-[#0b0f1a] text-white" : "bg-[#f6f8fc] text-gray-900";
-  const card = dark
-    ? "bg-white/5 border border-white/10 backdrop-blur-xl"
-    : "bg-white border border-gray-200 shadow-sm";
+  /* ---------- render helpers ---------- */
+  const cardHandlers = {
+    onToggleMenu: (id) => setActiveMenu((current) => (current === id ? null : id)),
+    onEdit: handleEdit,
+    onDelete: requestDelete,
+    onShare: shareProduct,
+    onContact: openWhatsApp,
+    onDetails: (item) => navigate(`/studentmarketplace/${encodeURIComponent(item.id)}`),
+  };
 
+  const renderShelf = (title, subtitle, shelfItems) =>
+    shelfItems.length > 0 ? (
+      <section key={title} className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <p className={`text-sm ${theme.muted}`}>{subtitle}</p>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {shelfItems.map((item) => (
+            <ListingCard key={item.id} item={item} theme={theme} dark={dark} mode="market" {...cardHandlers} />
+          ))}
+        </div>
+      </section>
+    ) : null;
+
+  const tabClass = (active) =>
+    `rounded-lg px-4 py-2 text-sm font-medium transition ${
+      active ? "bg-indigo-600 text-white shadow" : `${theme.muted} hover:text-indigo-500`
+    }`;
+
+  const gridClass =
+    view === "market" && viewMode === "list"
+      ? "grid grid-cols-1 gap-4"
+      : "grid gap-5 sm:grid-cols-2 lg:grid-cols-3";
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
   return (
-    <div className={`min-h-screen w-full md:pt-20 px-4 py-6 ${bg}`}>
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className={`min-h-screen w-full px-4 py-6 md:pt-20 ${theme.page}`}>
+      <div className="mx-auto max-w-7xl space-y-6 pb-24">
         {/* HEADER */}
-        <div className="flex gap-2.5 max-md:flex-col-reverse md:items-center md:justify-between">
+        <header className="flex gap-3 max-md:flex-col md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-3 shrink-0 rounded-2xl bg-indigo-600 text-white">
+            <div className="shrink-0 rounded-2xl bg-indigo-600 p-3 text-white">
               <ShoppingBag />
             </div>
             <div>
               <h1 className="text-xl font-bold">Student Marketplace</h1>
-              <p className="text-sm opacity-70">Buy & Sell Easily</p>
+              <p className={`text-sm ${theme.muted}`}>Buy and sell with students on campus</p>
             </div>
           </div>
 
-          {/* PLAN */}
-          <div
-            className={`${card} px-4 py-3 shrink-0 rounded-2xl flex max-w-xs items-center gap-3`}
-          >
-            {isPremium ? (
-              <>
-                <Crown className="text-yellow-500" />
-                <div>
-                  <p className="font-semibold">Premium User</p>
-                  <p className="text-xs opacity-70">
-                    {userUploads}/10 uploads
+          <div className={`${theme.card} w-full rounded-2xl px-4 py-3 md:w-64`}>
+            <div className="flex items-center gap-3">
+              {isPremium ? (
+                <Crown className="shrink-0 text-yellow-500" size={22} />
+              ) : (
+                <Lock className="shrink-0 text-indigo-500" size={22} />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">{isPremium ? "Premium" : "Free plan"}</p>
+                  <p className={`text-xs ${theme.muted}`}>
+                    {userUploads}/{uploadLimit} listings
                   </p>
                 </div>
-              </>
-            ) : (
-              <div
-                onClick={() => navigate("/premium")}
-                className="cursor-pointer flex justify-between items-center gap-3"
-              >
-                <Lock className="text-red-500" />
-                <div>
-                  <p className="font-semibold">Free User</p>
-                  <p className="text-xs opacity-70">{userUploads}/3 uploads</p>
+                <div className={`mt-2 h-1.5 overflow-hidden rounded-full ${dark ? "bg-white/10" : "bg-gray-200"}`}>
+                  <div
+                    className={`h-full rounded-full transition-all ${limitReached ? "bg-red-500" : "bg-indigo-500"}`}
+                    style={{ width: `${usagePercent}%` }}
+                  />
                 </div>
               </div>
+            </div>
+            {!isPremium && (
+              <button
+                onClick={() => navigate("/premium")}
+                className="mt-3 w-full rounded-lg bg-indigo-500/10 py-1.5 text-xs font-medium text-indigo-500 transition hover:bg-indigo-500/20"
+              >
+                Upgrade for up to {PREMIUM_LIMIT} listings
+              </button>
             )}
           </div>
-        </div>
+        </header>
 
-        {/* TOGGLE */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => setView("market")}
-            className={`px-5 py-2 rounded-xl transition ${
-              view === "market" ? "bg-indigo-600 text-white" : "bg-white/10 hover:bg-white/20"
-            }`}
-          >
+        {/* TABS */}
+        <div className={`${theme.card} inline-flex rounded-xl p-1`} role="tablist">
+          <button role="tab" aria-selected={view === "market"} onClick={() => setView("market")} className={tabClass(view === "market")}>
             Marketplace
           </button>
-          <button
-            onClick={() => setView("my")}
-            className={`px-5 py-2 rounded-xl transition ${
-              view === "my" ? "bg-indigo-600 text-white" : "bg-white/10 hover:bg-white/20"
-            }`}
-          >
-            My Products
+          <button role="tab" aria-selected={view === "my"} onClick={() => setView("my")} className={tabClass(view === "my")}>
+            My products
           </button>
         </div>
 
         {/* SEARCH & FILTERS */}
         {view === "market" && (
-          <div className={`${card} p-4 rounded-2xl grid md:grid-cols-3 gap-3`}>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5">
-              <Search size={16} />
+          <>
+            <div className={`${theme.card} grid gap-3 rounded-2xl p-3 md:grid-cols-[1fr_220px_160px_auto]`}>
+              <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 ${theme.field}`}>
+                <Search size={16} className={theme.muted} />
+                <input
+                  type="search"
+                  placeholder="Search products"
+                  aria-label="Search products"
+                  className="w-full bg-transparent text-sm outline-none"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <select
+                aria-label="Filter by category"
+                className={`rounded-xl px-3 py-2.5 text-sm outline-none ${theme.field}`}
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                <option value="">All categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+
               <input
-                placeholder="Search products..."
-                className="bg-transparent outline-none w-full text-sm"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                type="number"
+                min="0"
+                inputMode="numeric"
+                placeholder="Max price (₦)"
+                aria-label="Maximum price"
+                className={`rounded-xl px-3 py-2.5 text-sm outline-none ${theme.field}`}
+                value={filterPrice}
+                onChange={(e) => setFilterPrice(e.target.value)}
               />
+
+              <button
+                onClick={clearFilters}
+                disabled={!hasFilters}
+                className={`rounded-xl px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.subtle}`}
+              >
+                Clear
+              </button>
             </div>
 
-            <input
-              placeholder="Category"
-              className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-sm outline-none"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            />
+            {categories.length > 0 && (
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+                <button
+                  onClick={() => setFilterCategory("")}
+                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                    !filterCategory ? "bg-indigo-600 text-white" : `${theme.card} hover:border-indigo-400`
+                  }`}
+                >
+                  All items
+                </button>
+                {categories.map((category) => {
+                  const active = filterCategory.toLowerCase() === category.toLowerCase();
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setFilterCategory(active ? "" : category)}
+                      className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                        active ? "bg-indigo-600 text-white" : `${theme.card} hover:border-indigo-400`
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-            <input
-              type="number"
-              placeholder="Max price"
-              className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-sm outline-none"
-              value={filterPrice}
-              onChange={(e) => setFilterPrice(e.target.value)}
-            />
+            <section className="flex flex-col gap-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="rounded-xl bg-indigo-600 p-2 text-white">
+                  <Megaphone size={18} />
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold">Promoted listings</h2>
+                  <p className={`text-sm ${theme.muted}`}>
+                    Sponsored items get priority placement so more students see them.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSponsoredOnly(true);
+                  document.getElementById("marketplace-listings")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+              >
+                Browse promoted
+              </button>
+            </section>
+
+            {!hasFilters && !loading && !loadError && (
+              <div className="space-y-8">
+                {renderShelf("Sponsored", "Promoted listings from the student community", shelves.sponsored)}
+                {renderShelf("Fresh on campus", "New items students just posted", shelves.fresh)}
+                {renderShelf("Budget finds", `Useful picks priced at ${formatPrice(BUDGET_CEILING)} or less`, shelves.budget)}
+                {renderShelf("Verified sellers", "Listings from verified sellers", shelves.verified)}
+              </div>
+            )}
+
+            <div id="marketplace-listings" className="flex scroll-mt-24 flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">
+                {hasFilters ? "Results" : "All listings"}
+                <span className={`ml-2 text-sm font-normal ${theme.muted}`}>
+                  {sortedItems.length} {sortedItems.length === 1 ? "listing" : "listings"}
+                </span>
+              </h2>
+              <div className="flex items-center gap-2">
+                {sponsoredOnly && (
+                  <button
+                    onClick={() => setSponsoredOnly(false)}
+                    className="rounded-lg bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-600"
+                  >
+                    Sponsored only ×
+                  </button>
+                )}
+                <label className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${theme.card}`}>
+                  <ArrowUpDown size={15} />
+                  <select
+                    aria-label="Sort listings"
+                    className={`bg-transparent outline-none ${dark ? "[&>option]:text-gray-900" : ""}`}
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                  >
+                    <option value="newest">Newest first</option>
+                    <option value="price_asc">Price: low to high</option>
+                    <option value="price_desc">Price: high to low</option>
+                    <option value="rating_desc">Top rated</option>
+                  </select>
+                </label>
+                <div className={`flex rounded-xl p-1 ${theme.card}`}>
+                  {[
+                    ["grid", LayoutGrid, "Grid view"],
+                    ["list", List, "List view"],
+                  ].map(([mode, Icon, label]) => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      aria-label={label}
+                      aria-pressed={viewMode === mode}
+                      className={`rounded-lg p-2 transition ${viewMode === mode ? "bg-indigo-600 text-white" : theme.muted}`}
+                    >
+                      <Icon size={16} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {view === "my" && (
+          <div>
+            <h2 className="text-lg font-semibold">My products</h2>
+            <p className={`text-sm ${theme.muted}`}>Edit, share or remove the items you've listed.</p>
           </div>
         )}
 
-        {/* GRID PRODUCT LIST */}
+        {/* LISTINGS */}
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-indigo-500" size={32} />
+          <div className={gridClass}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} theme={theme} />
+            ))}
           </div>
+        ) : loadError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="Couldn't load listings"
+            text="Check your connection and try again."
+            action={{ label: "Retry", onClick: fetchItems }}
+            theme={theme}
+          />
+        ) : listedItems.length === 0 ? (
+          view === "my" ? (
+            <EmptyState
+              icon={Package}
+              title="You haven't listed anything yet"
+              text="Add photos, a price and your WhatsApp number to start selling to other students."
+              action={{ label: "List an item", onClick: openNewListing }}
+              theme={theme}
+            />
+          ) : hasFilters ? (
+            <EmptyState
+              icon={Search}
+              title="No listings match your filters"
+              text="Try a different search, category or price."
+              action={{ label: "Clear filters", onClick: clearFilters }}
+              theme={theme}
+            />
+          ) : (
+            <EmptyState
+              icon={ShoppingBag}
+              title="No listings yet"
+              text="Be the first to post something for sale on campus."
+              action={{ label: "List an item", onClick: openNewListing }}
+              theme={theme}
+            />
+          )
         ) : (
-          <div className="grid md:grid-cols-3 gap-5">
-            {(view === "market" ? filteredItems : items).map((item) => (
-              <div key={item.id} className={`${card} rounded-2xl overflow-hidden flex flex-col justify-between`}>
-                <div>
-                  {/* IMAGE */}
-                  <div className="relative menu-container">
-                    <ImageCarousel
-                      images={item.images}
-                      title={item.title}
-                      dark={dark}
-                      offsetTopRight={view === "my"}
-                      verifiedBadge={
-                        item.verified && (
-                          <div className="absolute top-3 left-3 bg-green-500 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1 shadow z-10">
-                            <CheckCircle2 size={12} />
-                            Verified
-                          </div>
-                        )
-                      }
-                      menuButton={
-                        view === "my" && (
-                          <div className="absolute top-3 right-3 z-10">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveMenu(activeMenu === item.id ? null : item.id);
-                              }}
-                              className="bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-md"
-                            >
-                              <MoreVertical size={16} />
-                            </button>
-
-                            {activeMenu === item.id && (
-                              <div className="absolute right-0 mt-2 w-40 rounded-2xl overflow-hidden bg-[#111827] border border-white/10 shadow-2xl z-50">
-                                <button
-                                  onClick={() => handleEdit(item)}
-                                  className="w-full px-4 py-3 text-left hover:bg-white/10 flex items-center gap-2 text-sm text-white"
-                                >
-                                  <Pencil size={15} />
-                                  Edit Product
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(item.id)}
-                                  className="w-full px-4 py-3 text-left hover:bg-red-500/20 text-red-400 flex items-center gap-2 text-sm"
-                                >
-                                  <Trash2 size={15} />
-                                  Delete Product
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      }
-                    />
-                  </div>
-
-                  {/* DETAILS */}
-                  <div className="p-4 space-y-3">
-                    <div className="flex justify-between items-start gap-3">
-                      <h2 className="font-semibold text-lg line-clamp-1">{item.title}</h2>
-                      <span className="text-xs bg-indigo-500/10 text-indigo-500 px-2 py-1 rounded-lg flex items-center gap-1 shrink-0">
-                        <Tag size={11} />
-                        {item.category}
-                      </span>
-                    </div>
-
-                    <p className="text-sm opacity-70 line-clamp-2">{item.description}</p>
-
-                    <p className="text-indigo-500 font-bold flex items-center gap-1 text-lg">
-                      <DollarSign size={16} />
-                      ₦{Number(item.price).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                {/* CARD ACTIONS */}
-                <div className="p-4 pt-0 flex items-center gap-2">
-                  <button
-                    onClick={() => shareProduct(item)}
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 py-3 text-sm font-medium text-indigo-500 transition"
-                  >
-                    <Share2 size={15} />
-                    Share
-                  </button>
-
-                  {view === "market" && item.phone && (
-                    <button
-                      onClick={() => openWhatsApp(item.phone, item.title)}
-                      className="inline-flex flex-[1.2] items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 py-3 text-sm font-medium text-white transition"
-                    >
-                      <Phone size={15} />
-                      WhatsApp
-                    </button>
-                  )}
-                </div>
-              </div>
+          <div className={gridClass}>
+            {listedItems.map((item) => (
+              <ListingCard
+                key={item.id}
+                item={item}
+                theme={theme}
+                dark={dark}
+                mode={view}
+                layout={viewMode}
+                menuOpen={activeMenu === item.id}
+                anchor
+                highlighted={highlightedId === item.id}
+                {...cardHandlers}
+              />
             ))}
           </div>
         )}
 
+        {!loading && !loadError && (hasMore || loadMoreError) ? (
+          <div className="flex justify-center">
+            <button
+              onClick={() => fetchItems({ reset: false })}
+              disabled={loadingMore}
+              className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60 ${theme.subtle}`}
+            >
+              {loadingMore ? <Loader2 size={16} className="animate-spin" /> : null}
+              {loadingMore ? "Loading more…" : loadMoreError ? "Couldn't load more. Tap to retry" : "Load more campus finds"}
+            </button>
+          </div>
+        ) : null}
+
         {/* FLOATING ACTION BUTTON */}
         <button
-          onClick={() => {
-            resetForm();
-            setShowUpload(true);
-          }}
-          className="fixed bottom-10 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl hover:scale-105 transition z-40"
-          aria-label="Upload item"
+          onClick={openNewListing}
+          className="fixed bottom-20 right-5 z-40 flex items-center gap-2 rounded-full bg-indigo-600 p-4 text-white shadow-2xl transition hover:bg-indigo-700 sm:bottom-8 sm:right-8 sm:px-5 sm:py-3"
+          aria-label="List an item"
         >
-          <PlusCircle size={24} />
+          <Plus size={22} />
+          <span className="hidden text-sm font-medium sm:inline">List an item</span>
         </button>
 
         {/* UPLOAD / EDIT MODAL */}
         {showUpload && (
-          <div className="fixed inset-0 z-[501] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-            <div className={`${card} w-full max-w-2xl rounded-3xl p-5 max-h-[90vh] overflow-y-auto sm:p-6`}>
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-semibold text-lg">
-                  {editingItem ? "Edit Product" : "Upload Product"}
-                </h2>
-                <button onClick={resetForm} className="p-1 hover:opacity-70">
+          <div
+            className="fixed inset-0 z-[501] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center sm:px-4"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !uploading) resetForm();
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="listing-modal-title"
+              className={`${theme.card} flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl ${
+                dark ? "!bg-[#111827]" : ""
+              }`}
+            >
+              <div className="flex items-center justify-between border-b border-gray-500/10 px-5 py-4 sm:px-6">
+                <div>
+                  <h2 id="listing-modal-title" className="text-lg font-semibold">
+                    {editingItem ? "Edit listing" : "List an item"}
+                  </h2>
+                  {!editingItem && (
+                    <p className={`text-xs ${theme.muted}`}>New listings are submitted for review.</p>
+                  )}
+                </div>
+                <button
+                  onClick={resetForm}
+                  disabled={uploading}
+                  aria-label="Close"
+                  className="rounded-lg p-1.5 transition hover:opacity-70 disabled:opacity-40"
+                >
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <input
-                  placeholder="Product Title"
-                  className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 outline-none text-sm"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                />
-
-                <input
-                  placeholder="Category (e.g. Textbooks, Electronics)"
-                  className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 outline-none text-sm"
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                />
-
-                <input
-                  type="number"
-                  placeholder="Price (NGN)"
-                  className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 outline-none text-sm"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                />
-
-                <input
-                  placeholder="WhatsApp Phone Number"
-                  className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 outline-none text-sm"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
-
-                <textarea
-                  rows={4}
-                  placeholder="Product Description"
-                  className="w-full p-3 rounded-xl bg-black/5 dark:bg-white/5 outline-none text-sm resize-none"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-
-                {/* FILE INPUT */}
-                <label className="border-2 border-dashed border-indigo-500/30 hover:border-indigo-500/60 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition">
-                  <ImageIcon className="opacity-70 mb-2" size={28} />
-                  <p className="font-medium text-sm">Upload Images</p>
-                  <span className="text-xs opacity-60 mt-1">Supports JPG, PNG, WEBP</span>
+              <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+                <Field label="Title" required error={errors.title} theme={theme}>
                   <input
-                    hidden
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) => handleImages(e.target.files)}
+                    placeholder="e.g. Mini fridge, barely used"
+                    className={`w-full rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                    value={form.title}
+                    maxLength={100}
+                    onChange={(e) => updateForm("title", e.target.value)}
                   />
-                </label>
+                </Field>
 
-                {/* PREVIEWS */}
-                {previews.length > 0 && (
-                  <div className="flex gap-3 overflow-x-auto py-2">
-                    {previews.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        alt="Preview"
-                        className="h-24 w-24 rounded-xl object-cover border border-white/10"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Category" required error={errors.category} theme={theme}>
+                    <select
+                      value={form.category}
+                      className={`w-full rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                      onChange={(e) => updateForm("category", e.target.value)}
+                    >
+                      <option value="">Select category…</option>
+                      {[...new Set([...MARKETPLACE_CATEGORIES, form.category].filter(Boolean))].map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Condition" required error={errors.condition} theme={theme}>
+                    <select
+                      value={form.condition}
+                      className={`w-full rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                      onChange={(e) => updateForm("condition", e.target.value)}
+                    >
+                      <option value="">Select condition…</option>
+                      {[...new Set([...CONDITION_OPTIONS, form.condition].filter(Boolean))].map((condition) => (
+                        <option key={condition} value={condition}>{condition}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Price" required error={errors.price} theme={theme}>
+                    <div className={`flex items-center rounded-xl ${theme.field}`}>
+                      <span className={`pl-3 text-sm ${theme.muted}`}>₦</span>
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        placeholder="0"
+                        className="w-full bg-transparent p-3 text-sm outline-none"
+                        value={form.price}
+                        onChange={(e) => updateForm("price", e.target.value)}
                       />
+                    </div>
+                  </Field>
+
+                  <Field label="Pickup location" required error={errors.location} theme={theme}>
+                    <input
+                      placeholder="e.g. Main gate, Faculty of Science"
+                      className={`w-full rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                      value={form.location}
+                      onChange={(e) => updateForm("location", e.target.value)}
+                    />
+                  </Field>
+                </div>
+
+                <Field
+                  label="Phone"
+                  required
+                  error={errors.phone}
+                  hint="Shown to interested students so they can reach you."
+                  theme={theme}
+                >
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="08012345678"
+                    className={`w-full rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                    value={form.phone}
+                    onChange={(e) => updateForm("phone", e.target.value)}
+                  />
+                </Field>
+
+                <Field label="Availability" hint="Optional" theme={theme}>
+                  <select
+                    value={form.availability}
+                    className={`w-full rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                    onChange={(e) => updateForm("availability", e.target.value)}
+                  >
+                    <option value="">Select availability…</option>
+                    {[...new Set([...AVAILABILITY_OPTIONS, form.availability].filter(Boolean))].map((availability) => (
+                      <option key={availability} value={availability}>{availability}</option>
                     ))}
+                  </select>
+                </Field>
+
+                <Field label="Description" theme={theme}>
+                  <textarea
+                    rows={4}
+                    maxLength={DESCRIPTION_MAX}
+                    placeholder="Add details such as size or reason for selling…"
+                    className={`w-full resize-none rounded-xl p-3 text-sm outline-none ${theme.field}`}
+                    value={form.description}
+                    onChange={(e) => updateForm("description", e.target.value)}
+                  />
+                  <span className={`mt-1 block text-right text-xs ${theme.muted}`}>
+                    {form.description.length}/{DESCRIPTION_MAX}
+                  </span>
+                </Field>
+
+                {/* PHOTOS */}
+                <div>
+                  <span className="mb-1.5 flex items-center gap-1 text-sm font-medium">
+                    Photos {!editingItem && <span className="text-red-500">*</span>}
+                  </span>
+                  <label
+                    className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition hover:border-indigo-500/60 ${
+                      errors.images ? "border-red-500/60" : "border-indigo-500/30"
+                    }`}
+                  >
+                    {compressing ? (
+                      <>
+                        <Loader2 className="mb-2 animate-spin text-indigo-500" size={26} />
+                        <p className="text-sm font-medium">Optimizing photos…</p>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className={`mb-2 ${theme.muted}`} size={26} />
+                        <p className="text-sm font-medium">
+                          {previews.length ? "Replace photos" : "Add photos"}
+                        </p>
+                        <span className={`mt-1 text-xs ${theme.muted}`}>
+                          Up to {MAX_IMAGES} images · JPG, PNG or WEBP
+                        </span>
+                      </>
+                    )}
+                    <input hidden type="file" multiple accept="image/*" onChange={handleImages} disabled={compressing || uploading} />
+                  </label>
+                  {errors.images && <span className="mt-1 block text-xs text-red-500">{errors.images}</span>}
+                  {savedSpace > 0 && images.length > 0 && (
+                    <span className={`mt-1 block text-xs ${theme.muted}`}>
+                      Photos optimized, about {savedSpace}% smaller for faster loading.
+                    </span>
+                  )}
+
+                  {previews.length > 0 && (
+                    <div className="mt-3 flex gap-3 overflow-x-auto py-1">
+                      {previews.map((src, i) => (
+                        <div key={`${src}-${i}`} className="relative shrink-0">
+                          <img
+                            src={src}
+                            alt={`Preview ${i + 1}`}
+                            className="h-24 w-24 rounded-xl border border-gray-500/20 object-cover"
+                          />
+                          {i === 0 && (
+                            <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                              Cover
+                            </span>
+                          )}
+                          {images.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => removeImage(i)}
+                              disabled={uploading}
+                              aria-label={`Remove photo ${i + 1}`}
+                              className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 p-1 text-white shadow transition hover:bg-red-600"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3 border-t border-gray-500/10 px-5 py-4 sm:px-6">
+                {uploading && (
+                  <div>
+                    <div className={`h-1.5 overflow-hidden rounded-full ${dark ? "bg-white/10" : "bg-gray-200"}`}>
+                      <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <p className={`mt-1 text-xs ${theme.muted}`}>
+                      {images.length > 0 ? `Uploading photos… ${progress}%` : "Saving…"}
+                    </p>
                   </div>
                 )}
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetForm}
+                    disabled={uploading}
+                    className={`rounded-xl px-5 py-3 text-sm font-medium transition disabled:opacity-50 ${theme.subtle}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploading || compressing}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        Saving…
+                      </>
+                    ) : editingItem ? (
+                      "Save changes"
+                    ) : (
+                      "Publish listing"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-                {/* SUBMIT BUTTON */}
+        {/* DELETE CONFIRMATION */}
+        {deleteTarget && (
+          <div
+            className="fixed inset-0 z-[502] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !deleting) setDeleteTarget(null);
+            }}
+          >
+            <div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="delete-title"
+              className={`${theme.card} w-full max-w-sm rounded-3xl p-6 ${dark ? "!bg-[#111827]" : ""}`}
+            >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-500">
+                <Trash2 size={22} />
+              </div>
+              <h2 id="delete-title" className="text-lg font-semibold">
+                Delete this listing?
+              </h2>
+              <p className={`mt-1 text-sm ${theme.muted}`}>
+                “{deleteTarget.title}” will be removed from the marketplace. This can't be undone.
+              </p>
+              <div className="mt-6 flex gap-3">
                 <button
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-medium transition flex items-center justify-center gap-2"
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={deleting}
+                  className={`flex-1 rounded-xl py-3 text-sm font-medium transition disabled:opacity-50 ${theme.subtle}`}>
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500 py-3 text-sm font-medium text-white transition hover:bg-red-600 disabled:opacity-60"
                 >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="animate-spin" size={18} />
-                      Processing...
-                    </>
-                  ) : editingItem ? (
-                    "Update Product"
-                  ) : (
-                    "Publish Product"
-                  )}
+                  {deleting ? <Loader2 className="animate-spin" size={16} /> : null}
+                  Delete
                 </button>
               </div>
             </div>

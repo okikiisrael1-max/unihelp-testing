@@ -286,13 +286,14 @@ const Dashboard = ({ dark }) => {
               <Link
                 to="/messages"
                 className="px-5 py-3 text-sm rounded-2xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
-                Connect with Students
+                Connect 
                 <ArrowRight size={15} />
               </Link>
               <a
-                href="#explore-tools"
-                className={`px-5 py-3 text-sm rounded-2xl border font-bold transition hover:border-indigo-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.card}`}>
-                Explore Features
+                href="/newsfeed"
+                className={`px-5 py-3 flex justify-center items-center gap-2 text-sm rounded-2xl border font-bold transition hover:border-indigo-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.card}`}>
+                Updateds
+                <PlayCircle size={15}/>
               </a>
             </div>
 
