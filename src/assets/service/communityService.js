@@ -492,6 +492,36 @@ export const startConversation = async (currentUser, otherUser, profile) => {
   return conversationId;
 };
 
+export const fetchConversations = async (uid) => {
+  if (!uid) return [];
+  const snap = await getDocs(query(
+    collection(db, "conversations"),
+    where("memberIds", "array-contains", uid)
+  ));
+
+  return snap.docs
+    .map((entry) => ({ id: entry.id, ...entry.data() }))
+    .filter((item) => {
+      const deletedAt = item.deletedFor?.[uid]?.toDate?.()?.getTime?.() || 0;
+      const updatedAt = item.updatedAt?.toDate?.()?.getTime?.() || 0;
+      return !deletedAt || updatedAt > deletedAt;
+    })
+    .sort((a, b) => {
+      const aTime = a.updatedAt?.toDate?.()?.getTime?.() || 0;
+      const bTime = b.updatedAt?.toDate?.()?.getTime?.() || 0;
+      return bTime - aTime;
+    });
+};
+
+export const fetchConversationMessages = async (conversationId) => {
+  if (!conversationId) return [];
+  const snap = await getDocs(query(
+    collection(db, "conversations", conversationId, "messages"),
+    orderBy("createdAt", "asc")
+  ));
+  return snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+};
+
 export const listenConversationMessages = (conversationId, callback) => {
   const q = query(collection(db, "conversations", conversationId, "messages"), orderBy("createdAt", "desc"), limit(MESSAGE_PAGE_SIZE));
   return onSnapshot(q, (snap) => {

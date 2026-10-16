@@ -42,9 +42,12 @@ import {
 import { Link, useSearchParams } from "react-router-dom";
 
 import { db } from "../../firebase/config";
+import { getJson, postJson } from "../../services/api";
 import { uploadFile } from "../../services/cloudinary";
 import { AuthContext } from "../context/AuthContext";
 import {
+  fetchConversationMessages,
+  fetchConversations,
   formatShortTime,
   getCurrentUserProfile,
   listenConversationMessages,
@@ -98,9 +101,12 @@ const Attachment = ({ item }) => {
 
 const messagePreview = (message) => {
   if (message?.deleted) return "This message was deleted";
+  if (message?.type === "sticker") return "Sticker";
   if (message?.text) return message.text.slice(0, 120);
   return message?.attachments?.[0]?.name || "Attachment";
 };
+
+const stickerLabel = (item) => item?.name || "Sticker";
 
 const toDate = (value) => {
   if (!value) return null;
@@ -142,6 +148,13 @@ export default function Messenger({ dark = false }) {
   const [requestTarget, setRequestTarget] = useState(null);
   const [requestSending, setRequestSending] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
+  const [stickerTab, setStickerTab] = useState("mine");
+  const [selectedStickerPackId, setSelectedStickerPackId] = useState("");
+  const [stickerPacks, setStickerPacks] = useState([]);
+  const [stickerItems, setStickerItems] = useState([]);
+  const [stickerLoading, setStickerLoading] = useState(false);
+  const [stickerError, setStickerError] = useState("");
   const openedUserRef = useRef("");
   const openedConversationRef = useRef("");
   const bottomRef = useRef(null);
@@ -189,17 +202,90 @@ export default function Messenger({ dark = false }) {
   // Listen conversations (no auto-open — WhatsApp always starts on the list)
   useEffect(() => {
     if (!user?.uid) return undefined;
+
+    let isMounted = true;
     const q = query(
       collection(db, "conversations"),
       where("memberIds", "array-contains", user.uid),
       orderBy("updatedAt", "desc"),
       limit(30)
     );
-    return onSnapshot(q, (snap) => {
+
+    fetchConversations(user.uid)
+      .then((items) => {
+        if (!isMounted) return;
+        setConversations(items);
+        if (!activeId && items.length > 0) {
+          setActiveId(items[0].id);
+        }
+      })
+      .catch(() => {});
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      if (!isMounted) return;
       const items = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
       setConversations(items);
+      if (!activeId && items.length > 0) {
+        setActiveId(items[0].id);
+      }
     });
-  }, [user?.uid]);
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [user?.uid, activeId]);
+
+  useEffect(() => {
+    if (!stickerPickerOpen || !user?.uid) return undefined;
+
+    const loadPacks = async () => {
+      try {
+        setStickerLoading(true);
+        setStickerError("");
+        const packs = await getJson("/api/stickers/packs");
+        setStickerPacks(packs?.data || []);
+      } catch (error) {
+        setStickerError(error.message || "Could not load sticker packs.");
+      } finally {
+        setStickerLoading(false);
+      }
+    };
+
+    loadPacks();
+    return undefined;
+  }, [stickerPickerOpen, user?.uid]);
+
+  useEffect(() => {
+    if (!stickerPickerOpen) return undefined;
+    let cancelled = false;
+    const tab = stickerTab === "recent" ? "recent" : stickerTab === "favorites" ? "favorites" : stickerTab === "mine" ? "mine" : "pack";
+
+    const loadStickers = async () => {
+      try {
+        setStickerLoading(true);
+        setStickerError("");
+        let data = [];
+        if (tab === "recent") {
+          data = (await getJson("/api/stickers/recent"))?.data || [];
+        } else if (tab === "favorites") {
+          data = (await getJson("/api/stickers/favorites"))?.data || [];
+        } else if (tab === "mine") {
+          data = (await getJson("/api/stickers?owner=me"))?.data || [];
+        } else {
+          data = selectedStickerPackId ? ((await getJson(`/api/stickers?packId=${encodeURIComponent(selectedStickerPackId)}`))?.data || []) : [];
+        }
+        if (!cancelled) setStickerItems(data);
+      } catch (error) {
+        if (!cancelled) setStickerError(error.message || "Could not load stickers.");
+      } finally {
+        if (!cancelled) setStickerLoading(false);
+      }
+    };
+
+    loadStickers();
+    return () => { cancelled = true; };
+  }, [selectedStickerPackId, stickerPickerOpen, stickerTab]);
 
   // Handle URL params for opening a chat directly
   useEffect(() => {
@@ -238,11 +324,28 @@ export default function Messenger({ dark = false }) {
   // Listen messages for active conversation
   useEffect(() => {
     if (!activeId || !user?.uid) return undefined;
+
+    let isMounted = true;
     markConversationRead(activeId, user.uid).catch(console.error);
-    return listenConversationMessages(activeId, (items) => {
+
+    fetchConversationMessages(activeId)
+      .then((items) => {
+        if (!isMounted) return;
+        setMessages(items);
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
+      })
+      .catch(() => {});
+
+    const unsubscribe = listenConversationMessages(activeId, (items) => {
+      if (!isMounted) return;
       setMessages(items);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
     });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [activeId, user?.uid]);
 
   // Reset per-message UI state whenever the open chat changes
@@ -433,6 +536,34 @@ export default function Messenger({ dark = false }) {
       setNotice(err.message || "Failed to send message. You may need to be friends first.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const sendSticker = async (sticker) => {
+    if (!activeConversation || !sticker?.id) return;
+    setNotice("");
+    setStickerPickerOpen(false);
+    try {
+      await sendDirectMessage(activeConversation, user, profile, {
+        type: "sticker",
+        stickerId: sticker.id,
+        text: "",
+        attachments: [],
+        sticker: {
+          id: sticker.id,
+          name: sticker.name || "Sticker",
+          type: sticker.type || "image",
+          assetUrl: sticker.assetUrl || sticker.url || sticker.imageUrl || sticker.thumbnailUrl || "",
+          thumbnailUrl: sticker.thumbnailUrl || sticker.imageUrl || sticker.url || "",
+        },
+      });
+      try {
+        await postJson(`/api/stickers/${encodeURIComponent(sticker.id)}/use`, {});
+      } catch (error) {
+        console.error("Sticker use tracking failed:", error);
+      }
+    } catch (err) {
+      setNotice(err.message || "Failed to send sticker.");
     }
   };
 
@@ -1151,6 +1282,16 @@ export default function Messenger({ dark = false }) {
                   <p className="mt-1 line-clamp-2 opacity-75">{message.replyTo.text}</p>
                 </div>
               )}
+              {message.type === "sticker" && message.sticker ? (
+                <div className="mt-2">
+                  <img
+                    src={message.sticker.thumbnailUrl || message.sticker.assetUrl || message.sticker.imageUrl || message.sticker.url}
+                    alt={message.sticker.name || "Sticker"}
+                    className="max-h-36 rounded-2xl border border-white/10 bg-black/10 object-contain"
+                  />
+                  <p className="mt-2 text-xs font-semibold opacity-80">{message.sticker.name || "Sticker"}</p>
+                </div>
+              ) : null}
               {message.text && <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.text}</p>}
               {(message.attachments || []).map((item, index) => <Attachment key={index} item={item} />)}
               {mine && <div className="mt-2 flex justify-end"><CheckCheck size={14} /></div>}
@@ -1161,6 +1302,88 @@ export default function Messenger({ dark = false }) {
       </div>
     );
   };
+
+  const StickerPicker = () => (
+    <div className={`fixed inset-0 z-50 bg-black/45 ${stickerPickerOpen ? "block" : "hidden"}`} onClick={() => setStickerPickerOpen(false)}>
+      <div className="absolute inset-x-0 bottom-0 mx-auto max-w-xl rounded-t-[28px] border border-white/10 bg-slate-950 p-4 text-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-lg font-black">Stickers</p>
+            <p className="text-xs text-slate-400">Choose from your packs and favorites</p>
+          </div>
+          <button onClick={() => setStickerPickerOpen(false)} className="rounded-xl p-2 hover:bg-white/5" aria-label="Close sticker picker"><X size={18} /></button>
+        </div>
+
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 text-sm">
+          {[
+            { key: "mine", label: "Mine" },
+            { key: "recent", label: "Recent" },
+            { key: "favorites", label: "Favorites" },
+            { key: "packs", label: "Packs" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setStickerTab(tab.key);
+                if (tab.key !== "packs") setSelectedStickerPackId("");
+              }}
+              className={`shrink-0 rounded-full px-3 py-2 font-semibold ${stickerTab === tab.key ? "bg-indigo-500 text-white" : "bg-white/5 text-slate-300"}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {stickerTab === "packs" && (
+          <div className="mb-4 grid max-h-52 grid-cols-2 gap-2 overflow-y-auto pr-1">
+            {stickerPacks.map((pack) => (
+              <button
+                key={pack.id}
+                onClick={() => {
+                  setSelectedStickerPackId(pack.id);
+                  setStickerTab("pack");
+                }}
+                className="rounded-2xl border border-white/10 bg-white/5 p-3 text-left hover:bg-white/10"
+              >
+                <p className="font-bold text-white">{pack.name || "Sticker pack"}</p>
+                <p className="mt-1 text-xs text-slate-400">{pack.description || "Official pack"}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {stickerError && <div className="mb-3 rounded-xl bg-red-500/10 p-2 text-sm text-red-300">{stickerError}</div>}
+
+        <div className="max-h-[42vh] overflow-y-auto">
+          {stickerLoading ? (
+            <div className="flex min-h-28 items-center justify-center text-slate-400"><Loader2 className="animate-spin" size={22} /></div>
+          ) : stickerItems.length === 0 ? (
+            <div className="flex min-h-28 items-center justify-center text-center text-sm text-slate-400">No stickers yet.</div>
+          ) : (
+            <div className="grid grid-cols-4 gap-3">
+              {stickerItems.map((sticker) => {
+                const image = sticker.thumbnailUrl || sticker.assetUrl || sticker.imageUrl || sticker.url || "";
+                return (
+                  <button
+                    key={sticker.id}
+                    onClick={() => sendSticker(sticker)}
+                    className="group flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 transition hover:border-indigo-400/50 hover:bg-indigo-500/10"
+                    title={stickerLabel(sticker)}
+                  >
+                    {image ? (
+                      <img src={image} alt={stickerLabel(sticker)} className="h-16 w-16 rounded-xl object-contain" />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-800 text-[10px] font-bold text-slate-300">Sticker</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={`min-h-screen md:mt-20 ${t.page}`}>
@@ -1265,6 +1488,9 @@ export default function Messenger({ dark = false }) {
                 {canUseComposer ? (
                   <div className={`flex items-end gap-2 rounded-3xl border p-3 ${t.soft}`}>
                     <button className="rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Emoji"><Smile size={18} /></button>
+                    <button onClick={() => setStickerPickerOpen(true)} className="rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Open sticker picker">
+                      <Smile size={18} />
+                    </button>
                     <label className="cursor-pointer rounded-2xl p-3 hover:bg-indigo-500/10" aria-label="Attach file">
                       <UploadCloud size={18} />
                       <input hidden type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
@@ -1292,6 +1518,8 @@ export default function Messenger({ dark = false }) {
           )}
         </main>
       </div>
+
+      <StickerPicker />
 
       {/* Find Friend Modal */}
       <FindFriendModal />

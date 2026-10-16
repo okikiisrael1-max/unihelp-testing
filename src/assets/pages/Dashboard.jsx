@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   Activity,
@@ -6,19 +12,21 @@ import {
   BarChart3,
   Bot,
   BookOpen,
+  Calculator,
   ChevronRight,
   Flame,
   HistoryIcon,
+  MessageCircle,
+  Newspaper,
+  PlayCircle,
   Search,
   Sparkles,
   Trash2,
-  TrendingUp,
   TrendingDown,
+  TrendingUp,
   Trophy,
+  Users,
   X,
-  Plus,
-  PlayCircle,
-  PlayCircleIcon,
 } from "lucide-react";
 
 import {
@@ -31,24 +39,109 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../../firebase/config";
-
 import { AuthContext } from "../context/AuthContext";
-
 import PromotionAdsBanner from "../components/PromotionAdsBanner";
 
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Images } from "../data/data";
-import { allFeatures, featuredFeatureItems, featureSections } from "../data/features";
+import { allFeatures, featureSections } from "../data/features";
 
-import fImg1 from "../images/featured/gpa_calc.jpg";
-import fImg2 from "../images/featured/cgpa_track.jpg";
-import fImg3 from "../images/featured/past_questions.jpg";
-import fImg4 from "../images/featured/stationery.jpg";
-import fImg5 from "../images/featured/desk1.jpg";
-import fImg6 from "../images/featured/coffee_notes.jpg";
+/* ================================================= */
+/* CONSTANTS */
+/* ================================================= */
 
-const FEATURED_IMAGES = [fImg1, fImg2, fImg3, fImg4, fImg5, fImg6];
+const TOOLS_PREVIEW_COUNT = 6;
+const RECORDS_PREVIEW_COUNT = 4;
+
+const QUICK_ACTIONS = [
+  {
+    label: "CGPA Tracker",
+    hint: "Log a semester",
+    to: "/CGPA",
+    icon: Calculator,
+    tint: "indigo",
+  },
+  {
+    label: "AI Tutor",
+    hint: "Ask anything",
+    to: "/ai",
+    icon: Bot,
+    tint: "violet",
+  },
+  {
+    label: "Watch",
+    hint: "Video tutorials",
+    to: "/watch",
+    icon: PlayCircle,
+    tint: "red",
+  },
+  {
+    label: "Messages",
+    hint: "Chat with students",
+    to: "/messages",
+    icon: MessageCircle,
+    tint: "sky",
+  },
+  {
+    label: "Updates",
+    hint: "Campus news",
+    to: "/newsfeed",
+    icon: Newspaper,
+    tint: "amber",
+  },
+  {
+    label: "Groups",
+    hint: "Join communities",
+    to: "/community",
+    icon: Users,
+    tint: "emerald",
+  },
+];
+
+// Written out in full so Tailwind can see every class at build time.
+const TINTS = {
+  indigo: {
+    dark: "bg-indigo-500/15 text-indigo-300",
+    light: "bg-indigo-50 text-indigo-600",
+  },
+  violet: {
+    dark: "bg-violet-500/15 text-violet-300",
+    light: "bg-violet-50 text-violet-600",
+  },
+  red: {
+    dark: "bg-red-500/15 text-red-300",
+    light: "bg-red-50 text-red-600",
+  },
+  sky: {
+    dark: "bg-sky-500/15 text-sky-300",
+    light: "bg-sky-50 text-sky-600",
+  },
+  amber: {
+    dark: "bg-amber-500/15 text-amber-300",
+    light: "bg-amber-50 text-amber-600",
+  },
+  emerald: {
+    dark: "bg-emerald-500/15 text-emerald-300",
+    light: "bg-emerald-50 text-emerald-600",
+  },
+};
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+
+const formatDate = (createdAt) => {
+  if (!createdAt?.seconds) return "";
+  return new Date(createdAt.seconds * 1000).toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+/* ================================================= */
+/* DASHBOARD */
+/* ================================================= */
 
 const Dashboard = ({ dark }) => {
   const { user } = useContext(AuthContext);
@@ -58,7 +151,11 @@ const Dashboard = ({ dark }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showAllRecords, setShowAllRecords] = useState(false);
+  const [showAllTools, setShowAllTools] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
+
+  const searchRef = useRef(null);
+  const toolsRef = useRef(null);
 
   /* ------------------------------------------------ */
   /* FETCH CGPA RECORDS */
@@ -70,6 +167,7 @@ const Dashboard = ({ dark }) => {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchRecords = async () => {
@@ -81,14 +179,15 @@ const Dashboard = ({ dark }) => {
 
       const snap = await getDocs(q);
 
-      const data = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
       }));
 
       setRecords(data);
     } catch (err) {
       console.log(err);
+      toast.error("Couldn't load your CGPA records");
     } finally {
       setLoading(false);
     }
@@ -101,7 +200,6 @@ const Dashboard = ({ dark }) => {
   const handleDelete = async (id) => {
     try {
       await deleteDoc(doc(db, "cgpaTracker", id));
-
       setRecords((prev) => prev.filter((item) => item.id !== id));
       toast.success("Record deleted");
     } catch (err) {
@@ -113,50 +211,80 @@ const Dashboard = ({ dark }) => {
   };
 
   /* ------------------------------------------------ */
-  /* SORT RECORDS */
+  /* KEYBOARD SHORTCUT: press "/" to search tools */
+  /* ------------------------------------------------ */
+
+  const focusSearch = () => {
+    toolsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // wait for the scroll to start so the keyboard doesn't fight it on mobile
+    setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 250);
+  };
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable)
+        return;
+      e.preventDefault();
+      focusSearch();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /* ------------------------------------------------ */
+  /* SORT + STATS */
   /* ------------------------------------------------ */
 
   const sortedRecords = useMemo(() => {
-    return [...records].sort((a, b) => {
-      const aTime = a.createdAt?.seconds || 0;
-      const bTime = b.createdAt?.seconds || 0;
-
-      return bTime - aTime;
-    });
+    return [...records].sort(
+      (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+    );
   }, [records]);
 
   const visibleRecords = showAllRecords
     ? sortedRecords
-    : sortedRecords.slice(0, 4);
+    : sortedRecords.slice(0, RECORDS_PREVIEW_COUNT);
 
-  /* ------------------------------------------------ */
-  /* DASHBOARD STATS */
-  /* ------------------------------------------------ */
+  const dashboard = useMemo(() => {
+    const values = records.map((r) => Number(r.cgpa) || 0);
+    const total = values.length;
 
-  const dashboard = {
-    totalRecords: records.length,
+    return {
+      totalRecords: total,
+      bestCGPA: total ? Math.max(...values).toFixed(2) : "0.00",
+      avgCGPA: total
+        ? (values.reduce((a, b) => a + b, 0) / total).toFixed(2)
+        : "0.00",
+      latestCGPA: total ? (Number(sortedRecords[0]?.cgpa) || 0).toFixed(2) : "0.00",
+    };
+  }, [records, sortedRecords]);
 
-    bestCGPA: records.length
-      ? Math.max(...records.map((r) => Number(r.cgpa) || 0)).toFixed(2)
-      : "0.00",
-
-    avgCGPA: records.length
-      ? (
-          records.reduce((acc, item) => acc + Number(item.cgpa || 0), 0) /
-          records.length
-        ).toFixed(2)
-      : "0.00",
-
-    latestCGPA: sortedRecords.length
-      ? Number(sortedRecords[0]?.cgpa).toFixed(2)
-      : "0.00",
-  };
-
-  // Simple trend: is the most recent record above or below the running average?
-  const cgpaTrend =
-    records.length > 1
-      ? Number(dashboard.latestCGPA) - Number(dashboard.avgCGPA)
+  // Change since the previous saved record (more meaningful than vs. average)
+  const cgpaChange =
+    sortedRecords.length > 1
+      ? (Number(sortedRecords[0]?.cgpa) || 0) -
+        (Number(sortedRecords[1]?.cgpa) || 0)
       : 0;
+
+  // Oldest -> newest, last 8, for the sparkline
+  const sparkData = useMemo(() => {
+    return [...sortedRecords]
+      .reverse()
+      .slice(-8)
+      .map((r) => ({
+        id: r.id,
+        value: Number(r.cgpa) || 0,
+        date: formatDate(r.createdAt),
+      }));
+  }, [sortedRecords]);
+
+  const sparkMax = Math.max(...sparkData.map((d) => d.value), 0.01);
+
+  /* ------------------------------------------------ */
+  /* THEME */
+  /* ------------------------------------------------ */
 
   const theme = {
     bg: dark ? "bg-[#070b14] text-white" : "bg-[#f6f7fb] text-gray-900",
@@ -172,8 +300,11 @@ const Dashboard = ({ dark }) => {
       : "bg-indigo-50 text-indigo-600",
     textSoft: dark ? "text-gray-400" : "text-gray-500",
     textFaint: dark ? "text-gray-500" : "text-gray-400",
-    border: dark ? "border-white/10" : "border-gray-200",
+    kbd: dark
+      ? "border-white/15 bg-white/5 text-gray-400"
+      : "border-gray-200 bg-gray-50 text-gray-500",
     fadeEdge: dark ? "from-[#070b14]" : "from-[#f6f7fb]",
+    tint: (name) => TINTS[name][dark ? "dark" : "light"],
   };
 
   /* ------------------------------------------------ */
@@ -190,17 +321,22 @@ const Dashboard = ({ dark }) => {
   const firstName = (user?.displayName || "Student").split(" ")[0];
 
   /* ------------------------------------------------ */
-  /* FEATURE DATA */
+  /* TOOLS: search + category filter */
   /* ------------------------------------------------ */
 
-  const categoryNames = ["All", ...featureSections.map((section) => section.title)];
+  const categoryNames = [
+    "All",
+    ...featureSections.map((section) => section.title),
+  ];
 
   const allItems = useMemo(() => allFeatures, []);
+  const totalToolCount = allItems.length;
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const isFiltering = normalizedQuery.length > 0 || activeCategory !== "All";
 
-  const filteredItems = useMemo(() => {
-    const matches = allItems.filter((item) => {
+  const matchedItems = useMemo(() => {
+    return allItems.filter((item) => {
       const matchesCategory =
         activeCategory === "All" || item.category === activeCategory;
 
@@ -211,12 +347,16 @@ const Dashboard = ({ dark }) => {
 
       return matchesCategory && matchesQuery;
     });
-
-    return matches.slice(0, 6);
   }, [allItems, activeCategory, normalizedQuery]);
 
-  const totalToolCount = allItems.length;
-  const isFiltering = normalizedQuery.length > 0 || activeCategory !== "All";
+  // While searching/filtering, always show every match; otherwise preview.
+  const filteredItems =
+    showAllTools || isFiltering
+      ? matchedItems
+      : matchedItems.slice(0, TOOLS_PREVIEW_COUNT);
+
+  const canToggleTools =
+    !isFiltering && matchedItems.length > TOOLS_PREVIEW_COUNT;
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -224,226 +364,204 @@ const Dashboard = ({ dark }) => {
   };
 
   /* ------------------------------------------------ */
-  /* STATS STRIP (real data, color-coded per stat) */
+  /* STATS */
   /* ------------------------------------------------ */
 
-  const statsStrip = [
+  const stats = [
     {
       icon: BarChart3,
-      label: "CGPA Records",
+      label: "CGPA records",
       value: dashboard.totalRecords,
-      tint: dark ? "bg-indigo-500/15 text-indigo-300" : "bg-indigo-50 text-indigo-600",
+      tint: "indigo",
     },
     {
-      icon: TrendingUp,
+      icon: Trophy,
       label: "Best CGPA",
       value: dashboard.bestCGPA,
-      tint: dark ? "bg-emerald-500/15 text-emerald-300" : "bg-emerald-50 text-emerald-600",
+      tint: "emerald",
     },
     {
       icon: Activity,
       label: "Average CGPA",
       value: dashboard.avgCGPA,
-      tint: dark ? "bg-sky-500/15 text-sky-300" : "bg-sky-50 text-sky-600",
+      tint: "sky",
     },
     {
       icon: Sparkles,
-      label: "Tools Available",
+      label: "Tools available",
       value: totalToolCount,
-      tint: dark ? "bg-violet-500/15 text-violet-300" : "bg-violet-50 text-violet-600",
+      tint: "violet",
     },
   ];
 
+  /* ------------------------------------------------ */
+  /* RENDER */
+  /* ------------------------------------------------ */
+
   return (
-    <div className={`min-h-screen px-4 md:px-8 lg:px-10 md:mt-20 ${theme.bg} transition-colors duration-300`}>
-      <div className="px-4 md:px-6 lg:px-8 py-6 md:py-10 max-w-[1400px] mx-auto">
+    <div
+      className={`min-h-screen px-4 md:px-8 lg:px-10 md:mt-20 ${theme.bg} motion-safe:transition-colors motion-safe:duration-300`}
+    >
+      <div className="px-0 sm:px-4 md:px-6 lg:px-8 py-6 md:py-10 max-w-[1280px] mx-auto">
         {/* ================================================= */}
-        {/* HERO */}
+        {/* HEADER: greeting + primary actions */}
         {/* ================================================= */}
 
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center mb-10 md:mb-14">
-          <div>
-            <span
-              className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full mb-4 ${theme.iconTint}`}>
-              {greeting}, {firstName}
-            </span>
-
-            <h1 className="text-3xl md:text-5xl font-black leading-[1.08] tracking-tight">
-              Everything you need
-              <br />
-              to succeed in school,
-              <br />
-              <span className="text-indigo-500">all in one place.</span>
-            </h1>
-
-            <p className={`mt-5 text-sm md:text-base leading-relaxed max-w-lg ${theme.textSoft}`}>
-              Access every academic tool, learning resource, marketplace
-              listing, and CGPA record UniHelp offers organized in a
-              single dashboard built for Nigerian university students.
+        <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-6 md:mb-8">
+          <div className="min-w-0">
+            <p className={`text-sm font-semibold ${theme.textSoft}`}>
+              {greeting}
             </p>
-
-            <div className="flex flex-wrap items-center gap-3 mt-7">
-              <Link
-                to="/messages"
-                className="px-5 py-3 text-sm rounded-2xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
-                Connect 
-                <ArrowRight size={15} />
-              </Link>
-              <a
-                href="/newsfeed"
-                className={`px-5 py-3 flex justify-center items-center gap-2 text-sm rounded-2xl border font-bold transition hover:border-indigo-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${theme.card}`}>
-                Updateds
-                <PlayCircle size={15}/>
-              </a>
-            </div>
-
-            <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 mt-6 text-xs font-semibold ${theme.textSoft}`}>
-              <span className="inline-flex items-center gap-1.5">
-                <Activity size={13} className="text-emerald-500" />
-                100% Free to Start
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Sparkles size={13} className="text-indigo-500" />
-                Made for Students
-              </span>
-            </div>
+            <h1 className="mt-1 text-3xl md:text-4xl font-black tracking-tight truncate">
+              Welcome back, {firstName}
+            </h1>
+            <p className={`mt-2 text-sm max-w-xl ${theme.textSoft}`}>
+              Pick up where you left off, or find a tool for your next
+              assignment.
+            </p>
           </div>
 
-          {/* HERO VISUAL PANEL */}
-          <div className="relative pb-6 sm:pb-0">
-            <div
-              className={`relative overflow-hidden rounded-[2rem] border ${ dark ? "bg-gradient-to-br from-indigo-950 via-[#0f172a] to-black border-white/10" : "bg-gradient-to-br from-indigo-50 via-white to-violet-50 border-indigo-100"}`}>
-              <div className="absolute -top-10 -right-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-10 -left-10 w-56 h-56 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
-              <img
-                src={Images.hero_image}
-                className="aspect-[4/5] sm:aspect-[3/3] w-full object-cover object-center"
-                alt="UniHelp platform preview"
-              />
-            </div>
+          <button
+            type="button"
+            onClick={focusSearch}
+            className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm w-full md:w-72 transition hover:border-indigo-400/60 ${theme.card} ${FOCUS_RING}`}
+          >
+            <Search size={16} className={theme.textFaint} />
+            <span className={`flex-1 ${theme.textSoft}`}>Find a tool…</span>
+            <kbd
+              className={`hidden md:inline-flex h-6 min-w-6 items-center justify-center rounded-md border px-1.5 text-[11px] font-semibold ${theme.kbd}`}
+            >
+              /
+            </kbd>
+          </button>
+        </header>
 
-            {/* Floating badges */}
-            <div className={`absolute -top-3 right-2 sm:-top-5 sm:right-2 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg max-w-[62%] sm:max-w-none ${theme.card}`}>
-              <p className="text-[10px] sm:text-[11px] font-semibold truncate">Welcome back,</p>
-              <p className="text-sm font-black text-indigo-500 truncate">{firstName} 👋</p>
-            </div>
+        {/* ================================================= */}
+        {/* QUICK ACTIONS */}
+        {/* ================================================= */}
 
-            <div className={`absolute bottom-16 left-1 sm:bottom-6 sm:-left-3 md:-left-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 ${theme.card}`}>
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                <Flame size={16} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-black leading-tight">{dashboard.bestCGPA}</p>
-                <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Best CGPA</p>
-              </div>
-            </div>
-
+        <nav
+          aria-label="Quick actions"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 md:mb-8"
+        >
+          {QUICK_ACTIONS.map(({ label, hint, to, icon: Icon, tint }) => (
             <Link
-              to="/ai"
-              className={`absolute bottom-1 right-2 sm:-bottom-5 sm:right-2 md:right-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}>
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-                <Bot size={16} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-black leading-tight whitespace-nowrap">AI Tutor</p>
-                <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Ask anything</p>
-              </div>
+              key={label}
+              to={to}
+              className={`group flex items-center gap-3 rounded-2xl p-3.5 transition hover:border-indigo-400/60 hover:shadow-md motion-safe:hover:-translate-y-0.5 ${theme.card} ${FOCUS_RING}`}
+            >
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${theme.tint(tint)}`}
+              >
+                <Icon size={18} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold leading-tight">
+                  {label}
+                </span>
+                <span className={`block truncate text-xs mt-0.5 ${theme.textSoft}`}>
+                  {hint}
+                </span>
+              </span>
             </Link>
+          ))}
+        </nav>
 
-             <Link
-              to="/watch"
-              className={`absolute top-5 -left-2 sm:top-15 sm:left-2 md:left-6 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 border shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.card}`}>
-              <div className="w-9 h-9 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
-                <PlayCircleIcon size={16} />
-              </div>
+        {/* ================================================= */}
+        {/* STATS */}
+        {/* ================================================= */}
+
+        <section
+          aria-label="Your stats"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 md:mb-8"
+        >
+          {stats.map(({ icon: Icon, label, value, tint }) => (
+            <div
+              key={label}
+              className={`rounded-2xl p-4 flex items-center gap-3.5 ${theme.card}`}
+            >
+              <span
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${theme.tint(tint)}`}
+              >
+                <Icon size={19} />
+              </span>
               <div className="min-w-0">
-                <p className="text-sm font-black leading-tight whitespace-nowrap">Watch</p>
-                <p className={`text-[10px] whitespace-nowrap ${theme.textSoft}`}>Tutorials</p>
+                {loading && label !== "Tools available" ? (
+                  <div
+                    className={`h-6 w-14 rounded-md motion-safe:animate-pulse ${theme.soft}`}
+                  />
+                ) : (
+                  <p className="text-xl font-black leading-tight">{value}</p>
+                )}
+                <p className={`text-xs mt-0.5 truncate ${theme.textSoft}`}>
+                  {label}
+                </p>
               </div>
-            </Link>
-          </div>
-        </div>
+            </div>
+          ))}
+        </section>
+
+        {/* ================================================= */}
+        {/* DAILY CHALLENGE (the one high-emphasis banner) */}
+        {/* ================================================= */}
+
+        <DailyChallengeBanner />
 
         {/* ================================================= */}
         {/* ADS BANNER */}
         {/* ================================================= */}
 
-        <div className="mb-10">
+        <div className="mb-10 md:mb-12">
           <PromotionAdsBanner dark={dark} autoSlide={true} interval={5000} />
         </div>
 
-
         {/* ================================================= */}
-        {/*  Group ADS*/}
-        {/* ================================================= */}
-         <section className="relative mb-8 md:mb-10 overflow-hidden hidden sm:block rounded-2xl bg-gradient-to-br from-indigo-600 to-transparent text-white shadow-lg shadow-indigo-500/20">
-      <div className="relative z-10 grid gap-6 px-5 pt-7 sm:px-8 sm:pt-9 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
-        <div className="min-w-0">
-          <h2 className=" text-2xl font-bold leading-tight sm:text-4xl">
-            Join <span className="text-indigo-300">Student Groups</span>
-          </h2>
-
-          <p className="mt-2 max-w-sm text-sm leading-6 text-white/80">
-            Connect with like-minded students, share resources, and collaborate on projects in your university community.
-          </p>
-
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-             <Link
-              to="/community"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600">
-              <Activity size={16} />
-              Explore Groups
-            </Link>
-          </div>
-        </div>
-
-        <img
-          src={Images.group_illutration}
-          alt=""
-          aria-hidden="true"
-          className="hidden h-80 w-80 shrink-0 object-contain sm:block md:h-auto md:w-80 lg:h-auto lg:w-90"
-        />
-      </div>
-    </section>
-
-
-        {/* ================================================= */}
-        {/* EXPLORE POWERFUL TOOLS */}
+        {/* EXPLORE TOOLS */}
         {/* ================================================= */}
 
-        <section id="explore-tools" className="mb-10 md:mb-14 scroll-mt-20">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-5">
+        <section
+          id="explore-tools"
+          ref={toolsRef}
+          className="mb-10 md:mb-12 scroll-mt-24"
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-5">
             <div>
-              <h2 className="text-xl md:text-2xl font-black">
-                Explore <span className="text-indigo-500">Powerful Tools</span>
-              </h2>
+              <h2 className="text-xl md:text-2xl font-black">Explore tools</h2>
               <p className={`text-sm mt-1 ${theme.textSoft}`}>
-                {totalToolCount} tools across academics, marketplace, and community.
+                {totalToolCount} tools across academics, marketplace, and
+                community.
               </p>
             </div>
 
             <Link
               to="/features"
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-500 hover:text-indigo-400 transition">
-              View All Features
+              className={`inline-flex items-center gap-1.5 text-sm font-bold text-indigo-500 hover:text-indigo-400 transition rounded-lg ${FOCUS_RING}`}
+            >
+              See all features
               <ArrowRight size={15} />
             </Link>
           </div>
 
           {/* SEARCH */}
           <div
-            className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-4 transition ${theme.input}`}>
+            className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-4 transition ${theme.input}`}
+          >
             <Search size={17} className={theme.textFaint} />
             <input
+              ref={searchRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tools, e.g. CGPA calculator, marketplace..."
-              className={`flex-1 bg-transparent text-sm outline-none placeholder:${theme.textFaint}`}
+              onKeyDown={(e) => e.key === "Escape" && setSearchQuery("")}
+              placeholder="Search tools, e.g. CGPA calculator, marketplace"
+              className={`flex-1 min-w-0 bg-transparent text-sm outline-none ${
+                dark ? "placeholder:text-gray-500" : "placeholder:text-gray-400"
+              }`}
               aria-label="Search tools"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
                 className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 hover:bg-red-500/10 hover:text-red-500 transition ${theme.textFaint}`}
@@ -453,218 +571,374 @@ const Dashboard = ({ dark }) => {
             )}
           </div>
 
-          {/* CATEGORY PILLS with fade edges */}
+          {/* CATEGORY PILLS */}
           <div className="relative mb-5">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-              {categoryNames.map((name) => (
-                <button
-                  key={name}
-                  onClick={() => setActiveCategory(name)}
-                  className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold whitespace-nowrap border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                    activeCategory === name
-                      ? "bg-indigo-500 border-indigo-500 text-white"
-                      : `${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`
-                  }`}>
-                  {name}
-                </button>
-              ))}
+            <div
+              role="tablist"
+              aria-label="Tool categories"
+              className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1 pr-8"
+            >
+              {categoryNames.map((name) => {
+                const active = activeCategory === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveCategory(name)}
+                    className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold whitespace-nowrap border transition ${FOCUS_RING} ${
+                      active
+                        ? "bg-indigo-500 border-indigo-500 text-white"
+                        : `${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
             </div>
-            <div className={`pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l ${theme.fadeEdge} to-transparent`} />
+            <div
+              className={`pointer-events-none absolute top-0 right-0 h-full w-10 bg-gradient-to-l ${theme.fadeEdge} to-transparent`}
+            />
           </div>
+
+          {/* RESULT COUNT (only while filtering) */}
+          {isFiltering && (
+            <div
+              className="flex items-center justify-between mb-3"
+              aria-live="polite"
+            >
+              <p className={`text-xs font-semibold ${theme.textSoft}`}>
+                {matchedItems.length}{" "}
+                {matchedItems.length === 1 ? "tool" : "tools"} found
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className={`text-xs font-bold text-indigo-500 hover:text-indigo-400 transition rounded ${FOCUS_RING}`}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
 
           {filteredItems.length === 0 ? (
             <div className={`rounded-3xl p-10 text-center ${theme.soft}`}>
               <Search className="mx-auto mb-4 opacity-40" size={36} />
               <h3 className="font-bold mb-1">
-                {searchQuery ? `No tools match "${searchQuery}"` : "No tools in this category yet"}
+                {searchQuery
+                  ? `No tools match "${searchQuery}"`
+                  : "No tools in this category yet"}
               </h3>
               <p className={`text-sm mb-4 ${theme.textSoft}`}>
-                Try a different keyword or category.
+                Check the spelling, try a shorter keyword, or pick another
+                category.
               </p>
               {isFiltering && (
                 <button
+                  type="button"
                   onClick={clearFilters}
-                  className="inline-flex px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
+                  className={`inline-flex px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition ${FOCUS_RING}`}
                 >
                   Clear filters
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
               {filteredItems.map((item) => (
-                <ToolRow key={`${item.category}-${item.title}`} item={item} theme={theme} />
+                <ToolRow
+                  key={`${item.category}-${item.title}`}
+                  item={item}
+                  theme={theme}
+                />
               ))}
+            </div>
+          )}
+
+          {canToggleTools && (
+            <div className="text-center mt-5">
+              <button
+                type="button"
+                onClick={() => setShowAllTools((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition hover:border-indigo-400/60 hover:text-indigo-500 ${theme.card} ${FOCUS_RING}`}
+              >
+                {showAllTools
+                  ? "Show fewer tools"
+                  : `Show all ${matchedItems.length} tools`}
+                <ChevronRight
+                  size={13}
+                  className={`transition-transform ${
+                    showAllTools ? "-rotate-90" : "rotate-90"
+                  }`}
+                />
+              </button>
             </div>
           )}
         </section>
 
         {/* ================================================= */}
-        {/* DAILY CHALLENGE */}
+        {/* TRENDING + CGPA HISTORY */}
         {/* ================================================= */}
 
-        <DailyChallengeBanner />
-
-        {/* ================================================= */}
-        {/* TRENDING TOOLS + CGPA HISTORY (two column split) */}
-        {/* ================================================= */}
-
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
-          {/* TRENDING NOW — top tools by category */}
-          <section className={`${theme.card} rounded-[28px] p-5 md:p-6`}>
+        <div className="grid lg:grid-cols-[1fr_1fr] gap-5 md:gap-6 mb-10 md:mb-12">
+          {/* TRENDING */}
+          <section className={`${theme.card} rounded-3xl p-5 md:p-6`}>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-11 h-11 rounded-2xl bg-orange-500/10 flex items-center justify-center shrink-0">
                 <Flame className="text-orange-500" size={20} />
               </div>
               <div>
-                <h2 className="font-black text-lg">Trending Now</h2>
-                <p className={`text-xs ${theme.textSoft}`}>Popular tools students use most</p>
+                <h2 className="font-black text-lg">Trending now</h2>
+                <p className={`text-xs ${theme.textSoft}`}>
+                  Tools students are using most
+                </p>
               </div>
             </div>
 
-            <div className="space-y-2.5">
-              {allItems.slice(5, 10).map((item, i) => (
-                <Link
-                  key={item.title}
-                  to={item.link}
-                  className={`flex items-center gap-3 rounded-2xl p-3 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${theme.soft}`}
-                >
-                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${theme.iconTint}`}>
-                    {i + 1}
-                  </span>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${theme.iconTint}`}>
-                    <item.icon size={17} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm truncate">{item.title}</p>
-                    <p className={`text-xs truncate ${theme.textSoft}`}>{item.category}</p>
-                  </div>
-                  <ChevronRight size={16} className="opacity-40 shrink-0" />
-                </Link>
-              ))}
-            </div>
+            <ol className="space-y-2.5">
+              {allItems.slice(5, 10).map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.title}>
+                    <Link
+                      to={item.link}
+                      className={`flex items-center gap-3 rounded-2xl p-3 transition hover:border-indigo-400/40 motion-safe:hover:-translate-y-0.5 ${theme.soft} ${FOCUS_RING}`}
+                    >
+                      <span
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${theme.iconTint}`}
+                        aria-label={`Rank ${i + 1}`}
+                      >
+                        {i + 1}
+                      </span>
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${theme.iconTint}`}
+                      >
+                        {Icon && <Icon size={17} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm truncate">
+                          {item.title}
+                        </p>
+                        <p className={`text-xs truncate ${theme.textSoft}`}>
+                          {item.category}
+                        </p>
+                      </div>
+                      <ChevronRight size={16} className="opacity-40 shrink-0" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
 
-          {/* CGPA HISTORY as "Recent Activity" style panel */}
-          <section className={`${theme.card} rounded-[28px] p-5 md:p-6`}>
+          {/* CGPA HISTORY */}
+          <section className={`${theme.card} rounded-3xl p-5 md:p-6`}>
             <div className="flex items-center justify-between gap-4 mb-5">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0">
-                  <HistoryIcon className="text-red-500" size={20} />
+                <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+                  <HistoryIcon className="text-indigo-500" size={20} />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="font-black text-lg">CGPA History</h2>
-                  <p className={`text-xs truncate ${theme.textSoft}`}>Your saved academic records</p>
+                  <h2 className="font-black text-lg">CGPA history</h2>
+                  <p className={`text-xs truncate ${theme.textSoft}`}>
+                    Your saved academic records
+                  </p>
                 </div>
               </div>
 
-              {!loading && records.length > 0 && (
+              {user && !loading && records.length > 0 && (
                 <Link
                   to="/CGPA"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-xs font-bold text-white hover:bg-indigo-600 transition shrink-0"
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-xs font-bold text-white hover:bg-indigo-600 transition shrink-0 ${FOCUS_RING}`}
                 >
-                  Add New
+                  Add record
                   <ArrowRight size={14} />
                 </Link>
               )}
             </div>
 
-            {loading && (
-              <div className="space-y-2.5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className={`rounded-2xl p-4 ${theme.soft} animate-pulse h-16`} />
-                ))}
-              </div>
-            )}
-
-            {!loading && records.length === 0 && (
+            {/* Signed out */}
+            {!user && !loading && (
               <div className={`rounded-2xl p-8 text-center ${theme.soft}`}>
                 <BookOpen className="mx-auto mb-3 opacity-50" size={34} />
-                <h3 className="font-bold text-sm mb-1">No CGPA Records Yet</h3>
+                <h3 className="font-bold text-sm mb-1">
+                  Sign in to see your records
+                </h3>
                 <p className={`text-xs mb-4 ${theme.textSoft}`}>
-                  Start tracking your CGPA to see your history here.
+                  Your CGPA records are saved to your account.
                 </p>
                 <Link
-                  to="/CGPA"
-                  className="inline-flex px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
+                  to="/login"
+                  className={`inline-flex px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition ${FOCUS_RING}`}
                 >
-                  Start Tracking
+                  Sign in
                 </Link>
               </div>
             )}
 
-            {!loading && records.length > 0 && (
-              <>
-                {cgpaTrend !== 0 && (
+            {/* Loading */}
+            {loading && (
+              <div className="space-y-2.5">
+                {[1, 2, 3].map((i) => (
                   <div
-                    className={`flex items-center gap-1.5 text-xs font-bold mb-3 ${
-                      cgpaTrend > 0 ? "text-emerald-500" : "text-red-500"
-                    }`}
-                  >
-                    {cgpaTrend > 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                    {cgpaTrend > 0 ? "+" : ""}
-                    {cgpaTrend.toFixed(2)} vs your average
-                  </div>
-                )}
+                    key={i}
+                    className={`rounded-2xl h-16 motion-safe:animate-pulse ${theme.soft}`}
+                  />
+                ))}
+              </div>
+            )}
 
-                <div className="space-y-2.5">
-                  {visibleRecords.map((record) => (
-                    <div key={record.id} className={`rounded-2xl p-4 ${theme.soft}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-                            <Activity size={17} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-black text-indigo-500 text-lg leading-tight">
-                              {record.cgpa}
-                            </p>
-                            <p className={`text-xs truncate ${theme.textSoft}`}>
-                              {record.semesters?.length || 0} semester
-                              {record.semesters?.length === 1 ? "" : "s"} recorded
-                            </p>
-                          </div>
-                        </div>
+            {/* Empty */}
+            {user && !loading && records.length === 0 && (
+              <div className={`rounded-2xl p-8 text-center ${theme.soft}`}>
+                <BookOpen className="mx-auto mb-3 opacity-50" size={34} />
+                <h3 className="font-bold text-sm mb-1">No CGPA records yet</h3>
+                <p className={`text-xs mb-4 ${theme.textSoft}`}>
+                  Add your first semester to start tracking your progress.
+                </p>
+                <Link
+                  to="/CGPA"
+                  className={`inline-flex px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition ${FOCUS_RING}`}
+                >
+                  Add your first record
+                </Link>
+              </div>
+            )}
 
-                        {confirmDeleteId === record.id ? (
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => handleDelete(record.id)}
-                              className="rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-red-600 transition"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteId(null)}
-                              className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${dark ? "bg-white/10 hover:bg-white/15" : "bg-white hover:bg-gray-100"}`}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setConfirmDeleteId(record.id)}
-                            className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition shrink-0"
-                            aria-label="Delete record"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        )}
-                      </div>
+            {/* Records */}
+            {user && !loading && records.length > 0 && (
+              <>
+                {/* Latest + trend + sparkline */}
+                <div className={`rounded-2xl p-4 mb-3 ${theme.soft}`}>
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <p className={`text-xs ${theme.textSoft}`}>Latest CGPA</p>
+                      <p className="text-3xl font-black text-indigo-500 leading-tight">
+                        {dashboard.latestCGPA}
+                      </p>
+                      {cgpaChange !== 0 && (
+                        <p
+                          className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${
+                            cgpaChange > 0 ? "text-emerald-500" : "text-red-500"
+                          }`}
+                        >
+                          {cgpaChange > 0 ? (
+                            <TrendingUp size={13} />
+                          ) : (
+                            <TrendingDown size={13} />
+                          )}
+                          {cgpaChange > 0 ? "+" : ""}
+                          {cgpaChange.toFixed(2)} since your previous record
+                        </p>
+                      )}
                     </div>
-                  ))}
+
+                    {sparkData.length > 1 && (
+                      <div
+                        className="flex items-end gap-1 h-14 shrink-0"
+                        role="img"
+                        aria-label={`CGPA over your last ${sparkData.length} records`}
+                      >
+                        {sparkData.map((d, i) => (
+                          <div
+                            key={d.id}
+                            title={`${d.value.toFixed(2)}${d.date ? ` · ${d.date}` : ""}`}
+                            className={`w-2.5 rounded-t-md ${
+                              i === sparkData.length - 1
+                                ? "bg-indigo-500"
+                                : "bg-indigo-500/30"
+                            }`}
+                            style={{
+                              height: `${Math.max(12, (d.value / sparkMax) * 100)}%`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {sortedRecords.length > 4 && (
+                <ul className="space-y-2.5">
+                  {visibleRecords.map((record) => {
+                    const semCount = record.semesters?.length || 0;
+                    const date = formatDate(record.createdAt);
+                    return (
+                      <li
+                        key={record.id}
+                        className={`rounded-2xl p-4 ${theme.soft}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                              <Activity size={17} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-indigo-500 text-lg leading-tight">
+                                {record.cgpa}
+                              </p>
+                              <p
+                                className={`text-xs truncate ${theme.textSoft}`}
+                              >
+                                {semCount} semester{semCount === 1 ? "" : "s"}
+                                {date ? ` · ${date}` : ""}
+                              </p>
+                            </div>
+                          </div>
+
+                          {confirmDeleteId === record.id ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(record.id)}
+                                className={`rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-red-600 transition ${FOCUS_RING}`}
+                              >
+                                Delete
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${FOCUS_RING} ${
+                                  dark
+                                    ? "bg-white/10 hover:bg-white/15"
+                                    : "bg-white hover:bg-gray-100"
+                                }`}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(record.id)}
+                              className={`w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition shrink-0 ${FOCUS_RING}`}
+                              aria-label={`Delete record with CGPA ${record.cgpa}`}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {sortedRecords.length > RECORDS_PREVIEW_COUNT && (
                   <div className="text-center mt-4">
                     <button
+                      type="button"
                       onClick={() => setShowAllRecords((v) => !v)}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-400 transition"
+                      className={`inline-flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-400 transition rounded ${FOCUS_RING}`}
                     >
-                      {showAllRecords ? "Show fewer" : `Show all ${sortedRecords.length}`}
+                      {showAllRecords
+                        ? "Show fewer"
+                        : `Show all ${sortedRecords.length}`}
                       <ChevronRight
                         size={13}
-                        className={`transition-transform ${showAllRecords ? "-rotate-90" : "rotate-90"}`}
+                        className={`transition-transform ${
+                          showAllRecords ? "-rotate-90" : "rotate-90"
+                        }`}
                       />
                     </button>
                   </div>
@@ -673,6 +947,39 @@ const Dashboard = ({ dark }) => {
             )}
           </section>
         </div>
+
+        {/* ================================================= */}
+        {/* STUDENT GROUPS (quiet secondary promo) */}
+        {/* ================================================= */}
+
+        <section
+          className={`relative overflow-hidden rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5 ${theme.card}`}
+        >
+          <div className="min-w-0 max-w-xl">
+            <h2 className="text-xl md:text-2xl font-black">
+              Study better with your community
+            </h2>
+            <p className={`mt-2 text-sm leading-6 ${theme.textSoft}`}>
+              Join student groups to share resources, ask questions, and
+              collaborate on projects with people at your university.
+            </p>
+            <Link
+              to="/community"
+              className={`mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-indigo-500 px-5 text-sm font-bold text-white hover:bg-indigo-600 transition ${FOCUS_RING}`}
+            >
+              <Users size={16} />
+              Explore groups
+            </Link>
+          </div>
+
+          <img
+            src={Images.group_illutration}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="hidden md:block h-44 w-auto shrink-0 object-contain"
+          />
+        </section>
 
         <div className="h-10" />
       </div>
@@ -690,20 +997,24 @@ const ToolRow = ({ item, theme }) => {
   return (
     <Link
       to={item.link}
-      className={`${theme.card} group flex items-start gap-3.5 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
+      className={`${theme.card} group flex items-start gap-3.5 rounded-2xl p-4 transition-all duration-200 hover:border-indigo-400/50 hover:shadow-md motion-safe:hover:-translate-y-0.5 ${FOCUS_RING}`}
     >
-      <div className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${theme.iconTint}`}>
-        <Icon size={19} />
+      <div
+        className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${theme.iconTint}`}
+      >
+        {Icon && <Icon size={19} />}
       </div>
 
       <div className="min-w-0 flex-1">
         <h4 className="font-bold text-sm leading-tight">{item.title}</h4>
-        <p className={`mt-1 text-xs leading-5 ${theme.textSoft}`}>{item.desc}</p>
+        <p className={`mt-1 text-xs leading-5 line-clamp-2 ${theme.textSoft}`}>
+          {item.desc}
+        </p>
       </div>
 
       <ChevronRight
         size={16}
-        className="opacity-0 shrink-0 mt-1 transition group-hover:translate-x-0.5 group-hover:opacity-60"
+        className="opacity-30 shrink-0 mt-1 transition group-hover:translate-x-0.5 group-hover:opacity-70"
       />
     </Link>
   );
@@ -711,43 +1022,50 @@ const ToolRow = ({ item, theme }) => {
 
 const DailyChallengeBanner = () => {
   return (
-    <section className="relative mb-8 md:mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20">
-  <div className="relative z-10 grid gap-6 px-5 pt-7 sm:px-8 sm:pt-9 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
-    <div className="min-w-0">
-      <h2 className=" text-2xl font-bold leading-tight sm:text-4xl">
-        Complete today's challenge, earn XP, and climb the leaderboard.
-      </h2>
+    <section className="relative mb-6 md:mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20">
+      <div className="relative z-10 grid gap-5 px-5 py-6 sm:px-8 sm:py-8 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
+        <div className="min-w-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold">
+            <Flame size={13} />
+            Daily challenge
+          </span>
 
-      <p className="mt-2 max-w-sm text-sm leading-6 text-white/80">
-        Keep your streak alive with quick mixed questions, fresh every day.
-      </p>
+          <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl max-w-xl">
+            Answer today's questions, earn XP, and climb the leaderboard.
+          </h2>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <Link
-          to="/challenge"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
-        >
-          Start Today's Challenge
-          <ArrowRight size={17} />
-        </Link>
+          <p className="mt-2 max-w-md text-sm leading-6 text-white/80">
+            Quick mixed questions, fresh every day. Keep your streak going.
+          </p>
 
-        <Link
-          to="/leaderboard"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600">
-          <Trophy size={17} />
-          View Leaderboard
-        </Link>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Link
+              to="/challenge"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
+            >
+              Start today's challenge
+              <ArrowRight size={17} />
+            </Link>
+
+            <Link
+              to="/leaderboard"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
+            >
+              <Trophy size={17} />
+              View leaderboard
+            </Link>
+          </div>
+        </div>
+
+        <img
+          src={Images.challengeBannerImage}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="hidden md:block h-48 w-auto shrink-0 object-contain lg:h-56"
+        />
       </div>
-    </div>
-
-    <img
-      src={Images.challengeBannerImage}
-      alt=""
-      aria-hidden="true"
-      className="hidden h-80 w-80 shrink-0 object-contain sm:block md:h-auto md:w-80 lg:h-auto lg:w-90"
-    />
-  </div>
-</section>
+    </section>
   );
 };
 
