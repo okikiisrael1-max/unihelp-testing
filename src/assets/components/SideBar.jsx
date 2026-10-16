@@ -62,6 +62,8 @@ import ProfilePhoto from "./ProfilePhoto.jsx";
 import UpgradeButton from "./UpgradeButton.jsx";
 import { doc, getDoc } from "firebase/firestore";
 
+import { isUserAdmin } from "../hooks/useAdmin";
+
 const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
 
   const { user } = useContext(AuthContext);
@@ -78,18 +80,25 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid) {
+        setIsAdmin(false);
+        return;
+      }
 
       try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
+        const [tokenResult, userSnap] = await Promise.all([
+          user.getIdTokenResult().catch(() => null),
+          getDoc(doc(db, "users", user.uid)).catch(() => null),
+        ]);
 
-          const data = userSnap.data();
-          setIsAdmin(data.admin === true);
-        } else {
-          setIsAdmin(false);
-        }
+        const userData = userSnap?.exists() ? userSnap.data() : {};
+        setIsAdmin(
+          isUserAdmin({
+            user,
+            userData,
+            tokenResult,
+          })
+        );
       } catch (error) {
         console.error(error);
         setIsAdmin(false);

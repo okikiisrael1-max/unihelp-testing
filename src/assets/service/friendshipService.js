@@ -95,21 +95,67 @@ export const listenOutgoingFriendRequests = (uid, callback) => {
   return onSnapshot(q, (snap) => callback(mapDocs(snap)));
 };
 
-export const sendFriendRequest = async ({ currentUid, targetUid, currentProfile = {}, targetProfile = {} }) => {
-  await runTransaction(db, async (transaction) => {
-    if (!currentUid || !targetUid) throw new Error("Missing user information.");
-    if (currentUid === targetUid) throw new Error("You cannot interact with yourself.");
 
-    const friendshipRef = doc(db, "friends", pairId(currentUid, targetUid));
-    const requestRef = doc(db, "friendRequests", pairId(currentUid, targetUid));
+export const sendFriendRequest = async ({
+  currentUid,
+  targetUid,
+  currentProfile = {},
+  targetProfile = {},
+}) => {
+  if (!currentUid || !targetUid) {
+    throw new Error("Missing user information.");
+  }
+
+  if (currentUid === targetUid) {
+    throw new Error("You cannot interact with yourself.");
+  }
+
+  const friendshipRef = doc(
+    db,
+    "friends",
+    pairId(currentUid, targetUid)
+  );
+
+  const requestRef = doc(
+    db,
+    "friendRequests",
+    pairId(currentUid, targetUid)
+  );
+
+  await runTransaction(db, async (transaction) => {
     const [friendshipSnap, requestSnap] = await Promise.all([
       transaction.get(friendshipRef),
       transaction.get(requestRef),
     ]);
 
-    if (friendshipSnap.exists()) throw new Error("You are already friends.");
-    if (requestSnap.exists() && requestSnap.data()?.status === "pending") {
-      throw new Error("A pending friend request already exists.");
+    if (friendshipSnap.exists()) {
+      throw new Error("You are already friends.");
+    }
+
+    if (requestSnap.exists()) {
+      const existing = requestSnap.data();
+
+      if (existing.status === "pending") {
+        if (
+          existing.from === targetUid &&
+          existing.to === currentUid
+        ) {
+          throw new Error(
+            "This student has already sent you a friend request. Accept it from your Requests tab."
+          );
+        }
+
+        if (
+          existing.from === currentUid &&
+          existing.to === targetUid
+        ) {
+          throw new Error("You have already sent a friend request.");
+        }
+
+        throw new Error(
+          "A pending friend request already exists."
+        );
+      }
     }
 
     transaction.set(requestRef, {
@@ -123,6 +169,7 @@ export const sendFriendRequest = async ({ currentUid, targetUid, currentProfile 
     });
   });
 };
+
 
 export const acceptFriendRequest = async ({ request, currentUid, currentProfile = {} }) => {
   if (!request?.id) throw new Error("Missing friend request.");

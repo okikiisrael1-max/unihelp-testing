@@ -5,10 +5,34 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { AuthContext } from "../context/AuthContext";
 
-const ADMIN_EMAILS = new Set([
+export const ADMIN_EMAILS = new Set([
   "onakomayaokiki@gmail.com",
   "iadejuwon77@gmail.com",
+  "agbajejoshua36@gmail.com",
 ]);
+
+export const isUserAdmin = ({
+  user,
+  userData = {},
+  tokenResult = null,
+}) => {
+  const email = String(
+    user?.email || userData?.email || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  const hasAdminEmail = ADMIN_EMAILS.has(email);
+  const hasAdminClaim = Boolean(
+    tokenResult?.claims?.admin
+  );
+  const hasAdminFlag =
+    userData.admin === true ||
+    userData.role === "admin" ||
+    userData.userRole === "admin";
+
+  return hasAdminEmail || hasAdminClaim || hasAdminFlag;
+};
 
 export default function useAdmin() {
   const { user, loading: authLoading } =
@@ -46,21 +70,13 @@ export default function useAdmin() {
           ? userSnap.data()
           : {};
 
-        const hasAdminEmail = ADMIN_EMAILS.has(
-          String(user.email || "").trim().toLowerCase()
-        );
-        const hasAdminClaim = Boolean(
-          tokenResult?.claims?.admin
-        );
-        const hasAdminFlag =
-          userData.admin === true ||
-          userData.role === "admin";
-
         if (!cancelled) {
           setIsAdmin(
-            hasAdminEmail ||
-              hasAdminClaim ||
-              hasAdminFlag
+            isUserAdmin({
+              user,
+              userData,
+              tokenResult,
+            })
           );
         }
       } catch (error) {
