@@ -56,6 +56,7 @@ import DashboardLayout from "./assets/Layouts/DashboardLayout";
 /* ================= COMPONENTS ================= */
 
 import ProtectedRoute from "./assets/components/ProtectedRoutes";
+import AdminRoute from "./assets/components/AdminRoute";
 import InstallPrompt from "./assets/components/InstallPrompt";
 import AcademicCalculator from "./assets/components/AcademicCalculator";
 import StoriesHome from "./assets/pages/stories/StoriesHome";
@@ -300,6 +301,7 @@ const App = () => {
           <Route path="/register" element={ currentUser ? <Navigate to="/" replace /> : <Signup dark={dark} /> }/>
           <Route path="/reset-password" element={ currentUser ? <Navigate to="/" replace /> : <ResetPassword dark={dark} /> }/>
           <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
+          <Route path="/messages" element={ <ProtectedRoute> <Messenger dark={dark} /> </ProtectedRoute> } />
 
         <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
             <Route path="/" element={ <Dashboard dark={dark} /> }/>
@@ -323,7 +325,7 @@ const App = () => {
             <Route path="/community" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute> } />
             <Route path="/community/:groupId" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute>}/>
             <Route path="/community/:groupId/manage" element={ <ProtectedRoute> <ManageGroup dark={dark} /></ProtectedRoute>}/>
-            <Route path="/messages" element={ <ProtectedRoute> <Messenger dark={dark} /> </ProtectedRoute> } />
+            
             <Route path="/notifications" element={ <ProtectedRoute> <NotificationsCenter dark={dark} /> </ProtectedRoute> } />
             <Route path="/community-settings" element={ <ProtectedRoute> <CommunitySettings dark={dark} /> </ProtectedRoute>}/>
             <Route path="/coming-soon" element={ <ProtectedRoute> <ComingSoon dark={dark} /> </ProtectedRoute>} />
@@ -353,7 +355,7 @@ const App = () => {
             <Route path="/create-story" element={<CreateStory dark={dark} />} />
             <Route path="/create-chapter/:storyId" element={<CreateChapter dark={dark} />} />
             <Route path="/ai" element={ <ProtectedRoute> <AiAssistance dark={dark} /> </ProtectedRoute> }/>
-            <Route path="/adminpanel" element={ <ProtectedRoute> <AdminPanel dark={dark} /> </ProtectedRoute> } />
+            <Route path="/adminpanel" element={ <ProtectedRoute><AdminRoute dark={dark}><AdminPanel dark={dark} /></AdminRoute></ProtectedRoute> } />
           </Route>
 
           <Route path="*" element={<NotFound dark={dark} />} />

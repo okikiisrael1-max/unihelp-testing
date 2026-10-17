@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertCircle,
@@ -61,6 +61,7 @@ import { deleteJson, getJson, patchJson, postJson, putJson } from "../../service
 const ADMIN_EMAILS = ["onakomayaokiki@gmail.com", "iadejuwon77@gmail.com"];
 
 const cx = (...classes) => classes.filter(Boolean).join(" ");
+const AdminThemeContext = createContext(false);
 
 const navSections = [
   {
@@ -355,32 +356,34 @@ export default function AdminPanel({ dark }) {
 
   return (
     <div className={cx("min-h-screen", isDark ? "bg-slate-950 text-slate-100" : "bg-slate-100 text-slate-950")}>
-      <div className="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
-        <AdminSidebar
-          activePage={activePage}
-          setActivePage={setActivePage}
-          open={sidebarOpen}
-          setOpen={setSidebarOpen}
-          dark={isDark}
-        />
-        <div className="min-w-0">
-          <AdminHeader
-            page={page}
+      <AdminThemeContext.Provider value={isDark}>
+        <div className="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
+          <AdminSidebar
+            activePage={activePage}
+            setActivePage={setActivePage}
+            open={sidebarOpen}
+            setOpen={setSidebarOpen}
             dark={isDark}
-            search={globalSearch}
-            setSearch={setGlobalSearch}
-            onMenu={() => setSidebarOpen(true)}
-            onRefresh={data.reload}
           />
-          <main className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
-            {data.error ? (
-              <ErrorState title="Admin data could not load" message={data.error} onRetry={data.reload} />
-            ) : (
-              <AdminPage activePage={activePage} data={data} search={globalSearch} dark={isDark} reload={data.reload} />
-            )}
-          </main>
+          <div className="min-w-0">
+            <AdminHeader
+              page={page}
+              dark={isDark}
+              search={globalSearch}
+              setSearch={setGlobalSearch}
+              onMenu={() => setSidebarOpen(true)}
+              onRefresh={data.reload}
+            />
+            <main className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
+              {data.error ? (
+                <ErrorState title="Admin data could not load" message={data.error} onRetry={data.reload} />
+              ) : (
+                <AdminPage activePage={activePage} data={data} search={globalSearch} dark={isDark} reload={data.reload} />
+              )}
+            </main>
+          </div>
         </div>
-      </div>
+      </AdminThemeContext.Provider>
     </div>
   );
 }
@@ -1276,6 +1279,7 @@ function AcademicDataPage({ data, search, reload }) {
 }
 
 function StreakRewardsPage({ data, reload }) {
+  const dark = useContext(AdminThemeContext);
   const [json, setJson] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -1296,7 +1300,7 @@ function StreakRewardsPage({ data, reload }) {
       <PageHeader eyebrow="Growth" title="Streak Rewards" subtitle="Configure the existing milestone reward structure." />
       <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
         <SectionCard title="Milestone editor" subtitle="Uses the existing backend config schema.">
-          <textarea value={json} onChange={(event) => setJson(event.target.value)} className="min-h-[460px] w-full rounded-xl border border-slate-500/20 bg-slate-950 p-4 font-mono text-sm text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500" />
+          <textarea value={json} onChange={(event) => setJson(event.target.value)} className={cx("min-h-[460px] w-full rounded-xl border border-slate-500/20 p-4 font-mono text-sm outline-none focus:ring-2 focus:ring-indigo-500", dark ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900")} />
           <div className="mt-3"><ActionButton onClick={save} busy={busy}>Save configuration</ActionButton></div>
         </SectionCard>
         <SectionCard title="Current milestones">
@@ -1540,8 +1544,9 @@ function PageHeader({ eyebrow, title, subtitle, children }) {
 }
 
 function MetricCard({ label, value, detail, icon: Icon }) {
+  const dark = useContext(AdminThemeContext);
   return (
-    <div className="rounded-2xl border border-slate-500/15 bg-white p-5 shadow-sm dark:bg-slate-900">
+    <div className={cx("rounded-2xl border border-slate-500/15 p-5 shadow-sm", dark ? "bg-slate-900" : "bg-white")}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-medium opacity-60">{label}</div>
@@ -1559,8 +1564,9 @@ function QueueStat({ label, value }) {
 }
 
 function SectionCard({ title, subtitle, children }) {
+  const dark = useContext(AdminThemeContext);
   return (
-    <section className="rounded-2xl border border-slate-500/15 bg-white p-5 shadow-sm dark:bg-slate-900">
+    <section className={cx("rounded-2xl border border-slate-500/15 p-5 shadow-sm", dark ? "bg-slate-900" : "bg-white")}>
       <div className="mb-4">
         <h3 className="font-semibold">{title}</h3>
         {subtitle ? <p className="mt-1 text-sm opacity-60">{subtitle}</p> : null}
@@ -1637,6 +1643,7 @@ function FilterBar({ value, onChange, options }) {
 }
 
 function StatusBadge({ value }) {
+  const dark = useContext(AdminThemeContext);
   const text = String(value || "unknown");
   const key = text.toLowerCase();
   const tone = key.includes("published") || key.includes("active") || key.includes("premium") || key.includes("ready") || key.includes("resolved")
@@ -1645,7 +1652,7 @@ function StatusBadge({ value }) {
       ? "bg-rose-500/10 text-rose-600"
       : key.includes("pending") || key.includes("draft") || key.includes("manual")
         ? "bg-amber-500/10 text-amber-600"
-        : "bg-slate-500/10 text-slate-600 dark:text-slate-300";
+        : cx("bg-slate-500/10", dark ? "text-slate-300" : "text-slate-600");
   return <span className={cx("inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize", tone)}>{text.replace(/_/g, " ")}</span>;
 }
 
@@ -1738,10 +1745,11 @@ function FormField({ label, value, onChange, textarea = false, mono = false }) {
 }
 
 function AdminModal({ open, title, onClose, children }) {
+  const dark = useContext(AdminThemeContext);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[700] flex items-center justify-center bg-slate-950/60 p-4">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900">
+      <div className={cx("max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-5 shadow-2xl", dark ? "bg-slate-900" : "bg-white")}>
         <div className="mb-5 flex items-center justify-between gap-4">
           <h3 className="text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-slate-500/10" aria-label="Close modal"><X size={18} /></button>
