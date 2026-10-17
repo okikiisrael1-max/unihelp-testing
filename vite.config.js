@@ -17,74 +17,48 @@ export default defineConfig({
     }),
 
     VitePWA({
-      registerType:
-        "autoUpdate",
-
-      injectRegister:
-        "auto",
-
-      strategies:
-        "generateSW",
-
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      strategies: "generateSW",
+      includeAssets: ["favicon.png", "logo.png"],
       workbox: {
         clientsClaim: true,
-
         skipWaiting: true,
-
-        cleanupOutdatedCaches:
-          true,
-
-        // FIX BUILD ERROR
-        maximumFileSizeToCacheInBytes:
-          10 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
-
       devOptions: {
         enabled: true,
       },
-
       manifest: {
         name: "UniHelp",
-
-        short_name:
-          "UniHelp",
-
+        short_name: "UniHelp",
         id: "/",
-
-        start_url:
-          "/",
-
-        scope:
-          "/",
-
-        display:
-          "standalone",
-
-        theme_color:
-          "#0f172a",
-
-        background_color:
-          "#0b0f1a",
-
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        orientation: "portrait",
+        theme_color: "#0f172a",
+        background_color: "#0b0f1a",
         icons: [
           {
             src: "/favicon.png",
-
-            sizes:
-              "192x192",
-
+            sizes: "192x192",
             type: "image/png",
+            purpose: "any maskable",
           },
-
           {
             src: "/logo.png",
-
-            sizes:
-              "512x512",
-
+            sizes: "512x512",
             type: "image/png",
+            purpose: "any maskable",
           },
         ],
+      },
+      apple: {
+        icon: "/logo.png",
+        statusBarStyle: "black-translucent",
       },
     }),
   ],
