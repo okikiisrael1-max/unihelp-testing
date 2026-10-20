@@ -36,7 +36,6 @@ import {
   Wallet,
   PhoneCall,
   FileWarning,
-  Newspaper,
   RadioTower,
   CheckSquare,
   ShieldCheck,
@@ -296,16 +295,6 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
 
         links: [
           {
-            to: "/hostelmarketplace",
-
-            label: "Find Hostel",
-
-            icon: (
-              <HomeIcon size={18} />
-            ),
-          },
-
-          {
             to: "/studentmarketplace",
 
             label: "Student Marketplace",
@@ -333,15 +322,6 @@ const SideBar = ({ dark, menuOpen, setMenuOpen }) => {
             ),
           },
 
-          {
-            to: "/newsfeed",
-
-            label: "Feed",
-
-            icon: (
-              <Newspaper size={18} />
-            ),
-          },
           {
             to: "/coming-soon",
 

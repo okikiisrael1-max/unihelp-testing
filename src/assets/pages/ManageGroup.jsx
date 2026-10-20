@@ -16,7 +16,7 @@ import {
 import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 
 import { db } from "../../firebase/config";
-import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
+import { uploadFeatureMedia } from "../../services/api";
 import { AuthContext } from "../context/AuthContext";
 import {
   approveJoinRequest,
@@ -158,14 +158,14 @@ export default function ManageGroup({ dark = false }) {
     try {
       const payload = { ...form };
       if (cover) {
-        const result = await uploadImage(cover);
-        payload.coverUrl = result.secure_url;
-        payload.coverAsset = toCloudinaryAsset(result);
+        const result = await uploadFeatureMedia(cover, { feature: "groups", resourceType: "image" });
+        payload.coverUrl = result.url || result.secure_url;
+        payload.coverAsset = { url: result.url || result.secure_url, key: result.key || result.publicId || "", storageProvider: "r2" };
       }
       if (avatar) {
-        const result = await uploadImage(avatar);
-        payload.avatarUrl = result.secure_url;
-        payload.avatarAsset = toCloudinaryAsset(result);
+        const result = await uploadFeatureMedia(avatar, { feature: "groups", resourceType: "image" });
+        payload.avatarUrl = result.url || result.secure_url;
+        payload.avatarAsset = { url: result.url || result.secure_url, key: result.key || result.publicId || "", storageProvider: "r2" };
       }
       await updateGroupDetails(groupId, payload);
       setNotice("Group details saved.");

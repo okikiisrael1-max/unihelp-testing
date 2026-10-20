@@ -122,6 +122,11 @@ body {
    ANIMATIONS
 ========================================================= */
 
+@keyframes promo-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

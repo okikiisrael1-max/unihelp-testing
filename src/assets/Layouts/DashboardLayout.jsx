@@ -17,7 +17,6 @@ import {
   FileWarning,
   GraduationCap,
   HouseIcon,
-  NewspaperIcon,
   NotebookPenIcon,
   PhoneCall,
   PlaySquareIcon,
@@ -67,7 +66,6 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
       title: "Student Marketplace",
       icon: <LayoutDashboard size={20} />,
       links: [
-        { to: "/hostelmarketplace", label: "Find Hostel", icon: <HouseIcon size={18} /> },
         { to: "/studentmarketplace", label: "Student Marketplace", icon: <BadgeDollarSign size={18} /> },
       ],
     },
@@ -82,7 +80,6 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
       title: "Smart Features",
       icon: <Brain size={20} />,
       links: [
-        { to: "/newsfeed", label: "Smart Feeds", icon: <NewspaperIcon size={18} /> },
         { to: "/ai", label: "AI Assistance", icon: <Brain size={18} /> },
         { to: "/announcements", label: "Announcements", icon: <RadioTower size={18} /> },
       ],

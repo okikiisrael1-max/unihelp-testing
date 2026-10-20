@@ -37,7 +37,7 @@ const STUDENT_PLAN = {
     "Verified student badge",
     "Increase Daily AI Limit",
     "Reduced ads experience",
-    "Upload 5 Hostels / Products",
+    "Upload 5 Products",
     "Early access to New features",
     "Premium student tools",
     "Exclusive UniHelp features",

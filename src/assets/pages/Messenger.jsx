@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   collection,
-  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -9,6 +8,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   startAfter,
@@ -26,9 +26,12 @@ import {
   FileText,
   Loader2,
   MessageCircle,
+  Mic,
   MoreVertical,
+  Pause,
   Paperclip,
   Pencil,
+  Play,
   Reply,
   Search,
   Send,
@@ -48,8 +51,7 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { db } from "../../firebase/config";
-import { getJson, postJson } from "../../services/api";
-import { uploadFile } from "../../services/cloudinary";
+import { deleteJson, getJson, postJson, uploadFeatureMedia, uploadVoiceMessage } from "../../services/api";
 import { AuthContext } from "../context/AuthContext";
 import {
   formatShortTime,
@@ -101,6 +103,18 @@ const PAGE_SIZE = 30;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
+// Direct messages use the same `{ emoji: [userId] }` reaction format as mobile.
+// The fallback also keeps existing web-only `{ userId: emoji }` reactions visible.
+const normalizeReactions = (reactions = {}) =>
+  Object.entries(reactions || {}).reduce((result, [key, value]) => {
+    if (Array.isArray(value)) {
+      result[key] = [...new Set(value.filter(Boolean))];
+    } else if (typeof value === "string" && value) {
+      result[value] = [...new Set([...(result[value] || []), key])];
+    }
+    return result;
+  }, {});
+
 // Module-level caches survive remounts, so revisiting Messenger doesn't re-read the same docs.
 const profileCache = new Map(); // uid -> { at, data }
 const userDocCache = new Map(); // uid -> { at, data }
@@ -141,6 +155,7 @@ const kindFor = (file) => {
 
 const messagePreview = (message) => {
   if (message?.deleted) return "This message was deleted";
+  if (message?.type === "voice") return "Voice message";
   if (message?.type === "sticker") return "Sticker";
   if (message?.text) return message.text.slice(0, 120);
   return message?.attachments?.[0]?.name || "Attachment";
@@ -167,6 +182,15 @@ const toDate = (value) => {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
+
+const sortVisibleConversations = (items, uid) =>
+  items
+    .filter((item) => {
+      const hiddenAt = toDate(item.deletedFor?.[uid])?.getTime() || 0;
+      const updatedAt = toDate(item.updatedAt)?.getTime() || 0;
+      return !hiddenAt || updatedAt > hiddenAt;
+    })
+    .sort((left, right) => (toDate(right.updatedAt)?.getTime() || 0) - (toDate(left.updatedAt)?.getTime() || 0));
 
 const sortMessages = (map) =>
   Array.from(map.values()).sort((a, b) => {
@@ -233,6 +257,195 @@ const Attachment = ({ item, onOpen }) => {
   );
 };
 
+const formatVoiceDuration = (seconds = 0) => {
+  const safe = Math.max(0, Math.round(Number(seconds) || 0));
+  return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
+};
+
+const isPremiumActive = (profile = {}) => {
+  if (!profile.premium || profile.subscriptionStatus === "expired") return false;
+  const expiry = profile.subscriptionExpiresAt || profile.premiumExpiresAt;
+  const expiryDate = toDate(expiry);
+  return !expiryDate || expiryDate.getTime() > Date.now();
+};
+
+const VoiceMessage = ({ message, mine }) => {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(Number(message.duration) || 0);
+
+  const togglePlayback = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    try {
+      if (audio.paused) await audio.play();
+      else audio.pause();
+    } catch {
+      // The browser can reject playback until the user has interacted with the page.
+    }
+  };
+
+  return (
+    <div className="flex min-w-[210px] items-center gap-2 py-1">
+      <audio
+        ref={audioRef}
+        src={message.audioUrl}
+        preload="metadata"
+        onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : Number(message.duration) || 0)}
+        onTimeUpdate={(event) => setProgress(event.currentTarget.duration ? event.currentTarget.currentTime / event.currentTarget.duration : 0)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); setProgress(0); }}
+      />
+      <button
+        type="button"
+        onClick={togglePlayback}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${mine ? "bg-white/20 text-white" : "bg-indigo-600 text-white"}`}
+        aria-label={playing ? "Pause voice message" : "Play voice message"}
+      >
+        {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="flex h-7 items-center gap-[3px]" aria-hidden="true">
+          {Array.from({ length: 24 }, (_, index) => {
+            const height = 7 + ((index * 13) % 17);
+            const filled = index / 24 <= progress;
+            return <span key={index} style={{ height }} className={`w-1 rounded-full ${filled ? (mine ? "bg-white" : "bg-indigo-500") : (mine ? "bg-white/35" : "bg-slate-300")}`} />;
+          })}
+        </div>
+        <div className={`mt-0.5 flex items-center justify-between text-[10px] font-semibold ${mine ? "text-white/75" : "text-slate-500"}`}>
+          <span>{playing ? "Playing" : "Voice message"}</span>
+          <span>{formatVoiceDuration(duration)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VoiceRecorder = ({ isPremium, disabled, onSend, onUpgrade, onError, onStateChange }) => {
+  const [state, setState] = useState("idle");
+  const [elapsed, setElapsed] = useState(0);
+  const recorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const chunksRef = useRef([]);
+  const startedAtRef = useRef(0);
+  const timerRef = useRef(null);
+  const discardRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  const stopTracks = () => {
+    streamRef.current?.getTracks?.().forEach((track) => track.stop());
+    streamRef.current = null;
+  };
+  const clearTimer = () => {
+    if (timerRef.current) window.clearInterval(timerRef.current);
+    timerRef.current = null;
+  };
+  const reset = () => {
+    clearTimer();
+    stopTracks();
+    recorderRef.current = null;
+    chunksRef.current = [];
+    if (mountedRef.current) {
+      setElapsed(0);
+      setState("idle");
+    }
+  };
+
+  useEffect(() => {
+    onStateChange?.(state);
+  }, [onStateChange, state]);
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+    discardRef.current = true;
+    clearTimer();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+    stopTracks();
+  }, []);
+
+  const finish = (discard = false) => {
+    if (recorderRef.current?.state !== "recording") return;
+    discardRef.current = discard;
+    clearTimer();
+    if (mountedRef.current) setState(discard ? "idle" : "uploading");
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  };
+
+  const start = async () => {
+    if (disabled || state !== "idle") return;
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      onError?.("Voice recording is not supported in this browser.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      streamRef.current = stream;
+      recorderRef.current = recorder;
+      chunksRef.current = [];
+      discardRef.current = false;
+      startedAtRef.current = Date.now();
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) chunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        const seconds = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+        const discardRecording = discardRef.current;
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        stopTracks();
+        recorderRef.current = null;
+        if (discardRecording || !blob.size) {
+          reset();
+          return;
+        }
+        try {
+          const extension = blob.type.includes("ogg") ? "ogg" : "webm";
+          await onSend(new File([blob], `voice-message-${Date.now()}.${extension}`, { type: blob.type || "audio/webm" }), seconds);
+        } catch (error) {
+          onError?.(error.message || "Voice message could not be sent.");
+        } finally {
+          reset();
+        }
+      };
+      recorder.start(250);
+      setState("recording");
+      timerRef.current = window.setInterval(() => {
+        const next = Date.now() - startedAtRef.current;
+        if (mountedRef.current) setElapsed(next);
+        if (next >= 60_000) finish(false);
+      }, 250);
+    } catch (error) {
+      stopTracks();
+      onError?.(error.name === "NotAllowedError" ? "Microphone access is required to record a voice message." : "Could not start voice recording.");
+    }
+  };
+
+  if (state === "recording") {
+    return (
+      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl bg-rose-500/10 px-3 py-1.5 text-rose-600">
+        <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-rose-500" />
+        <span className="w-10 text-xs font-black tabular-nums">{formatVoiceDuration(elapsed / 1000)}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-1" aria-label="Recording waveform">
+          {Array.from({ length: 16 }, (_, index) => <span key={index} style={{ height: 7 + ((index * 11) % 14), animationDelay: `${index * 75}ms` }} className="w-1 animate-pulse rounded-full bg-rose-500" />)}
+        </div>
+        <button type="button" onClick={() => finish(true)} className="rounded-lg p-1.5 hover:bg-rose-500/10" aria-label="Cancel voice recording"><Trash2 size={17} /></button>
+        <button type="button" onClick={() => finish(false)} className="rounded-lg bg-rose-500 p-1.5 text-white hover:bg-rose-600" aria-label="Send voice message"><Send size={17} /></button>
+      </div>
+    );
+  }
+  if (state === "uploading") {
+    return <div className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-sm font-bold text-indigo-600"><Loader2 size={17} className="animate-spin" /> Uploading voice message…</div>;
+  }
+  return <button type="button" onClick={start} disabled={disabled} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-indigo-500/10 disabled:opacity-40" aria-label={isPremium ? "Record voice message" : "Voice messages are a Premium feature"} title={isPremium ? "Record voice message" : "Voice messages are a Premium feature"}><Mic size={19} /></button>;
+};
+
 /* -------------------------------------------------------------------------- */
 /*  Component                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -255,6 +468,7 @@ export default function Messenger({ dark = false }) {
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState("");
   const [sending, setSending] = useState(false);
+  const [voiceRecorderState, setVoiceRecorderState] = useState("idle");
   const [otherTyping, setOtherTyping] = useState(false);
   const [notice, setNotice] = useState("");
   const [requestTarget, setRequestTarget] = useState(null);
@@ -266,6 +480,10 @@ export default function Messenger({ dark = false }) {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [lightbox, setLightbox] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [conversationSettingsOpen, setConversationSettingsOpen] = useState(false);
+  const [conversationMuted, setConversationMuted] = useState(false);
+  const [conversationSettingsLoading, setConversationSettingsLoading] = useState(false);
+  const [reactionViewer, setReactionViewer] = useState(null);
 
   // Emoji + stickers
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -414,6 +632,8 @@ export default function Messenger({ dark = false }) {
   const activeAreFriends = !activeOtherId || friendIds.has(activeOtherId);
   const nonFriendMessageUsed = !activeAreFriends && Number(activeConversation?.messageCount || 0) >= 1;
   const canUseComposer = activeAreFriends || !nonFriendMessageUsed;
+  const voiceComposerActive = voiceRecorderState !== "idle";
+  const canRecordVoice = isPremiumActive(profile);
 
   // Which of my messages the other person has not read yet.
   const unreadMineIds = useMemo(() => {
@@ -471,26 +691,37 @@ export default function Messenger({ dark = false }) {
     return () => { cancelled = true; };
   }, [user?.uid]);
 
-  // Conversations. The list always opens first (no auto-open), so "back" on mobile works.
+  // Keep this query index-free. Combining `array-contains` with `orderBy` needs a
+  // composite Firestore index; if it is missing, the entire conversation list fails.
+  // Sorting locally also matches the mobile client's conversation behaviour.
   useEffect(() => {
-    if (!user?.uid) return undefined;
+    if (!user?.uid) {
+      setConversations([]);
+      setConvLoading(false);
+      return undefined;
+    }
 
     let isMounted = true;
+    setConvLoading(true);
     const q = query(
       collection(db, "conversations"),
-      where("memberIds", "array-contains", user.uid),
-      orderBy("updatedAt", "desc"),
-      limit(30)
+      where("memberIds", "array-contains", user.uid)
     );
 
     const unsubscribe = onSnapshot(
       q,
       (snap) => {
         if (!isMounted) return;
-        setConversations(snap.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
+        setConversations(sortVisibleConversations(snap.docs.map((entry) => ({ id: entry.id, ...entry.data() })), user.uid));
         setConvLoading(false);
       },
-      () => isMounted && setConvLoading(false)
+      (error) => {
+        if (!isMounted) return;
+        console.error("Unable to load conversations:", error);
+        setConversations([]);
+        setConvLoading(false);
+        setNotice("Could not load your conversations. Please refresh and try again.");
+      }
     );
 
     return () => {
@@ -628,6 +859,26 @@ export default function Messenger({ dark = false }) {
     );
   }, [activeId, user?.uid]);
 
+  // Shared with the mobile conversation-settings screen.
+  useEffect(() => {
+    setConversationMuted(false);
+    setConversationSettingsLoading(false);
+    if (!activeId || !user?.uid) return undefined;
+    let cancelled = false;
+    setConversationSettingsLoading(true);
+    getDoc(doc(db, "users", user.uid, "conversationSettings", activeId))
+      .then((snap) => {
+        if (!cancelled) setConversationMuted(Boolean(snap.data()?.muted));
+      })
+      .catch(() => {
+        if (!cancelled) setNotice("Could not load conversation settings.");
+      })
+      .finally(() => {
+        if (!cancelled) setConversationSettingsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeId, user?.uid]);
+
   // Mark as read only when there is something unread (no write on every snapshot).
   useEffect(() => {
     if (!activeId || !user?.uid || unreadForMe === 0) return undefined;
@@ -663,6 +914,8 @@ export default function Messenger({ dark = false }) {
     setEditText("");
     setReplyTo(null);
     setEmojiOpen(false);
+    setConversationSettingsOpen(false);
+    setReactionViewer(null);
     return () => stopTyping();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
@@ -682,6 +935,8 @@ export default function Messenger({ dark = false }) {
     const handler = (event) => {
       if (event.key !== "Escape") return;
       if (lightbox) setLightbox(null);
+      else if (reactionViewer) setReactionViewer(null);
+      else if (conversationSettingsOpen) setConversationSettingsOpen(false);
       else if (stickerPickerOpen) setStickerPickerOpen(false);
       else if (emojiOpen) setEmojiOpen(false);
       else if (showFindModal) closeFind();
@@ -690,15 +945,15 @@ export default function Messenger({ dark = false }) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lightbox, stickerPickerOpen, emojiOpen, showFindModal, openMenuId]);
+  }, [lightbox, reactionViewer, conversationSettingsOpen, stickerPickerOpen, emojiOpen, showFindModal, openMenuId]);
 
   // Lock page scroll behind modals
   useEffect(() => {
-    if (!showFindModal && !stickerPickerOpen) return undefined;
+    if (!showFindModal && !stickerPickerOpen && !conversationSettingsOpen && !reactionViewer) return undefined;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
-  }, [showFindModal, stickerPickerOpen]);
+  }, [showFindModal, stickerPickerOpen, conversationSettingsOpen, reactionViewer]);
 
   // Search users: 400ms debounce + 5 min cache per query
   useEffect(() => {
@@ -908,13 +1163,65 @@ export default function Messenger({ dark = false }) {
   const toggleReaction = async (message, emoji) => {
     setOpenMenuId("");
     if (!activeId || !user?.uid) return;
-    const current = message.reactions?.[user.uid];
     try {
-      await updateDoc(doc(db, "conversations", activeId, "messages", message.id), {
-        [`reactions.${user.uid}`]: current === emoji ? deleteField() : emoji,
+      const messageRef = doc(db, "conversations", activeId, "messages", message.id);
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(messageRef);
+        if (!snap.exists()) throw new Error("This message no longer exists.");
+        const reactions = normalizeReactions(snap.data().reactions);
+        const current = reactions[emoji] || [];
+        const next = current.includes(user.uid)
+          ? current.filter((id) => id !== user.uid)
+          : [...current, user.uid];
+        if (next.length) reactions[emoji] = next;
+        else delete reactions[emoji];
+        transaction.update(messageRef, { reactions });
       });
     } catch {
       setNotice("Could not add your reaction.");
+    }
+  };
+
+  const updateConversationMuted = async (muted) => {
+    if (!activeId || !user?.uid || conversationSettingsLoading) return;
+    const previous = conversationMuted;
+    setConversationMuted(muted);
+    setConversationSettingsLoading(true);
+    try {
+      await setDoc(
+        doc(db, "users", user.uid, "conversationSettings", activeId),
+        { muted, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    } catch {
+      setConversationMuted(previous);
+      setNotice("Could not update conversation settings.");
+    } finally {
+      setConversationSettingsLoading(false);
+    }
+  };
+
+  const openReactionViewer = async (reactions, title = "Reactions") => {
+    const normalized = normalizeReactions(reactions);
+    const reactorIds = [...new Set(Object.values(normalized).flat())];
+    setReactionViewer({ title, reactions: normalized, people: [], loading: true });
+    try {
+      const people = (await Promise.all(reactorIds.map(async (id) => {
+        if (id === user?.uid) return { id, ...profile };
+        const data = await getUserDoc(id);
+        return data ? { id, ...data } : { id };
+      }))).map((person) => ({
+        ...person,
+        name: person.name || person.username || person.displayName || "Student",
+        avatar: person.avatar || person.photo || person.photoURL || "",
+        emojis: Object.entries(normalized)
+          .filter(([, ids]) => ids.includes(person.id))
+          .map(([emoji]) => emoji),
+      }));
+      setReactionViewer({ title, reactions: normalized, people, loading: false });
+    } catch {
+      setReactionViewer({ title, reactions: normalized, people: [], loading: false });
+      setNotice("Could not load everyone who reacted.");
     }
   };
 
@@ -1003,14 +1310,16 @@ export default function Messenger({ dark = false }) {
     try {
       const attachments = [];
       if (file) {
-        const uploaded = await uploadFile(file);
+        const resourceType = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : "raw";
+        const uploaded = await uploadFeatureMedia(file, { feature: "messages", resourceType });
         attachments.push({
           type: kindFor(file),
-          url: uploaded.secure_url,
-          publicId: uploaded.public_id,
-          resourceType: uploaded.resource_type,
-          name: uploaded.original_filename || file.name,
-          bytes: uploaded.bytes || file.size,
+          url: uploaded.url || uploaded.secure_url,
+          publicId: uploaded.publicId || uploaded.public_id || uploaded.key || "",
+          resourceType: uploaded.resourceType || uploaded.resource_type || resourceType,
+          storageProvider: uploaded.storageProvider || "r2",
+          name: file.name,
+          bytes: file.size,
         });
       }
       await sendDirectMessage(activeConversation, user, profile, {
@@ -1087,6 +1396,47 @@ export default function Messenger({ dark = false }) {
     return !!sentAt && Date.now() - sentAt.getTime() <= EDIT_WINDOW_MS;
   };
 
+  const sendVoice = async (audioFile, duration) => {
+    if (!activeConversation || sending) throw new Error("The conversation is not ready yet.");
+    setSending(true);
+    setNotice("");
+    stopTyping();
+    try {
+      const uploaded = await uploadVoiceMessage(audioFile, { conversationId: activeConversation.id, duration });
+      if (!uploaded?.audioUrl) throw new Error("Voice upload did not return an audio file.");
+      await sendDirectMessage(activeConversation, user, profile, {
+        type: "voice",
+        text: "",
+        attachments: [],
+        audioUrl: uploaded.audioUrl,
+        duration: uploaded.duration || duration,
+        audioBytes: uploaded.bytes || audioFile.size,
+        audioMimeType: audioFile.type,
+        publicId: uploaded.publicId || "",
+        storageProvider: "r2",
+        replyTo: replyTo
+          ? {
+              id: replyTo.id,
+              senderId: replyTo.senderId || "",
+              senderName: replyTo.senderName || "Student",
+              text: messagePreview(replyTo),
+            }
+          : null,
+      });
+      setReplyTo(null);
+      stickRef.current = true;
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const canDeleteMessage = (message) => {
+    if (!message || message.deleted || message.senderId !== user?.uid) return false;
+    if (message.type !== "voice") return true;
+    const sentAt = toDate(message.createdAt);
+    return !!sentAt && Date.now() - sentAt.getTime() <= EDIT_WINDOW_MS;
+  };
+
   const startEditMessage = (message) => {
     setEditingId(message.id);
     setEditText(message.text || "");
@@ -1125,8 +1475,16 @@ export default function Messenger({ dark = false }) {
   const deleteMessage = async (message) => {
     if (!activeId) return;
     setOpenMenuId("");
+    if (!canDeleteMessage(message)) {
+      setNotice("Voice messages can only be deleted within 30 minutes of sending.");
+      return;
+    }
     if (!window.confirm("Delete this message for everyone? This can't be undone.")) return;
     try {
+      if (message.type === "voice") {
+        await deleteJson(`/api/voice/${encodeURIComponent(activeId)}/${encodeURIComponent(message.id)}`);
+        return;
+      }
       await updateDoc(doc(db, "conversations", activeId, "messages", message.id), {
         deleted: true,
         text: "",
@@ -1645,11 +2003,15 @@ export default function Messenger({ dark = false }) {
     const isSticker = message.type === "sticker" && message.sticker && !message.deleted;
     const openUp = index >= messages.length - 3 && messages.length > 3;
     const unreadByOther = unreadMineIds.has(message.id);
-    const reactionCounts = Object.values(message.reactions || {}).reduce((acc, e) => {
-      acc[e] = (acc[e] || 0) + 1;
-      return acc;
-    }, {});
-    const myReaction = message.reactions?.[user?.uid];
+    const reactions = normalizeReactions(message.reactions);
+    const reactionCounts = Object.fromEntries(
+      Object.entries(reactions).map(([emoji, ids]) => [emoji, ids.length])
+    );
+    const myReactions = new Set(
+      Object.entries(reactions)
+        .filter(([, ids]) => ids.includes(user?.uid))
+        .map(([emoji]) => emoji)
+    );
 
     const bubbleTone = isSticker
       ? ""
@@ -1677,7 +2039,7 @@ export default function Messenger({ dark = false }) {
                 <button
                   key={emoji}
                   onClick={() => toggleReaction(message, emoji)}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full text-base transition-transform hover:scale-125 ${myReaction === emoji ? "bg-indigo-500/20" : ""}`}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-base transition-transform hover:scale-125 ${myReactions.has(emoji) ? "bg-indigo-500/20" : ""}`}
                   aria-label={`React ${emoji}`}
                 >
                   {emoji}
@@ -1688,7 +2050,7 @@ export default function Messenger({ dark = false }) {
               { label: "Reply", icon: Reply, show: true, run: () => { setReplyTo(message); setOpenMenuId(""); textareaRef.current?.focus(); } },
               { label: "Copy", icon: Copy, show: !!message.text, run: () => copyMessage(message) },
               { label: "Edit", icon: Pencil, show: mine && editable, run: () => startEditMessage(message) },
-              { label: "Delete", icon: Trash2, show: mine, run: () => deleteMessage(message), danger: true },
+              { label: "Delete", icon: Trash2, show: mine && canDeleteMessage(message), run: () => deleteMessage(message), danger: true },
             ]
               .filter((a) => a.show)
               .map((a) => (
@@ -1772,24 +2134,37 @@ export default function Messenger({ dark = false }) {
                   loading="lazy"
                 />
               )}
+              {message.type === "voice" && message.audioUrl && <VoiceMessage message={message} mine={mine} />}
               {message.text && <p className="whitespace-pre-wrap break-words text-sm leading-6"><Linkified text={message.text} /></p>}
               {(message.attachments || []).map((item, i) => <Attachment key={i} item={item} onOpen={setLightbox} />)}
               {Object.keys(reactionCounts).length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {Object.entries(reactionCounts).map(([emoji, count]) => (
-                    <button
+                    <div
                       key={emoji}
-                      onClick={() => toggleReaction(message, emoji)}
-                      className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
-                        myReaction === emoji
+                      className={`flex items-center overflow-hidden rounded-full text-xs font-bold ${
+                        myReactions.has(emoji)
                           ? "bg-indigo-500/30 ring-1 ring-indigo-400"
                           : mine ? "bg-white/15" : dark ? "bg-white/10" : "bg-white"
                       }`}
-                      aria-label={`${emoji} ${count}`}
                     >
-                      <span>{emoji}</span>
-                      {count > 1 && <span>{count}</span>}
-                    </button>
+                      <button
+                        onClick={() => toggleReaction(message, emoji)}
+                        className="flex items-center gap-1 px-2 py-0.5"
+                        aria-label={`${emoji} ${count}${myReactions.has(emoji) ? ", you reacted" : ""}`}
+                      >
+                        <span>{emoji}</span>
+                        {count > 1 && <span>{count}</span>}
+                      </button>
+                      <button
+                        onClick={() => openReactionViewer(message.reactions, "Message reactions")}
+                        className={`border-l px-1.5 py-0.5 ${mine ? "border-white/20" : dark ? "border-white/10" : "border-slate-200"}`}
+                        aria-label={`See the ${count} people who reacted ${emoji}`}
+                        title="See who reacted"
+                      >
+                        <Eye size={12} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1940,9 +2315,89 @@ export default function Messenger({ dark = false }) {
         ) : (
           <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
         )}
+        <button
+          onClick={() => setConversationSettingsOpen(true)}
+          className={`${iconBtn} border ${t.divider}`}
+          aria-label="Conversation settings"
+          title="Conversation settings"
+        >
+          <Settings size={18} />
+        </button>
       </div>
     );
   };
+
+  const renderConversationSettings = () =>
+    conversationSettingsOpen ? (
+      <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-3 sm:items-center" onClick={() => setConversationSettingsOpen(false)}>
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-label="Conversation settings"
+          className={`w-full max-w-md rounded-3xl border p-5 shadow-2xl ${t.sheet}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-lg font-black">Conversation settings</p>
+              <p className={`mt-1 text-sm ${t.muted}`}>These preferences sync with Unihelp Mobile.</p>
+            </div>
+            <button onClick={() => setConversationSettingsOpen(false)} className={iconBtn} aria-label="Close conversation settings"><X size={18} /></button>
+          </div>
+          <div className={`mt-5 flex items-center gap-3 rounded-2xl border p-4 ${t.soft}`}>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500"><MessageCircle size={18} /></div>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold">Message notifications</p>
+              <p className={`mt-0.5 text-xs ${t.muted}`}>{conversationMuted ? "Muted on this device and your other signed-in apps." : "Get notifications when this person messages you."}</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!conversationMuted}
+              disabled={conversationSettingsLoading}
+              onClick={() => updateConversationMuted(!conversationMuted)}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-55 ${conversationMuted ? "bg-slate-400" : "bg-indigo-600"}`}
+            >
+              <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${conversationMuted ? "left-1" : "left-6"}`} />
+            </button>
+          </div>
+        </section>
+      </div>
+    ) : null;
+
+  const renderReactionViewer = () =>
+    reactionViewer ? (
+      <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-3 sm:items-center" onClick={() => setReactionViewer(null)}>
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-label={reactionViewer.title}
+          className={`w-full max-w-md rounded-3xl border p-5 shadow-2xl ${t.sheet}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-lg font-black">{reactionViewer.title}</p>
+              <p className={`mt-0.5 text-sm ${t.muted}`}>{reactionViewer.people.length} {reactionViewer.people.length === 1 ? "person" : "people"}</p>
+            </div>
+            <button onClick={() => setReactionViewer(null)} className={iconBtn} aria-label="Close reactions"><X size={18} /></button>
+          </div>
+          <div className="mt-4 max-h-[55dvh] space-y-2 overflow-y-auto">
+            {reactionViewer.loading ? (
+              <div className={`flex justify-center py-10 ${t.muted}`}><Loader2 className="animate-spin" size={22} /></div>
+            ) : reactionViewer.people.length ? reactionViewer.people.map((person) => (
+              <Link key={person.id} to={`/profile/${person.id}`} onClick={() => setReactionViewer(null)} className={`flex items-center gap-3 rounded-2xl p-2 ${t.hover}`}>
+                <Avatar src={person.avatar} name={person.name} size="sm" />
+                <span className="min-w-0 flex-1 truncate text-sm font-bold">{person.name}</span>
+                <span className="text-lg">{person.emojis.join("")}</span>
+              </Link>
+            )) : (
+              <p className={`py-8 text-center text-sm ${t.muted}`}>No reactions yet.</p>
+            )}
+          </div>
+        </section>
+      </div>
+    ) : null;
 
   const renderComposer = () => (
     <div className={`border-t p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-3 ${t.divider}`}>
@@ -1977,54 +2432,67 @@ export default function Messenger({ dark = false }) {
 
       {canUseComposer ? (
         <div className={`relative flex items-end gap-1 rounded-3xl border p-1.5 ${t.soft}`}>
-          {renderEmojiPicker()}
-          <button onClick={() => setEmojiOpen((v) => !v)} className={iconBtn} aria-label="Emoji" aria-expanded={emojiOpen}>
-            <Smile size={19} />
-          </button>
-          <button onClick={() => setStickerPickerOpen(true)} className={iconBtn} aria-label="Open sticker picker">
-            <StickyNote size={19} />
-          </button>
-          <label className={`${iconBtn} cursor-pointer`} aria-label="Attach file">
-            <Paperclip size={19} />
-            <input
-              hidden
-              type="file"
-              onChange={(e) => {
-                stageFile(e.target.files?.[0] || null);
-                e.target.value = "";
+          {!voiceComposerActive && <>
+            {renderEmojiPicker()}
+            <button onClick={() => setEmojiOpen((v) => !v)} className={iconBtn} aria-label="Emoji" aria-expanded={emojiOpen}>
+              <Smile size={19} />
+            </button>
+            <button onClick={() => setStickerPickerOpen(true)} className={iconBtn} aria-label="Open sticker picker">
+              <StickyNote size={19} />
+            </button>
+            <label className={`${iconBtn} cursor-pointer`} aria-label="Attach file">
+              <Paperclip size={19} />
+              <input
+                hidden
+                type="file"
+                onChange={(e) => {
+                  stageFile(e.target.files?.[0] || null);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </>}
+          <VoiceRecorder
+            key={activeId}
+            isPremium={canRecordVoice}
+            disabled={sending || Boolean(file) || Boolean(text.trim())}
+            onStateChange={setVoiceRecorderState}
+            onSend={sendVoice}
+            onError={(message) => setNotice(message)}
+            onUpgrade={() => navigate("/premium")}
+          />
+          {!voiceComposerActive && <>
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => handleTextChange(e.target.value)}
+              onPaste={(e) => {
+                const pasted = Array.from(e.clipboardData?.files || [])[0];
+                if (pasted) {
+                  e.preventDefault();
+                  stageFile(pasted);
+                }
+              }}
+              rows={1}
+              placeholder={activeAreFriends ? "Message" : "Send one intro message"}
+              aria-label="Message"
+              className="max-h-32 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm outline-none"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  send();
+                }
               }}
             />
-          </label>
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => handleTextChange(e.target.value)}
-            onPaste={(e) => {
-              const pasted = Array.from(e.clipboardData?.files || [])[0];
-              if (pasted) {
-                e.preventDefault();
-                stageFile(pasted);
-              }
-            }}
-            rows={1}
-            placeholder={activeAreFriends ? "Message" : "Send one intro message"}
-            aria-label="Message"
-            className="max-h-32 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm outline-none"
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                send();
-              }
-            }}
-          />
-          <button
-            onClick={send}
-            disabled={sending || (!text.trim() && !file)}
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition-opacity hover:bg-indigo-700 disabled:opacity-40 ${focusRing}`}
-            aria-label="Send message"
-          >
-            {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-          </button>
+            <button
+              onClick={send}
+              disabled={sending || (!text.trim() && !file)}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition-opacity hover:bg-indigo-700 disabled:opacity-40 ${focusRing}`}
+              aria-label="Send message"
+            >
+              {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+            </button>
+          </>}
         </div>
       ) : (
         <div className={`rounded-2xl border p-4 text-center text-sm font-semibold ${t.soft}`}>
@@ -2211,6 +2679,8 @@ export default function Messenger({ dark = false }) {
 
       {renderStickerPicker()}
       {renderFindModal()}
+      {renderConversationSettings()}
+      {renderReactionViewer()}
 
       {lightbox && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4" onClick={() => setLightbox(null)} role="dialog" aria-modal="true" aria-label="Image preview">

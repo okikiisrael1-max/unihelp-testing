@@ -375,7 +375,7 @@ export const loadOlderGroupMessages = async (groupId, cursor) => {
 
 export const sendGroupMessage = async (groupId, user, profile, payload) => {
   const summary = userSummary(user, profile);
-  await addDoc(collection(db, "groups", groupId, "messages"), {
+  const messageRef = await addDoc(collection(db, "groups", groupId, "messages"), {
     ...payload,
     senderId: user.uid,
     senderName: summary.name,
@@ -384,6 +384,62 @@ export const sendGroupMessage = async (groupId, user, profile, payload) => {
     createdAt: serverTimestamp(),
   });
   await updateDoc(doc(db, "groups", groupId), { lastActivityAt: serverTimestamp() });
+  return messageRef.id;
+};
+
+const normalizePollInput = ({ question, options, multiSelect = false } = {}) => {
+  const cleanQuestion = String(question || "").trim();
+  const cleanOptions = (options || []).map((option) => String(option || "").trim()).filter(Boolean).slice(0, 6);
+  if (!cleanQuestion || cleanOptions.length < 2) throw new Error("Add a question and at least two options.");
+  return { cleanQuestion, cleanOptions, multiSelect: Boolean(multiSelect) };
+};
+
+export const createGroupPoll = async (groupId, user, profile, input) => {
+  const { cleanQuestion, cleanOptions, multiSelect } = normalizePollInput(input);
+  return sendGroupMessage(groupId, user, profile, {
+    type: "poll",
+    text: "",
+    poll: { question: cleanQuestion, multiSelect, isClosed: false, options: cleanOptions.map((text, index) => ({ id: `option-${index}`, text, voterIds: [] })) },
+  });
+};
+
+export const voteGroupPoll = async (groupId, messageId, optionId, uid) => {
+  if (!groupId || !messageId || !optionId || !uid) throw new Error("Missing poll vote details.");
+  const messageRef = doc(db, "groups", groupId, "messages", messageId);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(messageRef);
+    if (!snapshot.exists()) throw new Error("This poll is no longer available.");
+    const poll = snapshot.data().poll;
+    if (poll?.isClosed) throw new Error("This poll has been closed.");
+    if (!poll?.options?.some((option) => option.id === optionId)) throw new Error("That option is unavailable.");
+    const options = poll.options.map((option) => ({ ...option, voterIds: poll.multiSelect ? [...(option.voterIds || [])] : (option.voterIds || []).filter((id) => id !== uid) }));
+    const selected = options.find((option) => option.id === optionId);
+    selected.voterIds = selected.voterIds.includes(uid) ? selected.voterIds.filter((id) => id !== uid) : [...selected.voterIds, uid];
+    transaction.update(messageRef, { poll: { ...poll, options }, updatedAt: serverTimestamp() });
+  });
+};
+
+export const editGroupPoll = async (groupId, messageId, uid, input) => {
+  const { cleanQuestion, cleanOptions, multiSelect } = normalizePollInput(input);
+  const messageRef = doc(db, "groups", groupId, "messages", messageId);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(messageRef);
+    if (!snapshot.exists() || snapshot.data().type !== "poll") throw new Error("This poll is no longer available.");
+    const message = snapshot.data();
+    if (message.senderId !== uid) throw new Error("Only the poll creator can edit it.");
+    const oldOptions = message.poll?.options || [];
+    const options = cleanOptions.map((text, index) => ({ id: oldOptions[index]?.id || `option-${index}`, text, voterIds: oldOptions[index]?.voterIds || [] }));
+    transaction.update(messageRef, { poll: { ...message.poll, question: cleanQuestion, multiSelect, options }, updatedAt: serverTimestamp() });
+  });
+};
+
+export const setGroupPollClosed = async (groupId, messageId, uid, isClosed) => {
+  const messageRef = doc(db, "groups", groupId, "messages", messageId);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(messageRef);
+    if (!snapshot.exists() || snapshot.data().senderId !== uid || snapshot.data().type !== "poll") throw new Error("Only the poll creator can manage it.");
+    transaction.update(messageRef, { poll: { ...snapshot.data().poll, isClosed: Boolean(isClosed) }, updatedAt: serverTimestamp() });
+  });
 };
 
 export const createPost = async (groupId, user, profile, payload) => {

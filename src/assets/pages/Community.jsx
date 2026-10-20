@@ -37,11 +37,12 @@ import {
 } from "lucide-react";
 
 import { db } from "../../firebase/config";
-import { toCloudinaryAsset, uploadFile, uploadImage } from "../../services/cloudinary";
+import { uploadFeatureMedia } from "../../services/api";
 import { AuthContext } from "../context/AuthContext";
 import {
   approveJoinRequest,
   createGroup,
+  createGroupPoll,
   createPost,
   deleteOwnPost,
   formatShortTime,
@@ -58,11 +59,17 @@ import {
   rejectJoinRequest,
   requestJoinGroup,
   sendGroupMessage,
+  editGroupPoll,
+  setGroupPollClosed,
+  voteGroupPoll,
 } from "../service/communityService";
 
 /* -------------------------------------------------------------------------- */
 /*  Constants, tokens, caches                                                 */
 /* -------------------------------------------------------------------------- */
+
+const uploadGroupMedia = (file, resourceType = "image") => uploadFeatureMedia(file, { feature: "groups", resourceType });
+const toR2Asset = (result) => ({ url: result?.url || result?.secure_url || "", key: result?.key || result?.publicId || "", storageProvider: "r2" });
 
 const CATEGORIES = ["All", "Academics", "Campus Life", "Marketplace", "Study Group"];
 const REACTIONS = ["👍", "❤️", "😂", "🔥", "👏"];
@@ -560,13 +567,13 @@ function Composer({ placeholder, onSend, allowVideo = true, replyTo = null, onCa
       if (file) {
         const kind = fileKind(file);
         if (kind === "video" && !allowVideo) throw new Error("Video uploads are available for premium users.");
-        const uploaded = await uploadFile(file);
+        const uploaded = await uploadGroupMedia(file, kind === "image" || kind === "video" ? kind : "raw");
         attachments.push({
           type: kind,
-          url: uploaded.secure_url,
-          publicId: uploaded.public_id,
-          resourceType: uploaded.resource_type,
-          name: uploaded.original_filename || file.name,
+          url: uploaded.url || uploaded.secure_url,
+          key: uploaded.key || uploaded.publicId,
+          resourceType: uploaded.resourceType || (kind === "image" || kind === "video" ? kind : "raw"),
+          name: uploaded.originalFilename || file.name,
           bytes: uploaded.bytes || file.size,
         });
       }
@@ -725,14 +732,14 @@ function CreateGroupModal({ onClose, onCreated, user, profile }) {
     try {
       const uploads = {};
       if (cover) {
-        const result = await uploadImage(cover);
-        uploads.coverUrl = result.secure_url;
-        uploads.coverAsset = toCloudinaryAsset(result);
+        const result = await uploadGroupMedia(cover);
+        uploads.coverUrl = result.url || result.secure_url;
+        uploads.coverAsset = toR2Asset(result);
       }
       if (avatar) {
-        const result = await uploadImage(avatar);
-        uploads.avatarUrl = result.secure_url;
-        uploads.avatarAsset = toCloudinaryAsset(result);
+        const result = await uploadGroupMedia(avatar);
+        uploads.avatarUrl = result.url || result.secure_url;
+        uploads.avatarAsset = toR2Asset(result);
       }
       const id = await createGroup({ form, user, profile, uploads });
       markJoined(user.uid, id, "owner");
@@ -1402,7 +1409,9 @@ function renderMentions(text) {
   );
 }
 
-function ChatMessage({ message, mine, avatar, name, onReply, onOpenDM }) {
+function ChatMessage({ message, mine, avatar, name, onReply, onOpenDM, groupId, uid, onVotePoll, onEditPoll, onTogglePollClosed }) {
+  const poll = message.type === "poll" ? message.poll : null;
+  const totalVotes = poll ? new Set(poll.options?.flatMap((option) => option.voterIds || []) || []).size : 0;
   return (
     <div className={`group flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
       {!mine && (
@@ -1430,6 +1439,24 @@ function ChatMessage({ message, mine, avatar, name, onReply, onOpenDM }) {
           </div>
         )}
         {message.text && <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6">{renderMentions(message.text)}</p>}
+        {poll && (
+          <div className={`mt-2 min-w-64 ${mine ? "text-white" : ""}`}>
+            <p className="text-sm font-bold">{poll.question}</p>
+            <div className="mt-2 space-y-2">
+              {poll.options.map((option) => {
+                const count = option.voterIds?.length || 0;
+                const selected = option.voterIds?.includes(uid);
+                const percent = totalVotes ? Math.round((count / totalVotes) * 100) : 0;
+                return <button key={option.id} disabled={poll.isClosed} onClick={() => onVotePoll(message, option.id)} className={`relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-80 ${mine ? "border-white/30 bg-white/10" : "[border-color:var(--line)] [background:var(--paper-raised)]"}`}>
+                  <span className={`absolute inset-y-0 left-0 ${mine ? "bg-white/15" : "[background:var(--brand-soft)]"}`} style={{ width: `${percent}%` }} />
+                  <span className="relative flex justify-between gap-3"><span>{selected ? "✓ " : ""}{option.text}</span><span>{percent}%</span></span>
+                </button>;
+              })}
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2 text-[11px] opacity-75"><span>{totalVotes} {totalVotes === 1 ? "vote" : "votes"} · {poll.multiSelect ? "Multiple answers" : "One answer"}</span>{poll.isClosed ? <span>Poll closed</span> : null}</div>
+            {mine && <div className="mt-2 flex gap-2"><button onClick={() => onEditPoll(message)} className="rounded-lg bg-white/15 px-2 py-1 text-[11px] font-bold">Edit</button><button onClick={() => onTogglePollClosed(message)} className="rounded-lg bg-white/15 px-2 py-1 text-[11px] font-bold">{poll.isClosed ? "Reopen" : "Close poll"}</button></div>}
+          </div>
+        )}
         {(message.attachments || []).map((item, index) => (
           <AttachmentPreview key={index} attachment={item} />
         ))}
@@ -1464,6 +1491,7 @@ function GroupDetail({ groupId }) {
   const [replyTo, setReplyTo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [pollBuilder, setPollBuilder] = useState(null);
 
   const chatScrollRef = useRef(null);
   const chatBottomRef = useRef(null);
@@ -1612,6 +1640,12 @@ function GroupDetail({ groupId }) {
     await sendGroupMessage(groupId, user, profile, payload);
     setReplyTo(null);
   };
+  const savePoll = async (input) => {
+    try { if (pollBuilder?.id) await editGroupPoll(groupId, pollBuilder.id, user.uid, input); else await createGroupPoll(groupId, user, profile, input); }
+    catch (err) { push(err?.message || "Could not save poll.", { tone: "error" }); throw err; }
+  };
+  const votePoll = async (message, optionId) => { try { await voteGroupPoll(groupId, message.id, optionId, user.uid); } catch (err) { push(err?.message || "Could not record your vote.", { tone: "error" }); } };
+  const togglePollClosed = async (message) => { try { await setGroupPollClosed(groupId, message.id, user.uid, !message.poll?.isClosed); } catch (err) { push(err?.message || "Could not update poll.", { tone: "error" }); } };
   const deletePost = async (post) => {
     if (!window.confirm("Delete this post? This can't be undone.")) return;
     try {
@@ -1834,6 +1868,11 @@ function GroupDetail({ groupId }) {
                                 avatar={mine ? message.senderAvatar || profile.photo || user?.photoURL || "" : message.senderAvatar || ""}
                                 onReply={setReplyTo}
                                 onOpenDM={openDirectMessage}
+                                groupId={groupId}
+                                uid={user.uid}
+                                onVotePoll={votePoll}
+                                onEditPoll={(message) => setPollBuilder(message)}
+                                onTogglePollClosed={togglePollClosed}
                               />
                             );
                           })}
@@ -1842,6 +1881,7 @@ function GroupDetail({ groupId }) {
                       )}
                     </div>
                     <div className="border-t p-3 [border-color:var(--line)]">
+                      <button onClick={() => setPollBuilder({})} className={`mb-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${cx.soft}`}>Create poll</button>
                       <Composer
                         placeholder="Message the group. Type @ to mention someone."
                         onSend={sendChat}
@@ -1997,6 +2037,7 @@ function GroupDetail({ groupId }) {
         )}
       </div>
       <ToastHost items={toasts} dismiss={dismiss} />
+      {pollBuilder && <PollBuilderModal poll={pollBuilder?.poll} onClose={() => setPollBuilder(null)} onSave={savePoll} />}
     </div>
   );
 }
@@ -2004,4 +2045,13 @@ function GroupDetail({ groupId }) {
 export default function Community({ dark = false }) {
   const { groupId } = useParams();
   return <PageChrome dark={dark}>{groupId ? <GroupDetail groupId={groupId} /> : <GroupDiscovery />}</PageChrome>;
+}
+
+function PollBuilderModal({ poll, onClose, onSave }) {
+  const [question, setQuestion] = useState(poll?.question || "");
+  const [options, setOptions] = useState(poll?.options?.map((item) => item.text) || ["", ""]);
+  const [multiSelect, setMultiSelect] = useState(Boolean(poll?.multiSelect));
+  const [saving, setSaving] = useState(false);
+  const submit = async (event) => { event.preventDefault(); setSaving(true); try { await onSave({ question, options, multiSelect }); onClose(); } finally { setSaving(false); } };
+  return <div className="fixed inset-0 z-[600] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center" onClick={onClose}><form onSubmit={submit} onClick={(event) => event.stopPropagation()} className={`w-full max-w-lg p-5 shadow-2xl ${cx.panel}`}><div className="flex items-center justify-between"><div><h2 className="text-lg font-black">{poll ? "Edit poll" : "Create a poll"}</h2><p className={`mt-1 text-xs ${cx.muted}`}>Set up a decision your group can act on.</p></div><button type="button" onClick={onClose} className={cx.ghostIcon}><X size={17} /></button></div><label className="mt-5 block text-xs font-bold">Question<textarea className={`mt-2 ${cx.input}`} rows={3} value={question} maxLength={220} onChange={(event) => setQuestion(event.target.value)} placeholder="What should the group decide?" /></label><div className="mt-4 space-y-2">{options.map((option, index) => <div key={index} className="flex gap-2"><input className={cx.input} value={option} maxLength={100} onChange={(event) => setOptions((items) => items.map((item, i) => i === index ? event.target.value : item))} placeholder={`Option ${index + 1}`} />{options.length > 2 && <button type="button" onClick={() => setOptions((items) => items.filter((_, i) => i !== index))} className="text-xs font-bold [color:var(--danger)]">Remove</button>}</div>)}</div>{options.length < 6 && <button type="button" onClick={() => setOptions((items) => [...items, ""])} className="mt-3 text-xs font-bold [color:var(--brand-text)]">+ Add option</button>}<label className={`mt-5 flex cursor-pointer items-center justify-between p-3 ${cx.soft}`}><span><span className="block text-sm font-bold">Allow multiple answers</span><span className={`block text-xs ${cx.muted}`}>Members can select more than one option.</span></span><input type="checkbox" checked={multiSelect} onChange={(event) => setMultiSelect(event.target.checked)} /></label><button disabled={saving} className={`mt-5 w-full ${cx.primaryBtn}`}>{saving ? "Saving…" : poll ? "Save poll" : "Post poll"}</button></form></div>;
 }

@@ -5,14 +5,12 @@ import {
   BadgeCheck,
   Ban,
   BookOpenCheck,
-  Building2,
   Check,
   ChevronDown,
   ClipboardList,
   Database,
   FileText,
   Gift,
-  GraduationCap,
   Headphones,
   Home,
   Image as ImageIcon,
@@ -22,7 +20,6 @@ import {
   Megaphone,
   Menu,
   MoreHorizontal,
-  Newspaper,
   Package,
   Plus,
   RefreshCw,
@@ -79,17 +76,14 @@ const navSections = [
     label: "Content",
     items: [
       { id: "pastQuestions", label: "Past Questions", icon: BookOpenCheck },
-      { id: "campusNews", label: "Campus News", icon: Newspaper },
       { id: "announcements", label: "Announcements", icon: Megaphone },
       { id: "mediaSources", label: "Media Sources", icon: Sparkles },
-      { id: "academicData", label: "Universities", icon: GraduationCap },
     ],
   },
   {
     label: "Marketplace",
     items: [
       { id: "marketplace", label: "Student Marketplace", icon: Package },
-      { id: "hostels", label: "Hostels", icon: Home },
     ],
   },
   {
@@ -207,8 +201,6 @@ function useAdminData() {
     users: [],
     announcements: [],
     marketingSources: [],
-    universities: [],
-    departments: [],
     promoSpotlights: [],
     promoStats: {},
     marketplace: [],
@@ -238,8 +230,6 @@ function useAdminData() {
         users,
         announcements,
         marketingSources,
-        universities,
-        departments,
         promoSpotlights,
         marketplaceResponse,
         hostelsResponse,
@@ -254,8 +244,6 @@ function useAdminData() {
         fetchCollection("users"),
         fetchCollection("announcements", [orderBy("createdAt", "desc"), limit(80)]),
         fetchCollection("marketingSources", [orderBy("createdAt", "desc")]),
-        fetchCollection("universities", [orderBy("name"), limit(120)]),
-        fetchCollection("departments", [orderBy("name"), limit(160)]),
         fetchCollection("promoSpotlights"),
         getJson("/api/marketplace?limit=50").catch((error) => ({ error })),
         getJson("/api/hostels?limit=50").catch((error) => ({ error })),
@@ -299,8 +287,6 @@ function useAdminData() {
         users,
         announcements,
         marketingSources,
-        universities,
-        departments,
         promoSpotlights: promoSpotlights.sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0)),
         promoStats,
         marketplace: marketplaceResponse.error ? [] : normalizePaged(marketplaceResponse).items,
@@ -520,13 +506,10 @@ function AdminPage({ activePage, data, search, dark, reload }) {
   if (activePage === "users") return <UsersPage data={data} search={search} reload={reload} />;
   if (activePage === "premium") return <UsersPage data={data} search={search} reload={reload} premiumOnly />;
   if (activePage === "marketplace") return <ListingsPage type="marketplace" data={data} search={search} reload={reload} />;
-  if (activePage === "hostels") return <ListingsPage type="hostels" data={data} search={search} reload={reload} />;
   if (["contact", "reports", "suggestions"].includes(activePage)) return <SupportPage kind={activePage} data={data} search={search} reload={reload} />;
   if (activePage === "announcements") return <AnnouncementsPage mode="announcements" data={data} search={search} reload={reload} />;
-  if (activePage === "campusNews") return <AnnouncementsPage mode="news" data={data} search={search} reload={reload} />;
   if (activePage === "promos") return <PromosPage data={data} search={search} reload={reload} />;
   if (activePage === "mediaSources") return <MediaSourcesPage data={data} search={search} reload={reload} />;
-  if (activePage === "academicData") return <AcademicDataPage data={data} search={search} reload={reload} />;
   if (activePage === "streakRewards") return <StreakRewardsPage data={data} reload={reload} />;
   if (activePage === "stickers") return <StickersPage data={data} reload={reload} />;
   if (activePage === "pastQuestions") return <PastQuestionsPage data={data} search={search} reload={reload} />;
@@ -1091,7 +1074,7 @@ function AnnouncementsPage({ mode, data, search, reload }) {
 function PromosPage({ data, search, reload }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "", imageUrl: "", actionType: "none", actionUrl: "", enabled: true, priority: "0" });
+  const [form, setForm] = useState({ type: "announcement", title: "", description: "", imageUrl: "", buttonText: "", advertiserName: "", actionType: "none", actionUrl: "", startAt: "", endAt: "", enabled: true, priority: "0" });
   const filtered = data.promoSpotlights.filter((item) => {
     const term = search.trim().toLowerCase();
     if (!term) return true;
@@ -1100,20 +1083,30 @@ function PromosPage({ data, search, reload }) {
 
   const openEdit = (item = null) => {
     setEditing(item);
-    setForm(item ? { ...form, ...item, priority: String(item.priority || 0) } : { title: "", description: "", imageUrl: "", actionType: "none", actionUrl: "", enabled: true, priority: "0" });
+    const asInputDate = (value) => {
+      const date = value?.toDate?.() || (value ? new Date(value) : null);
+      return date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 16) : "";
+    };
+    setForm(item
+      ? { ...form, ...item, startAt: asInputDate(item.startAt), endAt: asInputDate(item.endAt), priority: String(item.priority || 0) }
+      : { type: "announcement", title: "", description: "", imageUrl: "", buttonText: "", advertiserName: "", actionType: "none", actionUrl: "", startAt: "", endAt: "", enabled: true, priority: "0" });
     setFormOpen(true);
   };
 
   const save = async () => {
     const payload = {
-      type: editing?.type || "announcement",
+      type: form.type || "announcement",
       title: form.title.trim(),
       description: form.description.trim(),
       imageUrl: form.imageUrl.trim(),
+      buttonText: form.buttonText.trim(),
+      advertiserName: form.advertiserName.trim(),
       actionType: form.actionType || "none",
       actionUrl: form.actionUrl.trim(),
       enabled: form.enabled === true,
       priority: Number(form.priority) || 0,
+      startAt: form.startAt ? new Date(form.startAt) : null,
+      endAt: form.endAt ? new Date(form.endAt) : null,
       updatedBy: auth.currentUser?.uid || "",
       updatedAt: serverTimestamp(),
     };
@@ -1161,10 +1154,21 @@ function PromosPage({ data, search, reload }) {
           <FormField label="Description" textarea value={form.description} onChange={(description) => setForm((current) => ({ ...current, description }))} />
           <FormField label="Image URL" value={form.imageUrl} onChange={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} />
           <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="Action type" value={form.actionType} onChange={(actionType) => setForm((current) => ({ ...current, actionType }))} />
-            <FormField label="Action URL" value={form.actionUrl} onChange={(actionUrl) => setForm((current) => ({ ...current, actionUrl }))} />
+            <FormField label="Campaign type (announcement, external_ad, unihelp_promotion)" value={form.type} onChange={(type) => setForm((current) => ({ ...current, type }))} />
+            <FormField label="Action type (none, external_url, screen, deep_link)" value={form.actionType} onChange={(actionType) => setForm((current) => ({ ...current, actionType }))} />
           </div>
-          <FormField label="Priority" value={form.priority} onChange={(priority) => setForm((current) => ({ ...current, priority }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Action URL" value={form.actionUrl} onChange={(actionUrl) => setForm((current) => ({ ...current, actionUrl }))} />
+            <FormField label="Button text" value={form.buttonText} onChange={(buttonText) => setForm((current) => ({ ...current, buttonText }))} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Advertiser name" value={form.advertiserName} onChange={(advertiserName) => setForm((current) => ({ ...current, advertiserName }))} />
+            <FormField label="Priority" value={form.priority} onChange={(priority) => setForm((current) => ({ ...current, priority }))} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Starts (local date/time)" value={form.startAt} onChange={(startAt) => setForm((current) => ({ ...current, startAt }))} />
+            <FormField label="Ends (local date/time)" value={form.endAt} onChange={(endAt) => setForm((current) => ({ ...current, endAt }))} />
+          </div>
           <ToggleButton active={form.enabled} onClick={() => setForm((current) => ({ ...current, enabled: !current.enabled }))}>Enabled</ToggleButton>
           <ActionButton onClick={save}>Save promotion</ActionButton>
         </div>
@@ -1410,96 +1414,36 @@ function StickersPage({ data, reload }) {
 }
 
 function PastQuestionsPage({ data, search, reload }) {
-  const [selected, setSelected] = useState(null);
-  const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState("");
   const filtered = data.pastQuestions.filter((item) => {
     const term = search.trim().toLowerCase();
     if (!term) return true;
     return [item.title, item.courseCode, item.courseTitle, item.department, item.institution, item.status].filter(Boolean).some((field) => String(field).toLowerCase().includes(term));
   });
-  const openEditor = (item) => {
-    setSelected(item);
-    setDraft({
-      ...item,
-      contentJson: JSON.stringify(item.content || [], null, 2),
-      assetsJson: JSON.stringify(item.assets || [], null, 2),
-    });
-  };
-  const save = async () => {
-    if (!draft) return;
-    setBusy("save");
+  const remove = async (item) => {
+    if (!window.confirm(`Remove "${item.title || "this document"}"? This is only for inappropriate content.`)) return;
+    setBusy(item.id);
     try {
-      const payload = { ...draft, status: "draft", content: JSON.parse(draft.contentJson || "[]"), assets: JSON.parse(draft.assetsJson || "[]") };
-      delete payload.contentJson;
-      delete payload.assetsJson;
-      const res = await putJson(`/api/past-questions/${encodeURIComponent(draft.id)}`, payload);
-      setSelected(res.item || payload);
+      await deleteJson(`/api/past-questions/${encodeURIComponent(item.id)}`);
       await reload();
     } finally { setBusy(""); }
   };
-  const convert = async () => {
-    if (!draft) return;
-    setBusy("convert");
-    try { const res = await postJson(`/api/past-questions/${encodeURIComponent(draft.id)}/convert`, {}); setSelected(res.item); setDraft((current) => ({ ...current, ...(res.item || {}), contentJson: JSON.stringify(res.item?.content || [], null, 2), assetsJson: JSON.stringify(res.item?.assets || [], null, 2) })); await reload(); } finally { setBusy(""); }
-  };
-  const publish = async () => {
-    if (!draft || !window.confirm("Publish this past-question document?")) return;
-    setBusy("publish");
-    try { const res = await postJson(`/api/past-questions/${encodeURIComponent(draft.id)}/publish`, {}); setSelected(res.item); await reload(); } finally { setBusy(""); }
-  };
-  const remove = async (item) => {
-    if (!window.confirm(`Delete "${item.title || "this document"}" and its Cloudinary assets?`)) return;
-    await deleteJson(`/api/past-questions/${encodeURIComponent(item.id)}`);
-    setSelected(null);
-    setDraft(null);
-    await reload();
-  };
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="Content" title="Past Questions" subtitle="Review, convert, edit, and publish structured past-question documents." />
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_520px]">
-        <ResponsiveTable
-          columns={["Document", "Course", "Processing", "Status", "Actions"]}
-          rows={filtered.map((item) => ({
-            key: item.id,
-            cells: [
-              <div key="doc" className="min-w-0">
-                <div className="font-semibold">{item.title || "Untitled"}</div>
-                <div className="text-xs opacity-60">{[item.department, item.year, item.examSession || item.semester].filter(Boolean).join(" - ") || "No metadata"}</div>
-              </div>,
-              item.courseCode || item.courseTitle || "Not set",
-              <StatusBadge key="processing" value={item.processing?.status || item.processingStatus || "pending"} />,
-              <StatusBadge key="status" value={item.status || "draft"} />,
-              <div key="actions" className="flex gap-2">
-                <ActionButton onClick={() => openEditor(item)}>Edit</ActionButton>
-                <ActionButton danger onClick={() => remove(item)}>Delete</ActionButton>
-              </div>,
-            ],
-          }))}
-          empty="No past-question records found."
-        />
-        <SectionCard title={draft ? "Document editor" : "Select a document"} subtitle="JSON block editing preserves the existing content[] and assets[] schema.">
-          {draft ? (
-            <div className="space-y-3">
-              <FormField label="Title" value={draft.title || ""} onChange={(title) => setDraft((current) => ({ ...current, title }))} />
-              <div className="grid gap-3 sm:grid-cols-2">
-                {["courseCode", "courseTitle", "department", "institution", "year", "examType"].map((field) => (
-                  <FormField key={field} label={field} value={String(draft[field] || "")} onChange={(value) => setDraft((current) => ({ ...current, [field]: value }))} />
-                ))}
-              </div>
-              {draft.originalFile?.url ? <a className="inline-flex text-sm font-semibold text-indigo-500" href={draft.originalFile.url} target="_blank" rel="noreferrer">Open original paper</a> : null}
-              <FormField label="content[]" textarea value={draft.contentJson} onChange={(contentJson) => setDraft((current) => ({ ...current, contentJson }))} mono />
-              <FormField label="assets[]" textarea value={draft.assetsJson} onChange={(assetsJson) => setDraft((current) => ({ ...current, assetsJson }))} mono />
-              <div className="flex flex-wrap gap-2">
-                <ActionButton onClick={convert} busy={busy === "convert"}>Convert</ActionButton>
-                <ActionButton onClick={save} busy={busy === "save"}>Save draft</ActionButton>
-                <ActionButton onClick={publish} busy={busy === "publish"}>Publish</ActionButton>
-              </div>
-            </div>
-          ) : <EmptyState title="No document selected" text="Choose a past-question record from the table to review its metadata, content blocks, and assets." compact />}
-        </SectionCard>
-      </div>
+      <PageHeader eyebrow="Content moderation" title="Past Questions" subtitle="Documents publish automatically. Remove only content that is inappropriate or unsafe." />
+      <ResponsiveTable
+        columns={["Document", "Course", "Uploaded", "Actions"]}
+        rows={filtered.map((item) => ({
+          key: item.id,
+          cells: [
+            <div key="doc" className="min-w-0"><div className="font-semibold">{item.title || "Untitled"}</div><div className="text-xs opacity-60">{[item.department, item.year, item.examSession || item.semester].filter(Boolean).join(" - ") || "No metadata"}</div></div>,
+            item.courseCode || item.courseTitle || "Not set",
+            formatDate(item.updatedAt || item.createdAt),
+            <ActionButton key="actions" danger onClick={() => remove(item)} busy={busy === item.id}>Remove</ActionButton>,
+          ],
+        }))}
+        empty="No past-question records found."
+      />
     </div>
   );
 }

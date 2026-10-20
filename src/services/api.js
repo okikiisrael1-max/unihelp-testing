@@ -45,6 +45,18 @@ export const deleteJson = async (path) =>
     headers: await authHeaders(),
   }));
 
+export const uploadVoiceMessage = async (file, { conversationId, duration = 0 } = {}) => {
+  const formData = new FormData();
+  formData.append("audio", file);
+  formData.append("conversationId", conversationId || "");
+  formData.append("duration", String(duration));
+  return parse(await fetch(`${API_URL}/api/voice/upload`, {
+    method: "POST",
+    headers: await authHeaders(false),
+    body: formData,
+  }));
+};
+
 export const uploadFeatureMedia = async (file, { feature, resourceType = "image", onProgress } = {}) => {
   const headers = await authHeaders(false);
   const formData = new FormData();
@@ -59,4 +71,22 @@ export const uploadFeatureMedia = async (file, { feature, resourceType = "image"
   }));
   if (onProgress) onProgress(100);
   return data;
+};
+
+export const toR2Asset = (upload, fallback = {}) => ({
+  url: upload?.url || upload?.secure_url || fallback.url || "",
+  publicId: upload?.publicId || upload?.key || fallback.publicId || "",
+  resourceType: upload?.resourceType || upload?.resource_type || fallback.resourceType || "image",
+  storageProvider: upload?.storageProvider || "r2",
+});
+
+export const deleteProfileMedia = async (key) => {
+  if (typeof key !== "string" || !key.startsWith("unihelp/profile/") || key.includes("..")) {
+    throw new Error("Invalid profile media key.");
+  }
+  return parse(await fetch(`${API_URL}/api/uploads`, {
+    method: "DELETE",
+    headers: await authHeaders(),
+    body: JSON.stringify({ key }),
+  }));
 };

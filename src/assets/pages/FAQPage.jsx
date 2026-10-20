@@ -4,7 +4,6 @@ import {
   HelpCircle,
   BookOpen,
   GraduationCap,
-  Home,
   ShoppingBag,
   MessageCircle,
   ArrowLeft,
@@ -21,7 +20,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const categories = ["All", "Academic", "Marketplace", "Hostels", "Billing", "Community"];
+const categories = ["All", "Academic", "Marketplace", "Billing", "Community"];
 
 const rawFaqs = [
   // Academic
@@ -31,7 +30,7 @@ const rawFaqs = [
     icon: <GraduationCap size={20} />,
     question: "What is UniHelp?",
     answer:
-      "UniHelp is an all-in-one student ecosystem designed to streamline campus life. It provides direct access to crowdsourced lecture notes, verified past questions, GPA/CGPA calculators, learning videos, hostel listings, a student marketplace, and campus discussion forums."
+      "UniHelp is an all-in-one student ecosystem designed to streamline campus life. It provides direct access to crowdsourced lecture notes, verified past questions, GPA/CGPA calculators, learning videos, a student marketplace, and campus discussion forums."
   },
   {
     id: 2,
@@ -72,24 +71,6 @@ const rawFaqs = [
     question: "Are learning videos vetted for curriculum relevance?",
     answer:
       "Curated videos undergo community rating and automated verification to ensure they match standard university course syllabi."
-  },
-
-  // Hostels
-  {
-    id: 7,
-    category: "Hostels",
-    icon: <Home size={20} />,
-    question: "How does the hostel marketplace work?",
-    answer:
-      "Students, property managers, and verified agents list off-campus accommodations complete with photos, rent breakdown, distance from campus, and utility details. Students can filter listings and message property contacts directly."
-  },
-  {
-    id: 8,
-    category: "Hostels",
-    icon: <Home size={20} />,
-    question: "How do I avoid hostel scams?",
-    answer:
-      "Always inspect properties in person or arrange a video walkthrough before transferring funds. Look for listings tagged with the 'Verified Agent' or 'Verified Student' badge on UniHelp."
   },
 
   // Marketplace
@@ -240,7 +221,7 @@ export default function FAQPage({ dark = true }) {
           </h1>
 
           <p className={`mt-4 text-base sm:text-lg leading-relaxed ${theme.subText}`}>
-            Everything you need to know about academic tools, marketplace guidelines, hostel listings, and premium features.
+            Everything you need to know about academic tools, marketplace guidelines, and premium features.
           </p>
         </div>
 

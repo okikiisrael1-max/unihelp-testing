@@ -28,15 +28,12 @@ import Upload from "./assets/pages/Upload";
 import AiAssistance from "./assets/pages/AiAssistance";
 import GPA from "./assets/pages/GPA";
 import Resources from "./assets/pages/Resources";
-import HostelMarketplace from "./assets/pages/HostelMarketplace";
-import NewsFeed from "./assets/pages/NewsFeed";
 import Community from "./assets/pages/Community";
 import ManageGroup from "./assets/pages/ManageGroup";
 import Messenger from "./assets/pages/Messenger";
 import NotificationsCenter from "./assets/pages/NotificationsCenter";
 import CommunitySettings from "./assets/pages/CommunitySettings";
 import ComingSoon from "./assets/pages/ComingSoon";
-import MyHostels from "./assets/pages/MyUploadedHostel";
 import Contact from "./assets/pages/Contact";
 import Report from "./assets/pages/Report";
 import StudentMarketplace from "./assets/pages/StudentMarketplace";
@@ -58,12 +55,8 @@ import DashboardLayout from "./assets/Layouts/DashboardLayout";
 import ProtectedRoute from "./assets/components/ProtectedRoutes";
 import AdminRoute from "./assets/components/AdminRoute";
 import InstallPrompt from "./assets/components/InstallPrompt";
+import PromoSpotlight from "./assets/components/PromoSpotlight";
 import AcademicCalculator from "./assets/components/AcademicCalculator";
-import StoriesHome from "./assets/pages/stories/StoriesHome";
-import StoryDetails from "./assets/pages/stories/StoryDetails";
-import ReadStory from "./assets/pages/stories/ReadStory";
-import CreateStory from "./assets/pages/stories/CreateStory";
-import CreateChapter from './assets/pages/stories/CreateChapter';
 import { listenToForegroundMessages } from "./assets/utils/notificationPermission";
 import FormulaHome from "./assets/pages/formulaHub/FormulaHome";
 import FormulaDetails from "./assets/pages/formulaHub/FormulaDetails";
@@ -293,6 +286,7 @@ const App = () => {
     <div>
       <InstallPrompt />
       <ToastContainer />
+      <PromoSpotlight user={currentUser} onNavigate={navigate} />
 
       <div className={`${dark ? "bg-[#020617] text-white" : "bg-[#f8fafc] text-black"}`}>
         <Routes>
@@ -332,7 +326,7 @@ const App = () => {
             <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
             <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
-            <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />
+            <Route path="/newsfeed" element={<Navigate to="/" replace />} />
             <Route path="/feed" element={<SharedLinkFallback dark={dark} />} />
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
             <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />
@@ -343,17 +337,9 @@ const App = () => {
             <Route path="/cgpa" element={ <ProtectedRoute> <CGPA dark={dark} /> </ProtectedRoute> } />
             <Route path="/gpa" element={ <ProtectedRoute> <GPA dark={dark} /> </ProtectedRoute> } />
             <Route path="/uploadquestion" element={ <ProtectedRoute> <Upload dark={dark} /> </ProtectedRoute> } />
-            <Route path="/hostelmarketplace" element={ <ProtectedRoute> <HostelMarketplace dark={dark} /> </ProtectedRoute> } />
             <Route path="/resources" element={ <ProtectedRoute> <Resources dark={dark} /> </ProtectedRoute> } />
             <Route path="/studentmarketplace/:id" element={ <ProtectedRoute> <MarketplaceProductDetails dark={dark} /> </ProtectedRoute> } />
             <Route path="/studentmarketplace" element={ <ProtectedRoute> <StudentMarketplace dark={dark} /> </ProtectedRoute> } />
-            <Route path="/myhostels" element={ <ProtectedRoute> <MyHostels dark={dark} /> </ProtectedRoute> } />
-            
-            <Route path="/stories" element={<StoriesHome dark={dark} />} />
-            <Route path="/stories/:id" element={<StoryDetails dark={dark} />} />
-            <Route path="/read-story/:storyId/:chapterId" element={<ReadStory />} />
-            <Route path="/create-story" element={<CreateStory dark={dark} />} />
-            <Route path="/create-chapter/:storyId" element={<CreateChapter dark={dark} />} />
             <Route path="/ai" element={ <ProtectedRoute> <AiAssistance dark={dark} /> </ProtectedRoute> }/>
             <Route path="/adminpanel" element={ <ProtectedRoute><AdminRoute dark={dark}><AdminPanel dark={dark} /></AdminRoute></ProtectedRoute> } />
           </Route>

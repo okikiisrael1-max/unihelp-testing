@@ -27,7 +27,7 @@ import {
   where,
 } from "firebase/firestore";
 
-import { toCloudinaryAsset, uploadImage } from "../../services/cloudinary";
+import { deleteProfileMedia, toR2Asset, uploadFeatureMedia } from "../../services/api";
 
 import {
   signOut,
@@ -242,29 +242,41 @@ const Profile = ({
   // PHOTO UPLOAD
   // =====================================================
 
+  const cleanupProfileAsset = async (asset) => {
+    if (asset?.storageProvider === "r2" && asset?.publicId?.startsWith("unihelp/profile/")) {
+      await deleteProfileMedia(asset.publicId);
+      return;
+    }
+    if (asset?.url?.includes("res.cloudinary.com")) {
+      await deleteCloudinaryAssets({ assets: [asset] });
+    }
+  };
+
   const handlePhoto = async (e) => {
     try {
       const file = e.target.files[0];
       if (!file) return;
       setUploading(true);
-      const result = await uploadImage(file);
-      const url = result.secure_url;
-      const nextAsset = toCloudinaryAsset(result);
+      if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
+      const result = await uploadFeatureMedia(file, { feature: "profile", resourceType: "image" });
+      const url = result.url || result.secure_url;
+      const nextAsset = toR2Asset(result);
+      if (!url) throw new Error("The profile image upload did not return a URL.");
       const previousAsset = profile?.photoAsset || (profile?.photo ? { url: profile.photo, resourceType: "image" } : null);
 
       try {
         await updateProfile(auth.currentUser, { photoURL: url });
-        await setDoc(doc(db, "users", auth.currentUser.uid), { photo: url, photoURL: url, photoAsset: nextAsset }, { merge: true });
+        await setDoc(doc(db, "users", auth.currentUser.uid), { photo: url, photoURL: url, photoThumb: url, photoAsset: nextAsset }, { merge: true });
       } catch (saveError) {
-        await deleteCloudinaryAssets({ assets: [nextAsset] }).catch((cleanupError) => {
-          console.warn("Unable to clean up newly uploaded profile photo", cleanupError);
+        await cleanupProfileAsset(nextAsset).catch((cleanupError) => {
+          console.warn("Unable to clean up unsaved R2 profile photo", cleanupError);
         });
         throw saveError;
       }
 
       if (previousAsset?.publicId || previousAsset?.url) {
-        await deleteCloudinaryAssets({ assets: [previousAsset] }).catch((cleanupError) => {
-          console.warn("Unable to clean up previous profile photo", cleanupError);
+        await cleanupProfileAsset(previousAsset).catch((cleanupError) => {
+          console.warn("Unable to clean up replaced profile photo", cleanupError);
         });
       }
       fetchProfile();

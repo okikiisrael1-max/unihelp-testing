@@ -132,7 +132,7 @@ const SearchPanel = ({
             No pages match "{q}"
           </p>
           <p className="text-xs opacity-60 mt-1">
-            Try a shorter word, like "exam", "hostel" or "video".
+            Try a shorter word, like "exam" or "video".
           </p>
         </div>
       )}
@@ -255,7 +255,6 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
       { type: "link", title: "CGPA Tracker", desc: "Calculate and save your CGPA", url: "/CGPA", icon: Calculator, colorClass: "bg-teal-500/10 text-teal-500", keywords: ["cgpa", "gpa", "grade", "result", "score"] },
       { type: "link", title: "Formula Hub", desc: "Math, physics and chemistry formulas", url: "/formula-hub", icon: Calculator, colorClass: "bg-cyan-500/10 text-cyan-500", keywords: ["formula", "math", "physics", "chemistry", "calculate", "equations", "hub"] },
       { type: "link", title: "Study Resources", desc: "Notes, PDFs and study materials", url: "/resources", icon: BookOpen, colorClass: "bg-emerald-500/10 text-emerald-500", keywords: ["pdf", "read", "study", "materials", "handout", "notes", "resources"] },
-      { type: "link", title: "Hostel Marketplace", desc: "Find accommodation", url: "/hostelmarketplace", icon: Building2, colorClass: "bg-rose-500/10 text-rose-500", keywords: ["house", "rent", "lodge", "accommodation", "hostel", "room"] },
       { type: "link", title: "Student Marketplace", desc: "Buy and sell items", url: "/studentmarketplace", icon: ShoppingBag, colorClass: "bg-amber-500/10 text-amber-500", keywords: ["shop", "store", "buy", "sell", "products", "market"] },
       { type: "link", title: "Watch", desc: "Video tutorials", url: "/watch", icon: PlayCircle, colorClass: "bg-red-500/10 text-red-500", keywords: ["video", "youtube", "tutorial", "play", "learn"] },
       { type: "link", title: "AI Tutor", desc: "Ask questions, get answers", url: "/ai", icon: Sparkles, colorClass: "bg-purple-500/10 text-purple-500", keywords: ["bot", "chat", "help", "artificial", "intelligence", "ai", "tutor"] },
@@ -399,7 +398,6 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
           { label: "Study resources", to: "/resources" },
           { label: "CBT practice", to: "/cbt-practice" },
           { label: "CGPA tracker", to: "/CGPA" },
-          { label: "Find hostels", to: "/hostelmarketplace" },
           { label: "Student marketplace", to: "/studentmarketplace" },
           { label: "AI tutor", to: "/ai" },
         ],

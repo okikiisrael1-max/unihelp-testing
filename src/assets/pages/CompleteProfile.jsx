@@ -4,7 +4,7 @@ import { auth, db } from '../../firebase/config';
 import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { toast } from 'react-toastify';
-import { toCloudinaryAsset, uploadImage } from '../../services/cloudinary';
+import { deleteProfileMedia, toR2Asset, uploadFeatureMedia } from '../../services/api';
 import { deleteCloudinaryAssets } from '../../services/mediaCleanup';
 import { ALL_NIGERIAN_SCHOOLS, COMMON_DEPARTMENTS } from '../data/nigerianSchools';
 import {
@@ -319,6 +319,16 @@ const CompleteProfile = ({ dark = false }) => {
 
   const setField = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
 
+  const cleanupProfileAsset = async (asset) => {
+    if (asset?.storageProvider === 'r2' && asset?.publicId?.startsWith('unihelp/profile/')) {
+      await deleteProfileMedia(asset.publicId);
+      return;
+    }
+    if (asset?.url?.includes('res.cloudinary.com')) {
+      await deleteCloudinaryAssets({ assets: [asset] });
+    }
+  };
+
   const handlePhotoSelect = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file later
@@ -344,21 +354,22 @@ const CompleteProfile = ({ dark = false }) => {
 
     setUploadingPhoto(true);
     try {
-      const result = await uploadImage(file);
-      const url = result.secure_url;
-      const nextAsset = toCloudinaryAsset(result);
+      const result = await uploadFeatureMedia(file, { feature: 'profile', resourceType: 'image' });
+      const url = result.url || result.secure_url;
+      const nextAsset = toR2Asset(result);
+      if (!url) throw new Error('The profile image upload did not return a URL.');
       const previousAsset = photoAsset || (photoUrl?.startsWith('http') ? { url: photoUrl, resourceType: 'image' } : null);
 
       try {
         await updateProfile(user, { photoURL: url });
         await setDoc(
           doc(db, 'users', user.uid),
-          { photo: url, photoURL: url, photoAsset: nextAsset },
+          { photo: url, photoURL: url, photoThumb: url, photoAsset: nextAsset },
           { merge: true }
         );
       } catch (saveError) {
-        await deleteCloudinaryAssets({ assets: [nextAsset] }).catch((cleanupError) => {
-          console.warn('Unable to clean up newly uploaded profile photo', cleanupError);
+        await cleanupProfileAsset(nextAsset).catch((cleanupError) => {
+          console.warn('Unable to clean up unsaved R2 profile photo', cleanupError);
         });
         throw saveError;
       }
@@ -366,8 +377,8 @@ const CompleteProfile = ({ dark = false }) => {
       setPhotoUrl(url);
       setPhotoAsset(nextAsset);
       if (previousAsset?.publicId || previousAsset?.url) {
-        await deleteCloudinaryAssets({ assets: [previousAsset] }).catch((cleanupError) => {
-          console.warn('Unable to clean up previous profile photo', cleanupError);
+        await cleanupProfileAsset(previousAsset).catch((cleanupError) => {
+          console.warn('Unable to clean up replaced profile photo', cleanupError);
         });
       }
       toast.success('Profile picture updated');
@@ -388,9 +399,9 @@ const CompleteProfile = ({ dark = false }) => {
     if (!user) return;
     try {
       await updateProfile(user, { photoURL: null });
-      await setDoc(doc(db, 'users', user.uid), { photo: '', photoAsset: null }, { merge: true });
+      await setDoc(doc(db, 'users', user.uid), { photo: '', photoURL: '', photoThumb: '', photoAsset: null }, { merge: true });
       if (photoAsset?.publicId || photoAsset?.url) {
-        await deleteCloudinaryAssets({ assets: [photoAsset] }).catch((cleanupError) => {
+        await cleanupProfileAsset(photoAsset).catch((cleanupError) => {
           console.warn('Unable to clean up removed profile photo', cleanupError);
         });
       }
@@ -610,8 +621,8 @@ const CompleteProfile = ({ dark = false }) => {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-white font-bold text-[15px] transition-all shadow-lg ${ saving ? 'bg-indigo-400 cursor-not-allowed shadow-none' : 'bg-[#4338ca] hover:bg-[#3730a3] hover:shadow-[#4338ca]/30 active:scale-[0.98]'}`}>
+                disabled={saving || uploadingPhoto}
+                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-white font-bold text-[15px] transition-all shadow-lg ${ saving || uploadingPhoto ? 'bg-indigo-400 cursor-not-allowed shadow-none' : 'bg-[#4338ca] hover:bg-[#3730a3] hover:shadow-[#4338ca]/30 active:scale-[0.98]'}`}>
                 {saving ? (
                   <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>) : (
                   <>Save and continue <ArrowRight size={18} /> </>)}

@@ -55,7 +55,7 @@ export default function Footer({ dark = false }) {
 
           <p className={`leading-relaxed ${theme.muted}`}>
             Helping Nigerian students succeed through lecture notes, past
-            questions, hostel marketplace, GPA calculator, student
+            questions, GPA calculator, student
             community and more.
           </p>
         </div>
@@ -68,7 +68,6 @@ export default function Footer({ dark = false }) {
               { name: "Home", link: "/" },
               { name: "Resources", link: "/resources" },
               { name: "Marketplace", link: "/studentmarketplace" },
-              { name: "Find Hostels", link: "/hostelmarketplace" },
               { name: "Community", link: "/community" },
             ].map((item, index) => (
               <li key={index}>

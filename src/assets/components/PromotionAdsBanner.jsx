@@ -318,16 +318,16 @@ export const demoAds = [
   },
 
   {
-    badge: "🏠 Hostel",
+    badge: "📚 Study",
 
-    title: "Find Verified Student Hostels",
+    title: "Explore Student Resources",
 
     description:
-      "Browse affordable and verified hostels near your campus.",
+      "Find notes, past questions, and study materials for your courses.",
 
-    buttonText: "View Hostels",
+    buttonText: "Browse Resources",
 
-    buttonLink: "/hostelmarketplace",
+    buttonLink: "/resources",
 
     theme: "blue",
   },

@@ -8,7 +8,6 @@ import {
   UploadCloud,
   ComputerIcon,
   PlayCircle,
-  Home,
   ShoppingBag,
   Sparkles,
   Bot,
@@ -26,7 +25,6 @@ import {
   Info,
   PhoneCall,
   FileWarning,
-  Building2,
   CalendarDays,
 } from "lucide-react";
 
@@ -41,14 +39,12 @@ export const featureSections = [
       { title: "CBT Practice", desc: "Practice with exam materials", icon: ComputerIcon, link: "/cbt-practice" },
       { title: "Task Management", desc: "Plan assignments and deadlines", icon: Clock3, link: "/tasks" },
       { title: "Smart Timetable", desc: "Generate a balanced weekly schedule", icon: CalendarDays, link: "/smart-timetable" },
-      { title: "Stories", desc: "Read and create student stories", icon: PlayCircle, link: "/stories" },
     ],
   },
   {
     title: "Marketplace",
     icon: ShoppingBag,
     items: [
-      { title: "Hostel Marketplace", desc: "Find hostels around campus", icon: Home, link: "/hostelmarketplace" },
       { title: "Student Marketplace", desc: "Buy and sell student items", icon: ShoppingBag, link: "/studentmarketplace" },
  
     ],

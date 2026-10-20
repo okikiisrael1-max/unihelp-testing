@@ -17,7 +17,6 @@ import {
   Flame,
   HistoryIcon,
   MessageCircle,
-  Newspaper,
   PlayCircle,
   Search,
   Sparkles,
@@ -40,7 +39,6 @@ import {
 
 import { db } from "../../firebase/config";
 import { AuthContext } from "../context/AuthContext";
-import PromotionAdsBanner from "../components/PromotionAdsBanner";
 
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -82,13 +80,6 @@ const QUICK_ACTIONS = [
     to: "/messages",
     icon: MessageCircle,
     tint: "sky",
-  },
-  {
-    label: "Updates",
-    hint: "Campus news",
-    to: "/newsfeed",
-    icon: Newspaper,
-    tint: "amber",
   },
   {
     label: "Groups",
@@ -506,14 +497,6 @@ const Dashboard = ({ dark }) => {
         {/* ================================================= */}
 
         <DailyChallengeBanner />
-
-        {/* ================================================= */}
-        {/* ADS BANNER */}
-        {/* ================================================= */}
-
-        <div className="mb-10 md:mb-12">
-          <PromotionAdsBanner dark={dark} autoSlide={true} interval={5000} />
-        </div>
 
         {/* ================================================= */}
         {/* EXPLORE TOOLS */}

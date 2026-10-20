@@ -4,7 +4,6 @@ import {
   Brain,
   BookOpen,
   Users,
-  Home,
   ShoppingBag,
   Video,
   Rocket,
@@ -41,12 +40,6 @@ const FEATURES = [
     title: "Student Marketplace",
     description:
       "Safely buy, sell, and discover products and services within your campus community.",
-  },
-  {
-    icon: Home,
-    title: "Hostel Finder",
-    description:
-      "Locate and secure verified hostels and accommodation options tailored to your budget.",
   },
   {
     icon: Users,
@@ -223,7 +216,7 @@ export default function About({ dark }) {
                 </h2>
               </div>
               <p className={`text-base sm:text-lg leading-relaxed ${dark ? "text-slate-300" : "text-slate-700"}`}>
-                UniHelp was born out of a simple mission: making student life easier and more productive. From academic calculators to hostel search engines, marketplace tools, AI assistance, and social community spaces, UniHelp is designed to be your ultimate digital campus companion.
+                UniHelp was born out of a simple mission: making student life easier and more productive. From academic calculators to marketplace tools, AI assistance, and social community spaces, UniHelp is designed to be your ultimate digital campus companion.
               </p>
             </div>
           </div>
