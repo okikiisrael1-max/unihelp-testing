@@ -1,5 +1,8 @@
 import React, {
+  memo,
+  useCallback,
   useContext,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -7,19 +10,15 @@ import React, {
 } from "react";
 
 import {
-  Activity,
   ArrowRight,
-  BarChart3,
   Bot,
-  BookOpen,
   Calculator,
   ChevronRight,
-  Flame,
-  HistoryIcon,
+  Clock,
   MessageCircle,
   PlayCircle,
+  Plus,
   Search,
-  Sparkles,
   Trash2,
   TrendingDown,
   TrendingUp,
@@ -28,99 +27,104 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, query, where } from "firebase/firestore";
 
 import { db } from "../../firebase/config";
 import { AuthContext } from "../context/AuthContext";
 
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Images } from "../data/data";
 import { allFeatures, featureSections } from "../data/features";
 
-/* ================================================= */
-/* CONSTANTS */
-/* ================================================= */
+/* =====================================================================
+   READ-REDUCTION NOTES
+   1. CGPA records are cached in memory + sessionStorage, keyed by user.
+      Re-opening the dashboard shows them instantly and costs 0 reads for
+      CGPA_TTL; after that it refreshes quietly in the background (1 query).
+   2. Only the fields the dashboard shows are cached (not whole semester
+      arrays), so the cache stays tiny.
+   3. Deleting is optimistic with Undo. Nothing is re-fetched afterwards.
+   4. To refresh instantly after the CGPA page saves a record, dispatch
+        window.dispatchEvent(new Event("cgpa-records-changed"))
+      there (or call invalidateCgpaCache()). Without it the dashboard
+      catches up after CGPA_TTL.
+   5. Tool search / category filters run on the client (0 reads), and
+      "recent tools" live in localStorage (0 reads).
+   ===================================================================== */
 
+const CGPA_TTL = 2 * 60 * 1000;
+const UNDO_MS = 5000;
 const TOOLS_PREVIEW_COUNT = 6;
 const RECORDS_PREVIEW_COUNT = 4;
+const RECENT_KEY = "dash:recent-tools";
+const RECENT_MAX = 4;
+const CGPA_EVENT = "cgpa-records-changed";
 
 const QUICK_ACTIONS = [
-  {
-    label: "CGPA Tracker",
-    hint: "Log a semester",
-    to: "/CGPA",
-    icon: Calculator,
-    tint: "indigo",
-  },
-  {
-    label: "AI Tutor",
-    hint: "Ask anything",
-    to: "/ai",
-    icon: Bot,
-    tint: "violet",
-  },
-  {
-    label: "Watch",
-    hint: "Video tutorials",
-    to: "/watch",
-    icon: PlayCircle,
-    tint: "red",
-  },
-  {
-    label: "Messages",
-    hint: "Chat with students",
-    to: "/messages",
-    icon: MessageCircle,
-    tint: "sky",
-  },
-  {
-    label: "Groups",
-    hint: "Join communities",
-    to: "/community",
-    icon: Users,
-    tint: "emerald",
-  },
+  { label: "CGPA Tracker", hint: "Log a semester", to: "/CGPA", icon: Calculator, tint: "indigo" },
+  { label: "AI Tutor", hint: "Ask anything", to: "/ai", icon: Bot, tint: "violet" },
+  { label: "Watch", hint: "Video tutorials", to: "/watch", icon: PlayCircle, tint: "red" },
+  { label: "Messages", hint: "Chat with students", to: "/messages", icon: MessageCircle, tint: "sky" },
+  { label: "Groups", hint: "Join communities", to: "/community", icon: Users, tint: "emerald" },
 ];
 
 // Written out in full so Tailwind can see every class at build time.
 const TINTS = {
-  indigo: {
-    dark: "bg-indigo-500/15 text-indigo-300",
-    light: "bg-indigo-50 text-indigo-600",
-  },
-  violet: {
-    dark: "bg-violet-500/15 text-violet-300",
-    light: "bg-violet-50 text-violet-600",
-  },
-  red: {
-    dark: "bg-red-500/15 text-red-300",
-    light: "bg-red-50 text-red-600",
-  },
-  sky: {
-    dark: "bg-sky-500/15 text-sky-300",
-    light: "bg-sky-50 text-sky-600",
-  },
-  amber: {
-    dark: "bg-amber-500/15 text-amber-300",
-    light: "bg-amber-50 text-amber-600",
-  },
-  emerald: {
-    dark: "bg-emerald-500/15 text-emerald-300",
-    light: "bg-emerald-50 text-emerald-600",
-  },
+  indigo: { dark: "bg-indigo-500/15 text-indigo-300", light: "bg-indigo-50 text-indigo-600" },
+  violet: { dark: "bg-violet-500/15 text-violet-300", light: "bg-violet-50 text-violet-600" },
+  red: { dark: "bg-red-500/15 text-red-300", light: "bg-red-50 text-red-600" },
+  sky: { dark: "bg-sky-500/15 text-sky-300", light: "bg-sky-50 text-sky-600" },
+  emerald: { dark: "bg-emerald-500/15 text-emerald-300", light: "bg-emerald-50 text-emerald-600" },
 };
 
-const FOCUS_RING =
+const FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
+/* ---------- CGPA cache ---------- */
+let cgpaCache = null; // { uid, records, ts }
+const cacheKey = (uid) => `dash:cgpa:${uid}`;
+
+function readCgpaCache(uid) {
+  if (cgpaCache?.uid === uid) return cgpaCache;
+  try {
+    const raw = sessionStorage.getItem(cacheKey(uid));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.records)) {
+        cgpaCache = { uid, records: parsed.records, ts: parsed.ts || 0 };
+        return cgpaCache;
+      }
+    }
+  } catch {
+    /* storage unavailable: fall through */
+  }
+  return null;
+}
+
+function writeCgpaCache(uid, records, ts = Date.now()) {
+  cgpaCache = { uid, records, ts };
+  try {
+    sessionStorage.setItem(cacheKey(uid), JSON.stringify({ records, ts }));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function invalidateCgpaCache() {
+  window.dispatchEvent(new Event(CGPA_EVENT));
+}
+
+/* ---------- recent tools ---------- */
+function readRecent() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/* ---------- helpers ---------- */
 const formatDate = (createdAt) => {
   if (!createdAt?.seconds) return "";
   return new Date(createdAt.seconds * 1000).toLocaleDateString("en-NG", {
@@ -130,405 +134,748 @@ const formatDate = (createdAt) => {
   });
 };
 
-/* ================================================= */
-/* DASHBOARD */
-/* ================================================= */
+const normalizeRecord = (d) => {
+  const data = d.data();
+  return {
+    id: d.id,
+    cgpa: Number(data.cgpa) || 0,
+    semesterCount: Array.isArray(data.semesters) ? data.semesters.length : 0,
+    createdAt: data.createdAt?.seconds ? { seconds: data.createdAt.seconds } : null,
+  };
+};
 
+const initialsOf = (name) =>
+  (name || "S").trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "S";
+
+/* =====================================================================
+   INLINE ILLUSTRATIONS (no image files to load or break)
+   ===================================================================== */
+const ChallengeArt = ({ className }) => (
+  <svg viewBox="0 0 160 120" fill="none" aria-hidden="true" className={className}>
+    <circle cx="80" cy="62" r="50" fill="white" fillOpacity="0.12" />
+    <path d="M56 34h48v20a24 24 0 0 1-48 0V34Z" fill="white" />
+    <path
+      d="M56 40H44a4 4 0 0 0-4 4c0 10 7 18 17 19M104 40h12a4 4 0 0 1 4 4c0 10-7 18-17 19"
+      stroke="white"
+      strokeWidth="5"
+      strokeLinecap="round"
+    />
+    <rect x="74" y="78" width="12" height="14" rx="2" fill="white" fillOpacity="0.85" />
+    <rect x="62" y="92" width="36" height="8" rx="4" fill="white" />
+    <polygon points="80,40 84,49 94,50 86.5,56.5 89,66 80,61 71,66 73.5,56.5 66,50 76,49" fill="#fbbf24" />
+    <circle cx="32" cy="30" r="3" fill="white" fillOpacity="0.7" />
+    <circle cx="132" cy="24" r="4" fill="#fbbf24" fillOpacity="0.9" />
+    <circle cx="140" cy="86" r="2.5" fill="white" fillOpacity="0.7" />
+    <path d="M22 80v10M17 85h10" stroke="white" strokeOpacity="0.7" strokeWidth="2.5" strokeLinecap="round" />
+  </svg>
+);
+
+const GroupsArt = ({ className }) => (
+  <svg viewBox="0 0 200 120" fill="none" aria-hidden="true" className={className}>
+    <rect x="8" y="16" width="184" height="96" rx="20" className="fill-indigo-500/10" />
+    <g>
+      <circle cx="62" cy="58" r="14" className="fill-sky-400" />
+      <path d="M38 104a24 24 0 0 1 48 0Z" className="fill-sky-400" />
+      <circle cx="138" cy="58" r="14" className="fill-emerald-400" />
+      <path d="M114 104a24 24 0 0 1 48 0Z" className="fill-emerald-400" />
+      <circle cx="100" cy="50" r="16" className="fill-indigo-500" />
+      <path d="M72 106a28 28 0 0 1 56 0Z" className="fill-indigo-500" />
+    </g>
+    <rect x="124" y="6" width="56" height="28" rx="12" className="fill-violet-500" />
+    <path d="M136 34l-4 9 12-9Z" className="fill-violet-500" />
+    <circle cx="142" cy="20" r="3" fill="white" />
+    <circle cx="152" cy="20" r="3" fill="white" />
+    <circle cx="162" cy="20" r="3" fill="white" />
+  </svg>
+);
+
+const EmptyChartArt = ({ className }) => (
+  <svg viewBox="0 0 120 80" fill="none" aria-hidden="true" className={className}>
+    <rect x="12" y="46" width="16" height="26" rx="4" className="fill-indigo-500/25" />
+    <rect x="38" y="34" width="16" height="38" rx="4" className="fill-indigo-500/35" />
+    <rect x="64" y="22" width="16" height="50" rx="4" className="fill-indigo-500/50" />
+    <rect x="90" y="8" width="16" height="64" rx="4" className="fill-indigo-500" />
+    <path d="M20 38l26-14 26-6 26-10" className="stroke-indigo-500" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="1 6" />
+  </svg>
+);
+
+/* ---------- CGPA sparkline (inline SVG, no chart lib) ---------- */
+const Sparkline = ({ data }) => {
+  const W = 360;
+  const H = 110;
+  const P = 10;
+  const vals = data.map((d) => d.value);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min;
+  const pts = data.map((d, i) => ({
+    ...d,
+    x: P + (i * (W - 2 * P)) / Math.max(1, data.length - 1),
+    y: span === 0 ? H / 2 : H - P - ((d.value - min) / span) * (H - 2 * P),
+  }));
+  const line = pts.map((p) => `${p.x},${p.y}`).join(" ");
+  const area = `${P},${H - P / 2} ${line} ${W - P},${H - P / 2}`;
+  const last = pts.length - 1;
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label={`CGPA across your last ${data.length} records, from ${vals[0].toFixed(2)} to ${vals[last].toFixed(2)}`}
+      className="h-28 w-full"
+    >
+      <polygon points={area} className="fill-indigo-500/10" />
+      <polyline
+        points={line}
+        fill="none"
+        className="stroke-indigo-500"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {pts.map((p, i) => (
+        <circle
+          key={p.id}
+          cx={p.x}
+          cy={p.y}
+          r={i === last ? 5 : 3.5}
+          className={i === last ? "fill-indigo-500" : "fill-indigo-300"}
+        >
+          <title>{`${p.value.toFixed(2)}${p.date ? ` · ${p.date}` : ""}`}</title>
+        </circle>
+      ))}
+    </svg>
+  );
+};
+
+const Delta = ({ value, className = "" }) => {
+  if (value === null || Math.abs(value) < 0.005) return null;
+  const up = value > 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-bold ${
+        up ? "text-emerald-500" : "text-red-500"
+      } ${className}`}
+    >
+      <Icon size={13} />
+      {up ? "+" : ""}
+      {value.toFixed(2)}
+    </span>
+  );
+};
+
+/* ---------- tool row ---------- */
+const ToolRow = memo(function ToolRow({ item, theme, showCategory, onOpen }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.link}
+      onClick={() => onOpen(item.link)}
+      className={`${theme.card} group flex items-start gap-3.5 rounded-2xl p-4 transition hover:border-indigo-400/50 hover:shadow-md motion-safe:hover:-translate-y-0.5 ${FOCUS}`}
+    >
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${theme.iconTint}`}>
+        {Icon && <Icon size={19} />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-sm font-bold leading-tight">{item.title}</h3>
+        {showCategory && <p className="mt-0.5 text-[11px] font-semibold text-indigo-500">{item.category}</p>}
+        <p className={`mt-1 line-clamp-2 text-xs leading-5 ${theme.textSoft}`}>{item.desc}</p>
+      </div>
+      <ChevronRight
+        size={16}
+        className="mt-1 shrink-0 opacity-30 transition group-hover:translate-x-0.5 group-hover:opacity-70"
+      />
+    </Link>
+  );
+});
+
+/* =====================================================================
+   DASHBOARD
+   ===================================================================== */
 const Dashboard = ({ dark }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
+  const uid = user?.uid;
 
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const initialCache = uid ? readCgpaCache(uid) : null;
+  const [records, setRecords] = useState(initialCache?.records || []);
+  const [loading, setLoading] = useState(Boolean(uid) && !initialCache);
+  const [loadError, setLoadError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [showAllRecords, setShowAllRecords] = useState(false);
-  const [showAllTools, setShowAllTools] = useState(false);
+  const deferredQuery = useDeferredValue(searchQuery);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [showAllTools, setShowAllTools] = useState(false);
+  const [showAllRecords, setShowAllRecords] = useState(false);
+  const [recent, setRecent] = useState(readRecent);
 
   const searchRef = useRef(null);
   const toolsRef = useRef(null);
+  const recordsRef = useRef(records);
+  recordsRef.current = records;
+  const pendingDeletes = useRef(new Map());
+  const fetchSeq = useRef(0);
 
-  /* ------------------------------------------------ */
-  /* FETCH CGPA RECORDS */
-  /* ------------------------------------------------ */
+  /* ---------- records: state + cache in one place ---------- */
+  const commit = useCallback(
+    (next) => {
+      recordsRef.current = next;
+      setRecords(next);
+      if (uid) writeCgpaCache(uid, next, cgpaCache?.uid === uid ? cgpaCache.ts : Date.now());
+    },
+    [uid]
+  );
+
+  const fetchRecords = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!uid) return;
+      const seq = ++fetchSeq.current;
+      if (!silent) setLoading(true);
+      try {
+        const snap = await getDocs(query(collection(db, "cgpaTracker"), where("userId", "==", uid)));
+        if (seq !== fetchSeq.current) return;
+        // Don't resurrect records that are still waiting out their undo window.
+        const data = snap.docs.map(normalizeRecord).filter((r) => !pendingDeletes.current.has(r.id));
+        writeCgpaCache(uid, data);
+        recordsRef.current = data;
+        setRecords(data);
+        setLoadError("");
+      } catch (err) {
+        console.error(err);
+        if (seq === fetchSeq.current && !recordsRef.current.length) {
+          setLoadError("We couldn't load your CGPA records.");
+        }
+      } finally {
+        if (seq === fetchSeq.current) setLoading(false);
+      }
+    },
+    [uid]
+  );
 
   useEffect(() => {
-    if (user) {
-      fetchRecords();
+    if (!uid) {
+      setRecords([]);
+      setLoading(false);
+      return undefined;
+    }
+    const cached = readCgpaCache(uid);
+    if (cached) {
+      setRecords(cached.records);
+      setLoading(false);
+      if (Date.now() - cached.ts > CGPA_TTL) fetchRecords({ silent: true });
     } else {
-      setLoading(false);
+      fetchRecords();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    const onChanged = () => fetchRecords({ silent: true });
+    window.addEventListener(CGPA_EVENT, onChanged);
+    return () => window.removeEventListener(CGPA_EVENT, onChanged);
+  }, [uid, fetchRecords]);
 
-  const fetchRecords = async () => {
-    try {
-      const q = query(
-        collection(db, "cgpaTracker"),
-        where("userId", "==", user.uid)
+  /* ---------- delete with undo ---------- */
+  const deleteRecord = useCallback(
+    (record) => {
+      const index = recordsRef.current.findIndex((r) => r.id === record.id);
+      if (index === -1) return;
+      commit(recordsRef.current.filter((r) => r.id !== record.id));
+
+      const restore = () => {
+        if (recordsRef.current.some((r) => r.id === record.id)) return;
+        const next = [...recordsRef.current];
+        next.splice(Math.min(index, next.length), 0, record);
+        commit(next);
+      };
+
+      const timer = setTimeout(async () => {
+        pendingDeletes.current.delete(record.id);
+        try {
+          await deleteDoc(doc(db, "cgpaTracker", record.id));
+        } catch (err) {
+          console.error(err);
+          restore();
+          toast.error("Couldn't delete that record. It has been restored.");
+        }
+      }, UNDO_MS);
+      pendingDeletes.current.set(record.id, { timer });
+
+      toast(
+        ({ closeToast }) => (
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <span>Record deleted</span>
+            <button
+              type="button"
+              className="font-bold underline"
+              onClick={() => {
+                clearTimeout(timer);
+                pendingDeletes.current.delete(record.id);
+                restore();
+                closeToast();
+              }}
+            >
+              Undo
+            </button>
+          </div>
+        ),
+        { toastId: `del-${record.id}`, autoClose: UNDO_MS }
       );
+    },
+    [commit]
+  );
 
-      const snap = await getDocs(q);
+  // Leaving the page: send any deletes that were still counting down.
+  useEffect(
+    () => () => {
+      pendingDeletes.current.forEach(({ timer }, id) => {
+        clearTimeout(timer);
+        toast.dismiss(`del-${id}`);
+        deleteDoc(doc(db, "cgpaTracker", id)).catch(() => {});
+      });
+      pendingDeletes.current.clear();
+    },
+    []
+  );
 
-      const data = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-
-      setRecords(data);
-    } catch (err) {
-      console.log(err);
-      toast.error("Couldn't load your CGPA records");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ------------------------------------------------ */
-  /* DELETE RECORD */
-  /* ------------------------------------------------ */
-
-  const handleDelete = async (id) => {
-    try {
-      await deleteDoc(doc(db, "cgpaTracker", id));
-      setRecords((prev) => prev.filter((item) => item.id !== id));
-      toast.success("Record deleted");
-    } catch (err) {
-      console.log(err);
-      toast.error("Couldn't delete that record");
-    } finally {
-      setConfirmDeleteId(null);
-    }
-  };
-
-  /* ------------------------------------------------ */
-  /* KEYBOARD SHORTCUT: press "/" to search tools */
-  /* ------------------------------------------------ */
-
-  const focusSearch = () => {
+  /* ---------- "/" focuses tool search ---------- */
+  const focusSearch = useCallback(() => {
     toolsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // wait for the scroll to start so the keyboard doesn't fight it on mobile
     setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 250);
-  };
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = e.target?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable)
-        return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
       e.preventDefault();
       focusSearch();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [focusSearch]);
+
+  /* ---------- recent tools ---------- */
+  const trackTool = useCallback((link) => {
+    setRecent((cur) => {
+      const next = [link, ...cur.filter((l) => l !== link)].slice(0, RECENT_MAX);
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
   }, []);
 
-  /* ------------------------------------------------ */
-  /* SORT + STATS */
-  /* ------------------------------------------------ */
+  /* ---------- derived CGPA numbers ---------- */
+  const sorted = useMemo(
+    () => [...records].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)),
+    [records]
+  );
 
-  const sortedRecords = useMemo(() => {
-    return [...records].sort(
-      (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
-    );
-  }, [records]);
-
-  const visibleRecords = showAllRecords
-    ? sortedRecords
-    : sortedRecords.slice(0, RECORDS_PREVIEW_COUNT);
-
-  const dashboard = useMemo(() => {
-    const values = records.map((r) => Number(r.cgpa) || 0);
-    const total = values.length;
-
+  const summary = useMemo(() => {
+    const values = sorted.map((r) => r.cgpa);
+    const n = values.length;
     return {
-      totalRecords: total,
-      bestCGPA: total ? Math.max(...values).toFixed(2) : "0.00",
-      avgCGPA: total
-        ? (values.reduce((a, b) => a + b, 0) / total).toFixed(2)
-        : "0.00",
-      latestCGPA: total ? (Number(sortedRecords[0]?.cgpa) || 0).toFixed(2) : "0.00",
+      count: n,
+      latest: n ? values[0] : 0,
+      best: n ? Math.max(...values) : 0,
+      avg: n ? values.reduce((a, b) => a + b, 0) / n : 0,
+      change: n > 1 ? values[0] - values[1] : null,
     };
-  }, [records, sortedRecords]);
+  }, [sorted]);
 
-  // Change since the previous saved record (more meaningful than vs. average)
-  const cgpaChange =
-    sortedRecords.length > 1
-      ? (Number(sortedRecords[0]?.cgpa) || 0) -
-        (Number(sortedRecords[1]?.cgpa) || 0)
-      : 0;
+  const sparkData = useMemo(
+    () =>
+      sorted
+        .slice(0, 8)
+        .reverse()
+        .map((r) => ({ id: r.id, value: r.cgpa, date: formatDate(r.createdAt) })),
+    [sorted]
+  );
 
-  // Oldest -> newest, last 8, for the sparkline
-  const sparkData = useMemo(() => {
-    return [...sortedRecords]
-      .reverse()
-      .slice(-8)
-      .map((r) => ({
-        id: r.id,
-        value: Number(r.cgpa) || 0,
-        date: formatDate(r.createdAt),
-      }));
-  }, [sortedRecords]);
+  const visibleRecords = showAllRecords ? sorted : sorted.slice(0, RECORDS_PREVIEW_COUNT);
 
-  const sparkMax = Math.max(...sparkData.map((d) => d.value), 0.01);
-
-  /* ------------------------------------------------ */
-  /* THEME */
-  /* ------------------------------------------------ */
-
-  const theme = {
-    bg: dark ? "bg-[#070b14] text-white" : "bg-[#f6f7fb] text-gray-900",
-    card: dark
-      ? "bg-white/5 border border-white/10"
-      : "bg-white border border-gray-200/80 shadow-sm",
-    soft: dark ? "bg-white/5" : "bg-gray-50",
-    input: dark
-      ? "bg-white/5 border border-white/10 focus-within:border-indigo-400/60"
-      : "bg-white border border-gray-200 focus-within:border-indigo-400",
-    iconTint: dark
-      ? "bg-indigo-500/15 text-indigo-300"
-      : "bg-indigo-50 text-indigo-600",
-    textSoft: dark ? "text-gray-400" : "text-gray-500",
-    textFaint: dark ? "text-gray-500" : "text-gray-400",
-    kbd: dark
-      ? "border-white/15 bg-white/5 text-gray-400"
-      : "border-gray-200 bg-gray-50 text-gray-500",
-    fadeEdge: dark ? "from-[#070b14]" : "from-[#f6f7fb]",
-    tint: (name) => TINTS[name][dark ? "dark" : "light"],
-  };
-
-  /* ------------------------------------------------ */
-  /* GREETING */
-  /* ------------------------------------------------ */
-
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+  /* ---------- tools ---------- */
+  const categoryNames = useMemo(() => ["All", ...featureSections.map((s) => s.title)], []);
+  const categoryCounts = useMemo(() => {
+    const counts = { All: allFeatures.length };
+    allFeatures.forEach((f) => {
+      counts[f.category] = (counts[f.category] || 0) + 1;
+    });
+    return counts;
   }, []);
 
-  const firstName = (user?.displayName || "Student").split(" ")[0];
-
-  /* ------------------------------------------------ */
-  /* TOOLS: search + category filter */
-  /* ------------------------------------------------ */
-
-  const categoryNames = [
-    "All",
-    ...featureSections.map((section) => section.title),
-  ];
-
-  const allItems = useMemo(() => allFeatures, []);
-  const totalToolCount = allItems.length;
-
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const normalizedQuery = deferredQuery.trim().toLowerCase();
   const isFiltering = normalizedQuery.length > 0 || activeCategory !== "All";
 
-  const matchedItems = useMemo(() => {
-    return allItems.filter((item) => {
-      const matchesCategory =
-        activeCategory === "All" || item.category === activeCategory;
+  const matchedItems = useMemo(
+    () =>
+      allFeatures.filter((item) => {
+        if (activeCategory !== "All" && item.category !== activeCategory) return false;
+        if (!normalizedQuery) return true;
+        return `${item.title} ${item.desc} ${item.category}`.toLowerCase().includes(normalizedQuery);
+      }),
+    [activeCategory, normalizedQuery]
+  );
 
-      const matchesQuery =
-        !normalizedQuery ||
-        item.title.toLowerCase().includes(normalizedQuery) ||
-        item.desc.toLowerCase().includes(normalizedQuery);
+  const shownItems = showAllTools || isFiltering ? matchedItems : matchedItems.slice(0, TOOLS_PREVIEW_COUNT);
+  const canToggleTools = !isFiltering && matchedItems.length > TOOLS_PREVIEW_COUNT;
 
-      return matchesCategory && matchesQuery;
-    });
-  }, [allItems, activeCategory, normalizedQuery]);
-
-  // While searching/filtering, always show every match; otherwise preview.
-  const filteredItems =
-    showAllTools || isFiltering
-      ? matchedItems
-      : matchedItems.slice(0, TOOLS_PREVIEW_COUNT);
-
-  const canToggleTools =
-    !isFiltering && matchedItems.length > TOOLS_PREVIEW_COUNT;
+  const recentItems = useMemo(
+    () => recent.map((link) => allFeatures.find((f) => f.link === link)).filter(Boolean),
+    [recent]
+  );
 
   const clearFilters = () => {
     setSearchQuery("");
     setActiveCategory("All");
   };
 
-  /* ------------------------------------------------ */
-  /* STATS */
-  /* ------------------------------------------------ */
+  /* ---------- theme ---------- */
+  const theme = useMemo(
+    () => ({
+      bg: dark ? "bg-[#070b14] text-white" : "bg-[#f6f7fb] text-gray-900",
+      card: dark ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200/80 shadow-sm",
+      soft: dark ? "bg-white/5" : "bg-gray-50",
+      input: dark
+        ? "bg-white/5 border border-white/10 focus-within:border-indigo-400/60"
+        : "bg-white border border-gray-200 focus-within:border-indigo-400",
+      iconTint: dark ? "bg-indigo-500/15 text-indigo-300" : "bg-indigo-50 text-indigo-600",
+      textSoft: dark ? "text-gray-400" : "text-gray-500",
+      textFaint: dark ? "text-gray-500" : "text-gray-400",
+      divider: dark ? "divide-white/10" : "divide-gray-200",
+      kbd: dark ? "border-white/15 bg-white/5 text-gray-400" : "border-gray-200 bg-gray-50 text-gray-500",
+      ghost: dark ? "hover:bg-white/10" : "hover:bg-gray-100",
+      tint: (name) => TINTS[name][dark ? "dark" : "light"],
+    }),
+    [dark]
+  );
 
-  const stats = [
-    {
-      icon: BarChart3,
-      label: "CGPA records",
-      value: dashboard.totalRecords,
-      tint: "indigo",
-    },
-    {
-      icon: Trophy,
-      label: "Best CGPA",
-      value: dashboard.bestCGPA,
-      tint: "emerald",
-    },
-    {
-      icon: Activity,
-      label: "Average CGPA",
-      value: dashboard.avgCGPA,
-      tint: "sky",
-    },
-    {
-      icon: Sparkles,
-      label: "Tools available",
-      value: totalToolCount,
-      tint: "violet",
-    },
-  ];
+  /* ---------- greeting copy ---------- */
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const today = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long" });
+  const firstName = (user?.displayName || "").split(" ")[0] || "there";
 
-  /* ------------------------------------------------ */
-  /* RENDER */
-  /* ------------------------------------------------ */
+  const subline = (() => {
+    if (!uid) return "Sign in to track your CGPA and pick up where you left off.";
+    if (loading || authLoading) return "Getting your dashboard ready…";
+    if (summary.count === 0) return "Add your first semester and start tracking your progress.";
+    if (summary.change !== null && summary.change > 0.004)
+      return `Your CGPA is up ${summary.change.toFixed(2)} since your last record. Nice work.`;
+    if (summary.change !== null && summary.change < -0.004)
+      return `Your CGPA is down ${Math.abs(summary.change).toFixed(2)} since your last record. Your history below can help you see what changed.`;
+    return "Here's where you stand today.";
+  })();
 
+  const busy = authLoading || loading;
+  const signedOut = !authLoading && !uid;
+
+  /* ================================================================= */
   return (
-    <div
-      className={`min-h-screen px-4 md:px-8 lg:px-10 md:mt-20 ${theme.bg} motion-safe:transition-colors motion-safe:duration-300`}
-    >
-      <div className="px-0 sm:px-4 md:px-6 lg:px-8 py-6 md:py-10 max-w-[1280px] mx-auto">
-        {/* ================================================= */}
-        {/* HEADER: greeting + primary actions */}
-        {/* ================================================= */}
-
-        <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-6 md:mb-8">
-          <div className="min-w-0">
-            <p className={`text-sm font-semibold ${theme.textSoft}`}>
-              {greeting}
-            </p>
-            <h1 className="mt-1 text-3xl md:text-4xl font-black tracking-tight truncate">
-              Welcome back, {firstName}
-            </h1>
-            <p className={`mt-2 text-sm max-w-xl ${theme.textSoft}`}>
-              Pick up where you left off, or find a tool for your next
-              assignment.
-            </p>
+    <div className={`min-h-screen px-4 md:mt-20 md:px-8 lg:px-10 ${theme.bg} motion-safe:transition-colors motion-safe:duration-300`}>
+      <div className="mx-auto max-w-[1280px] px-0 py-6 sm:px-4 md:px-6 md:py-10 lg:px-8">
+        {/* ---------- header ---------- */}
+        <header className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <div
+              className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-black ${theme.iconTint}`}
+            >
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+              ) : (
+                initialsOf(user?.displayName)
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className={`text-xs font-medium ${theme.textSoft}`}>{today}</p>
+              <h1 className="truncate text-2xl font-black tracking-tight md:text-3xl">
+                {greeting}, {firstName}
+              </h1>
+              <p className={`mt-1 max-w-xl text-sm ${theme.textSoft}`}>{subline}</p>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={focusSearch}
-            className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm w-full md:w-72 transition hover:border-indigo-400/60 ${theme.card} ${FOCUS_RING}`}
+            className={`group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm transition hover:border-indigo-400/60 md:w-72 ${theme.card} ${FOCUS}`}
           >
             <Search size={16} className={theme.textFaint} />
             <span className={`flex-1 ${theme.textSoft}`}>Find a tool…</span>
-            <kbd
-              className={`hidden md:inline-flex h-6 min-w-6 items-center justify-center rounded-md border px-1.5 text-[11px] font-semibold ${theme.kbd}`}
-            >
+            <kbd className={`hidden h-6 min-w-6 items-center justify-center rounded-md border px-1.5 text-[11px] font-semibold md:inline-flex ${theme.kbd}`}>
               /
             </kbd>
           </button>
         </header>
 
-        {/* ================================================= */}
-        {/* QUICK ACTIONS */}
-        {/* ================================================= */}
-
+        {/* ---------- quick actions ---------- */}
         <nav
           aria-label="Quick actions"
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 md:mb-8"
+          className="-mx-4 mb-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-5 lg:overflow-visible"
         >
           {QUICK_ACTIONS.map(({ label, hint, to, icon: Icon, tint }) => (
             <Link
               key={label}
               to={to}
-              className={`group flex items-center gap-3 rounded-2xl p-3.5 transition hover:border-indigo-400/60 hover:shadow-md motion-safe:hover:-translate-y-0.5 ${theme.card} ${FOCUS_RING}`}
+              className={`group flex min-w-[10.5rem] shrink-0 snap-start items-center gap-3 rounded-2xl p-3.5 transition hover:border-indigo-400/60 hover:shadow-md motion-safe:hover:-translate-y-0.5 lg:min-w-0 ${theme.card} ${FOCUS}`}
             >
-              <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${theme.tint(tint)}`}
-              >
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${theme.tint(tint)}`}>
                 <Icon size={18} />
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-sm font-bold leading-tight">
-                  {label}
-                </span>
-                <span className={`block truncate text-xs mt-0.5 ${theme.textSoft}`}>
-                  {hint}
-                </span>
+                <span className="block truncate text-sm font-bold leading-tight">{label}</span>
+                <span className={`mt-0.5 block truncate text-xs ${theme.textSoft}`}>{hint}</span>
               </span>
             </Link>
           ))}
         </nav>
 
-        {/* ================================================= */}
-        {/* STATS */}
-        {/* ================================================= */}
+        {recentItems.length > 0 && (
+          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:mb-8">
+            <span className={`flex shrink-0 items-center gap-1.5 text-xs font-semibold ${theme.textSoft}`}>
+              <Clock size={13} /> Jump back in
+            </span>
+            {recentItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.link}
+                  to={item.link}
+                  onClick={() => trackTool(item.link)}
+                  className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition hover:border-indigo-400/60 hover:text-indigo-500 ${theme.card} ${FOCUS}`}
+                >
+                  {Icon && <Icon size={13} />}
+                  {item.title}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+        {recentItems.length === 0 && <div className="mb-3 md:mb-5" />}
 
-        <section
-          aria-label="Your stats"
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 md:mb-8"
-        >
-          {stats.map(({ icon: Icon, label, value, tint }) => (
-            <div
-              key={label}
-              className={`rounded-2xl p-4 flex items-center gap-3.5 ${theme.card}`}
-            >
-              <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${theme.tint(tint)}`}
-              >
-                <Icon size={19} />
-              </span>
-              <div className="min-w-0">
-                {loading && label !== "Tools available" ? (
-                  <div
-                    className={`h-6 w-14 rounded-md motion-safe:animate-pulse ${theme.soft}`}
-                  />
-                ) : (
-                  <p className="text-xl font-black leading-tight">{value}</p>
-                )}
-                <p className={`text-xs mt-0.5 truncate ${theme.textSoft}`}>
-                  {label}
-                </p>
-              </div>
+        {/* ---------- main grid ---------- */}
+        <div className="mb-10 grid items-start gap-5 md:mb-12 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+          {/* CGPA overview */}
+          <section aria-labelledby="cgpa-title" className={`${theme.card} rounded-3xl p-5 md:p-6 lg:col-start-1 lg:row-start-1`}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 id="cgpa-title" className="text-lg font-black">
+                Your CGPA
+              </h2>
+              {uid && !busy && summary.count > 0 && (
+                <Link
+                  to="/CGPA"
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3.5 text-xs font-bold text-white transition hover:bg-indigo-600 ${FOCUS}`}
+                >
+                  <Plus size={14} /> Add record
+                </Link>
+              )}
             </div>
-          ))}
-        </section>
 
-        {/* ================================================= */}
-        {/* DAILY CHALLENGE (the one high-emphasis banner) */}
-        {/* ================================================= */}
+            {busy && (
+              <div aria-busy="true" aria-label="Loading your CGPA" className="space-y-4">
+                <div className={`h-10 w-28 rounded-lg motion-safe:animate-pulse ${theme.soft}`} />
+                <div className={`h-28 rounded-2xl motion-safe:animate-pulse ${theme.soft}`} />
+                <div className="grid grid-cols-3 gap-3">
+                  {[0, 1, 2].map((k) => (
+                    <div key={k} className={`h-14 rounded-xl motion-safe:animate-pulse ${theme.soft}`} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-        <DailyChallengeBanner />
+            {!busy && signedOut && (
+              <div className={`flex flex-col items-center rounded-2xl px-6 py-8 text-center ${theme.soft}`}>
+                <EmptyChartArt className="mb-3 h-20 w-auto" />
+                <h3 className="text-sm font-bold">Sign in to see your progress</h3>
+                <p className={`mt-1 max-w-xs text-xs leading-5 ${theme.textSoft}`}>
+                  Your CGPA records are saved to your account, so they follow you across devices.
+                </p>
+                <Link to="/login" className={`mt-4 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-600 ${FOCUS}`}>
+                  Sign in
+                </Link>
+              </div>
+            )}
 
-        {/* ================================================= */}
-        {/* EXPLORE TOOLS */}
-        {/* ================================================= */}
+            {!busy && uid && loadError && summary.count === 0 && (
+              <div role="alert" className={`rounded-2xl px-6 py-8 text-center ${theme.soft}`}>
+                <h3 className="text-sm font-bold">{loadError}</h3>
+                <p className={`mt-1 text-xs ${theme.textSoft}`}>Check your connection and try again.</p>
+                <button
+                  type="button"
+                  onClick={() => fetchRecords()}
+                  className={`mt-4 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-600 ${FOCUS}`}
+                >
+                  Try again
+                </button>
+              </div>
+            )}
 
-        <section
-          id="explore-tools"
-          ref={toolsRef}
-          className="mb-10 md:mb-12 scroll-mt-24"
-        >
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-5">
+            {!busy && uid && !loadError && summary.count === 0 && (
+              <div className={`flex flex-col items-center rounded-2xl px-6 py-8 text-center ${theme.soft}`}>
+                <EmptyChartArt className="mb-3 h-20 w-auto" />
+                <h3 className="text-sm font-bold">No records yet</h3>
+                <p className={`mt-1 max-w-xs text-xs leading-5 ${theme.textSoft}`}>
+                  Add a semester and we'll chart your progress and show how you're trending.
+                </p>
+                <Link to="/CGPA" className={`mt-4 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-600 ${FOCUS}`}>
+                  Add your first record
+                </Link>
+              </div>
+            )}
+
+            {!busy && uid && summary.count > 0 && (
+              <>
+                <div className="flex items-end gap-3">
+                  <p className="text-5xl font-black leading-none tracking-tight text-indigo-500 tabular-nums">
+                    {summary.latest.toFixed(2)}
+                  </p>
+                  <div className="pb-1">
+                    <p className={`text-xs ${theme.textSoft}`}>Latest</p>
+                    <Delta value={summary.change} />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  {sparkData.length > 1 ? (
+                    <Sparkline data={sparkData} />
+                  ) : (
+                    <p className={`rounded-xl px-4 py-5 text-center text-xs ${theme.soft} ${theme.textSoft}`}>
+                      Add one more record to see your trend.
+                    </p>
+                  )}
+                </div>
+
+                <dl className={`mt-4 grid grid-cols-3 divide-x rounded-2xl py-3 ${theme.soft} ${theme.divider}`}>
+                  {[
+                    ["Best", summary.best.toFixed(2)],
+                    ["Average", summary.avg.toFixed(2)],
+                    ["Records", summary.count],
+                  ].map(([label, value]) => (
+                    <div key={label} className="px-4 text-center">
+                      <dt className={`text-xs ${theme.textSoft}`}>{label}</dt>
+                      <dd className="mt-0.5 text-lg font-black tabular-nums">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            )}
+          </section>
+
+          {/* Daily challenge */}
+          <section className="relative overflow-hidden rounded-3xl bg-indigo-600 p-5 text-white shadow-lg shadow-indigo-600/20 md:p-6 lg:col-start-2 lg:row-start-1">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-indigo-100">Daily challenge</p>
+                <h2 className="mt-1 text-xl font-black leading-snug">Ready for today's questions?</h2>
+              </div>
+              <ChallengeArt className="-mr-2 -mt-2 h-24 w-auto shrink-0" />
+            </div>
+            <p className="mt-2 text-sm leading-6 text-indigo-100">
+              A few quick questions, fresh every day. Earn XP and see where you rank.
+            </p>
+            <div className="mt-5 flex flex-col gap-2.5 sm:flex-row lg:flex-col xl:flex-row">
+              <Link
+                to="/challenge"
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
+              >
+                Start challenge <ArrowRight size={16} />
+              </Link>
+              <Link
+                to="/leaderboard"
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-white/30 px-4 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
+              >
+                <Trophy size={15} /> Leaderboard
+              </Link>
+            </div>
+          </section>
+
+          {/* CGPA history */}
+          {uid && !busy && summary.count > 0 && (
+            <section aria-labelledby="history-title" className={`${theme.card} rounded-3xl p-5 md:p-6 lg:col-start-1 lg:row-start-2`}>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 id="history-title" className="text-lg font-black">
+                  History
+                </h2>
+                <p className={`text-xs ${theme.textSoft}`}>Newest first</p>
+              </div>
+
+              <ul className="space-y-2">
+                {visibleRecords.map((record, i) => {
+                  const older = sorted[i + 1];
+                  const date = formatDate(record.createdAt);
+                  const delta = older ? record.cgpa - older.cgpa : null;
+                  return (
+                    <li key={record.id} className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${theme.soft}`}>
+                      <p className="w-14 shrink-0 text-xl font-black tabular-nums text-indigo-500">
+                        {record.cgpa.toFixed(2)}
+                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-xs ${theme.textSoft}`}>
+                          {record.semesterCount} semester{record.semesterCount === 1 ? "" : "s"}
+                          {date ? `, saved ${date}` : ""}
+                        </p>
+                      </div>
+                      <Delta value={delta} className="shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => deleteRecord(record)}
+                        aria-label={`Delete record with CGPA ${record.cgpa.toFixed(2)}`}
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${theme.textFaint} hover:bg-red-500/10 hover:text-red-500 ${FOCUS}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {sorted.length > RECORDS_PREVIEW_COUNT && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllRecords((v) => !v)}
+                  className={`mt-3 inline-flex items-center gap-1.5 rounded text-xs font-bold text-indigo-500 transition hover:text-indigo-400 ${FOCUS}`}
+                >
+                  {showAllRecords ? "Show fewer" : `Show all ${sorted.length}`}
+                  <ChevronRight size={13} className={`transition-transform ${showAllRecords ? "-rotate-90" : "rotate-90"}`} />
+                </button>
+              )}
+            </section>
+          )}
+
+          {/* Groups */}
+          <section className={`${theme.card} rounded-3xl p-5 md:p-6 lg:col-start-2 lg:row-start-2`}>
+            <GroupsArt className="mb-4 h-24 w-auto" />
+            <h2 className="text-lg font-black">Study with people who get it</h2>
+            <p className={`mt-1.5 text-sm leading-6 ${theme.textSoft}`}>
+              Join groups from your university to swap notes, ask questions, and team up on projects.
+            </p>
+            <Link
+              to="/community"
+              className={`mt-4 inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-bold transition hover:border-indigo-400/60 hover:text-indigo-500 ${
+                dark ? "border-white/15" : "border-gray-200"
+              } ${FOCUS}`}
+            >
+              <Users size={15} /> Browse groups
+            </Link>
+          </section>
+        </div>
+
+        {/* ---------- explore tools ---------- */}
+        <section id="explore-tools" ref={toolsRef} aria-labelledby="tools-title" className="mb-10 scroll-mt-24 md:mb-12">
+          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-xl md:text-2xl font-black">Explore tools</h2>
-              <p className={`text-sm mt-1 ${theme.textSoft}`}>
-                {totalToolCount} tools across academics, marketplace, and
-                community.
+              <h2 id="tools-title" className="text-xl font-black md:text-2xl">
+                Explore tools
+              </h2>
+              <p className={`mt-1 text-sm ${theme.textSoft}`}>
+                {allFeatures.length} tools for your studies, campus life, and community.
               </p>
             </div>
-
-            <Link
-              to="/features"
-              className={`inline-flex items-center gap-1.5 text-sm font-bold text-indigo-500 hover:text-indigo-400 transition rounded-lg ${FOCUS_RING}`}
-            >
-              See all features
-              <ArrowRight size={15} />
+            <Link to="/features" className={`inline-flex items-center gap-1.5 rounded-lg text-sm font-bold text-indigo-500 transition hover:text-indigo-400 ${FOCUS}`}>
+              See all features <ArrowRight size={15} />
             </Link>
           </div>
 
-          {/* SEARCH */}
-          <div
-            className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-4 transition ${theme.input}`}
-          >
+          <div className={`mb-4 flex items-center gap-2.5 rounded-2xl px-4 py-3 transition ${theme.input}`}>
             <Search size={17} className={theme.textFaint} />
             <input
               ref={searchRef}
@@ -537,518 +884,106 @@ const Dashboard = ({ dark }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && setSearchQuery("")}
               placeholder="Search tools, e.g. CGPA calculator, marketplace"
-              className={`flex-1 min-w-0 bg-transparent text-sm outline-none ${
-                dark ? "placeholder:text-gray-500" : "placeholder:text-gray-400"
-              }`}
               aria-label="Search tools"
+              className={`min-w-0 flex-1 bg-transparent text-sm outline-none ${dark ? "placeholder:text-gray-500" : "placeholder:text-gray-400"}`}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 hover:bg-red-500/10 hover:text-red-500 transition ${theme.textFaint}`}
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition hover:bg-red-500/10 hover:text-red-500 ${theme.textFaint}`}
               >
                 <X size={14} />
               </button>
             )}
           </div>
 
-          {/* CATEGORY PILLS */}
           <div className="relative mb-5">
-            <div
-              role="tablist"
-              aria-label="Tool categories"
-              className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1 pr-8"
-            >
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 pr-8 [scrollbar-width:none]">
               {categoryNames.map((name) => {
                 const active = activeCategory === name;
                 return (
                   <button
                     key={name}
                     type="button"
-                    role="tab"
-                    aria-selected={active}
+                    aria-pressed={active}
                     onClick={() => setActiveCategory(name)}
-                    className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold whitespace-nowrap border transition ${FOCUS_RING} ${
+                    className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition ${FOCUS} ${
                       active
-                        ? "bg-indigo-500 border-indigo-500 text-white"
+                        ? "border-indigo-500 bg-indigo-500 text-white"
                         : `${theme.card} hover:border-indigo-500/50 hover:text-indigo-500`
                     }`}
                   >
                     {name}
+                    <span className={`tabular-nums ${active ? "text-indigo-100" : theme.textFaint}`}>
+                      {categoryCounts[name] || 0}
+                    </span>
                   </button>
                 );
               })}
             </div>
-            <div
-              className={`pointer-events-none absolute top-0 right-0 h-full w-10 bg-gradient-to-l ${theme.fadeEdge} to-transparent`}
-            />
           </div>
 
-          {/* RESULT COUNT (only while filtering) */}
           {isFiltering && (
-            <div
-              className="flex items-center justify-between mb-3"
-              aria-live="polite"
-            >
+            <div className="mb-3 flex items-center justify-between" aria-live="polite">
               <p className={`text-xs font-semibold ${theme.textSoft}`}>
-                {matchedItems.length}{" "}
-                {matchedItems.length === 1 ? "tool" : "tools"} found
+                {matchedItems.length} {matchedItems.length === 1 ? "tool" : "tools"} found
               </p>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className={`text-xs font-bold text-indigo-500 hover:text-indigo-400 transition rounded ${FOCUS_RING}`}
-              >
+              <button type="button" onClick={clearFilters} className={`rounded text-xs font-bold text-indigo-500 transition hover:text-indigo-400 ${FOCUS}`}>
                 Clear filters
               </button>
             </div>
           )}
 
-          {filteredItems.length === 0 ? (
+          {shownItems.length === 0 ? (
             <div className={`rounded-3xl p-10 text-center ${theme.soft}`}>
-              <Search className="mx-auto mb-4 opacity-40" size={36} />
-              <h3 className="font-bold mb-1">
-                {searchQuery
-                  ? `No tools match "${searchQuery}"`
-                  : "No tools in this category yet"}
+              <Search className="mx-auto mb-4 opacity-40" size={32} />
+              <h3 className="font-bold">
+                {searchQuery ? `Nothing matches "${searchQuery}"` : "No tools in this category yet"}
               </h3>
-              <p className={`text-sm mb-4 ${theme.textSoft}`}>
-                Check the spelling, try a shorter keyword, or pick another
-                category.
+              <p className={`mx-auto mt-1 max-w-sm text-sm ${theme.textSoft}`}>
+                Try a shorter keyword, check the spelling, or browse another category.
               </p>
-              {isFiltering && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className={`inline-flex px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition ${FOCUS_RING}`}
-                >
-                  Clear filters
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={clearFilters}
+                className={`mt-4 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-600 ${FOCUS}`}
+              >
+                Show all tools
+              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-              {filteredItems.map((item) => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
+              {shownItems.map((item) => (
                 <ToolRow
                   key={`${item.category}-${item.title}`}
                   item={item}
                   theme={theme}
+                  showCategory={Boolean(normalizedQuery) && activeCategory === "All"}
+                  onOpen={trackTool}
                 />
               ))}
             </div>
           )}
 
           {canToggleTools && (
-            <div className="text-center mt-5">
+            <div className="mt-5 text-center">
               <button
                 type="button"
                 onClick={() => setShowAllTools((v) => !v)}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition hover:border-indigo-400/60 hover:text-indigo-500 ${theme.card} ${FOCUS_RING}`}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition hover:border-indigo-400/60 hover:text-indigo-500 ${theme.card} ${FOCUS}`}
               >
-                {showAllTools
-                  ? "Show fewer tools"
-                  : `Show all ${matchedItems.length} tools`}
-                <ChevronRight
-                  size={13}
-                  className={`transition-transform ${
-                    showAllTools ? "-rotate-90" : "rotate-90"
-                  }`}
-                />
+                {showAllTools ? "Show fewer tools" : `Show all ${matchedItems.length} tools`}
+                <ChevronRight size={13} className={`transition-transform ${showAllTools ? "-rotate-90" : "rotate-90"}`} />
               </button>
             </div>
           )}
         </section>
 
-        {/* ================================================= */}
-        {/* TRENDING + CGPA HISTORY */}
-        {/* ================================================= */}
-
-        <div className="grid lg:grid-cols-[1fr_1fr] gap-5 md:gap-6 mb-10 md:mb-12">
-          {/* TRENDING */}
-          <section className={`${theme.card} rounded-3xl p-5 md:p-6`}>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-orange-500/10 flex items-center justify-center shrink-0">
-                <Flame className="text-orange-500" size={20} />
-              </div>
-              <div>
-                <h2 className="font-black text-lg">Trending now</h2>
-                <p className={`text-xs ${theme.textSoft}`}>
-                  Tools students are using most
-                </p>
-              </div>
-            </div>
-
-            <ol className="space-y-2.5">
-              {allItems.slice(5, 10).map((item, i) => {
-                const Icon = item.icon;
-                return (
-                  <li key={item.title}>
-                    <Link
-                      to={item.link}
-                      className={`flex items-center gap-3 rounded-2xl p-3 transition hover:border-indigo-400/40 motion-safe:hover:-translate-y-0.5 ${theme.soft} ${FOCUS_RING}`}
-                    >
-                      <span
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${theme.iconTint}`}
-                        aria-label={`Rank ${i + 1}`}
-                      >
-                        {i + 1}
-                      </span>
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${theme.iconTint}`}
-                      >
-                        {Icon && <Icon size={17} />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-sm truncate">
-                          {item.title}
-                        </p>
-                        <p className={`text-xs truncate ${theme.textSoft}`}>
-                          {item.category}
-                        </p>
-                      </div>
-                      <ChevronRight size={16} className="opacity-40 shrink-0" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-
-          {/* CGPA HISTORY */}
-          <section className={`${theme.card} rounded-3xl p-5 md:p-6`}>
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 flex items-center justify-center shrink-0">
-                  <HistoryIcon className="text-indigo-500" size={20} />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="font-black text-lg">CGPA history</h2>
-                  <p className={`text-xs truncate ${theme.textSoft}`}>
-                    Your saved academic records
-                  </p>
-                </div>
-              </div>
-
-              {user && !loading && records.length > 0 && (
-                <Link
-                  to="/CGPA"
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-xs font-bold text-white hover:bg-indigo-600 transition shrink-0 ${FOCUS_RING}`}
-                >
-                  Add record
-                  <ArrowRight size={14} />
-                </Link>
-              )}
-            </div>
-
-            {/* Signed out */}
-            {!user && !loading && (
-              <div className={`rounded-2xl p-8 text-center ${theme.soft}`}>
-                <BookOpen className="mx-auto mb-3 opacity-50" size={34} />
-                <h3 className="font-bold text-sm mb-1">
-                  Sign in to see your records
-                </h3>
-                <p className={`text-xs mb-4 ${theme.textSoft}`}>
-                  Your CGPA records are saved to your account.
-                </p>
-                <Link
-                  to="/login"
-                  className={`inline-flex px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition ${FOCUS_RING}`}
-                >
-                  Sign in
-                </Link>
-              </div>
-            )}
-
-            {/* Loading */}
-            {loading && (
-              <div className="space-y-2.5">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className={`rounded-2xl h-16 motion-safe:animate-pulse ${theme.soft}`}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Empty */}
-            {user && !loading && records.length === 0 && (
-              <div className={`rounded-2xl p-8 text-center ${theme.soft}`}>
-                <BookOpen className="mx-auto mb-3 opacity-50" size={34} />
-                <h3 className="font-bold text-sm mb-1">No CGPA records yet</h3>
-                <p className={`text-xs mb-4 ${theme.textSoft}`}>
-                  Add your first semester to start tracking your progress.
-                </p>
-                <Link
-                  to="/CGPA"
-                  className={`inline-flex px-4 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition ${FOCUS_RING}`}
-                >
-                  Add your first record
-                </Link>
-              </div>
-            )}
-
-            {/* Records */}
-            {user && !loading && records.length > 0 && (
-              <>
-                {/* Latest + trend + sparkline */}
-                <div className={`rounded-2xl p-4 mb-3 ${theme.soft}`}>
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <p className={`text-xs ${theme.textSoft}`}>Latest CGPA</p>
-                      <p className="text-3xl font-black text-indigo-500 leading-tight">
-                        {dashboard.latestCGPA}
-                      </p>
-                      {cgpaChange !== 0 && (
-                        <p
-                          className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${
-                            cgpaChange > 0 ? "text-emerald-500" : "text-red-500"
-                          }`}
-                        >
-                          {cgpaChange > 0 ? (
-                            <TrendingUp size={13} />
-                          ) : (
-                            <TrendingDown size={13} />
-                          )}
-                          {cgpaChange > 0 ? "+" : ""}
-                          {cgpaChange.toFixed(2)} since your previous record
-                        </p>
-                      )}
-                    </div>
-
-                    {sparkData.length > 1 && (
-                      <div
-                        className="flex items-end gap-1 h-14 shrink-0"
-                        role="img"
-                        aria-label={`CGPA over your last ${sparkData.length} records`}
-                      >
-                        {sparkData.map((d, i) => (
-                          <div
-                            key={d.id}
-                            title={`${d.value.toFixed(2)}${d.date ? ` · ${d.date}` : ""}`}
-                            className={`w-2.5 rounded-t-md ${
-                              i === sparkData.length - 1
-                                ? "bg-indigo-500"
-                                : "bg-indigo-500/30"
-                            }`}
-                            style={{
-                              height: `${Math.max(12, (d.value / sparkMax) * 100)}%`,
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <ul className="space-y-2.5">
-                  {visibleRecords.map((record) => {
-                    const semCount = record.semesters?.length || 0;
-                    const date = formatDate(record.createdAt);
-                    return (
-                      <li
-                        key={record.id}
-                        className={`rounded-2xl p-4 ${theme.soft}`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-                              <Activity size={17} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-indigo-500 text-lg leading-tight">
-                                {record.cgpa}
-                              </p>
-                              <p
-                                className={`text-xs truncate ${theme.textSoft}`}
-                              >
-                                {semCount} semester{semCount === 1 ? "" : "s"}
-                                {date ? ` · ${date}` : ""}
-                              </p>
-                            </div>
-                          </div>
-
-                          {confirmDeleteId === record.id ? (
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(record.id)}
-                                className={`rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-red-600 transition ${FOCUS_RING}`}
-                              >
-                                Delete
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeleteId(null)}
-                                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${FOCUS_RING} ${
-                                  dark
-                                    ? "bg-white/10 hover:bg-white/15"
-                                    : "bg-white hover:bg-gray-100"
-                                }`}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(record.id)}
-                              className={`w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition shrink-0 ${FOCUS_RING}`}
-                              aria-label={`Delete record with CGPA ${record.cgpa}`}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                {sortedRecords.length > RECORDS_PREVIEW_COUNT && (
-                  <div className="text-center mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowAllRecords((v) => !v)}
-                      className={`inline-flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-400 transition rounded ${FOCUS_RING}`}
-                    >
-                      {showAllRecords
-                        ? "Show fewer"
-                        : `Show all ${sortedRecords.length}`}
-                      <ChevronRight
-                        size={13}
-                        className={`transition-transform ${
-                          showAllRecords ? "-rotate-90" : "rotate-90"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-        </div>
-
-        {/* ================================================= */}
-        {/* STUDENT GROUPS (quiet secondary promo) */}
-        {/* ================================================= */}
-
-        <section
-          className={`relative overflow-hidden rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5 ${theme.card}`}
-        >
-          <div className="min-w-0 max-w-xl">
-            <h2 className="text-xl md:text-2xl font-black">
-              Study better with your community
-            </h2>
-            <p className={`mt-2 text-sm leading-6 ${theme.textSoft}`}>
-              Join student groups to share resources, ask questions, and
-              collaborate on projects with people at your university.
-            </p>
-            <Link
-              to="/community"
-              className={`mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-indigo-500 px-5 text-sm font-bold text-white hover:bg-indigo-600 transition ${FOCUS_RING}`}
-            >
-              <Users size={16} />
-              Explore groups
-            </Link>
-          </div>
-
-          <img
-            src={Images.group_illutration}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            className="hidden md:block h-44 w-auto shrink-0 object-contain"
-          />
-        </section>
-
-        <div className="h-10" />
+        <div className="h-6" />
       </div>
     </div>
-  );
-};
-
-/* ================================================= */
-/* SUB-COMPONENTS */
-/* ================================================= */
-
-const ToolRow = ({ item, theme }) => {
-  const Icon = item.icon;
-
-  return (
-    <Link
-      to={item.link}
-      className={`${theme.card} group flex items-start gap-3.5 rounded-2xl p-4 transition-all duration-200 hover:border-indigo-400/50 hover:shadow-md motion-safe:hover:-translate-y-0.5 ${FOCUS_RING}`}
-    >
-      <div
-        className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${theme.iconTint}`}
-      >
-        {Icon && <Icon size={19} />}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <h4 className="font-bold text-sm leading-tight">{item.title}</h4>
-        <p className={`mt-1 text-xs leading-5 line-clamp-2 ${theme.textSoft}`}>
-          {item.desc}
-        </p>
-      </div>
-
-      <ChevronRight
-        size={16}
-        className="opacity-30 shrink-0 mt-1 transition group-hover:translate-x-0.5 group-hover:opacity-70"
-      />
-    </Link>
-  );
-};
-
-const DailyChallengeBanner = () => {
-  return (
-    <section className="relative mb-6 md:mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20">
-      <div className="relative z-10 grid gap-5 px-5 py-6 sm:px-8 sm:py-8 md:grid-cols-[1fr_auto] md:items-center md:gap-10 lg:px-10">
-        <div className="min-w-0">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold">
-            <Flame size={13} />
-            Daily challenge
-          </span>
-
-          <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl max-w-xl">
-            Answer today's questions, earn XP, and climb the leaderboard.
-          </h2>
-
-          <p className="mt-2 max-w-md text-sm leading-6 text-white/80">
-            Quick mixed questions, fresh every day. Keep your streak going.
-          </p>
-
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <Link
-              to="/challenge"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
-            >
-              Start today's challenge
-              <ArrowRight size={17} />
-            </Link>
-
-            <Link
-              to="/leaderboard"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-600"
-            >
-              <Trophy size={17} />
-              View leaderboard
-            </Link>
-          </div>
-        </div>
-
-        <img
-          src={Images.challengeBannerImage}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className="hidden md:block h-48 w-auto shrink-0 object-contain lg:h-56"
-        />
-      </div>
-    </section>
   );
 };
 

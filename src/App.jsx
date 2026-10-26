@@ -29,8 +29,9 @@ import AiAssistance from "./assets/pages/AiAssistance";
 import GPA from "./assets/pages/GPA";
 import Resources from "./assets/pages/Resources";
 import Community from "./assets/pages/Community";
+import CommunityHub from "./assets/pages/CommunityHub";
 import ManageGroup from "./assets/pages/ManageGroup";
-import Messenger from "./assets/pages/Messenger";
+import NewsFeed from "./assets/pages/NewsFeed";
 import NotificationsCenter from "./assets/pages/NotificationsCenter";
 import CommunitySettings from "./assets/pages/CommunitySettings";
 import ComingSoon from "./assets/pages/ComingSoon";
@@ -295,7 +296,8 @@ const App = () => {
           <Route path="/register" element={ currentUser ? <Navigate to="/" replace /> : <Signup dark={dark} /> }/>
           <Route path="/reset-password" element={ currentUser ? <Navigate to="/" replace /> : <ResetPassword dark={dark} /> }/>
           <Route path="/complete-profile" element={ currentUser ? <CompleteProfile dark={dark} /> : <Navigate to="/login" replace /> }/>
-          <Route path="/messages" element={ <ProtectedRoute> <Messenger dark={dark} /> </ProtectedRoute> } />
+          <Route path="/messages" element={ <ProtectedRoute> <CommunityHub dark={dark} /> </ProtectedRoute> } />
+          <Route path="/community" element={ <ProtectedRoute> <CommunityHub dark={dark} /> </ProtectedRoute> } />
 
         <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
             <Route path="/" element={ <Dashboard dark={dark} /> }/>
@@ -316,7 +318,7 @@ const App = () => {
             <Route path="/formula-hub/:id" element={<FormulaDetails dark={dark} />} />
             <Route path="/formula-hub/flashcards" element={<FlashCardsPage dark={dark} />} />
             <Route path="/formula-hub/bookmarks" element={<BookmarksPage dark={dark} />}/>
-            <Route path="/community" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute> } />
+            
             <Route path="/community/:groupId" element={ <ProtectedRoute> <Community dark={dark} /> </ProtectedRoute>}/>
             <Route path="/community/:groupId/manage" element={ <ProtectedRoute> <ManageGroup dark={dark} /></ProtectedRoute>}/>
             
@@ -326,7 +328,7 @@ const App = () => {
             <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
             <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
-            <Route path="/newsfeed" element={<Navigate to="/" replace />} />
+            <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />
             <Route path="/feed" element={<SharedLinkFallback dark={dark} />} />
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
             <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />

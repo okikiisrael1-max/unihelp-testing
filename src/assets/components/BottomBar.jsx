@@ -1,43 +1,40 @@
 import React from "react";
 
 import {
-  LayoutDashboardIcon,
-  FileQuestion,
-  MessageCircle,
+  Home,
+  MessagesSquare,
   Sparkles,
-  Trophy,
-  MessageCircleDashedIcon,
-  Users,
-  MessageCircleMore,
-  BookOpenIcon,
+  Newspaper,
+  BookOpen,
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 const BottomBar = ({ dark }) => {
+  const location = useLocation();
   const navItems = [
     {
       name: "Home",
-      icon: LayoutDashboardIcon,
+      icon: Home,
       path: "/",
     },
 
     {
-      name: "Chat",
-      icon: MessageCircleMore,
-      path: "/messages",
+      name: "Connect",
+      icon: MessagesSquare,
+      path: "/community",
     },
 
     {
-      name: "Resources",
-      icon: BookOpenIcon,
+      name: "Study",
+      icon: BookOpen,
       path: "/resources",
     },
 
     {
-      name: "Groups",
-      icon: Users,
-      path: "/community",
+      name: "Feed",
+      icon: Newspaper,
+      path: "/newsfeed",
     },
 
     {
@@ -49,139 +46,62 @@ const BottomBar = ({ dark }) => {
 
   return (
     <>
-      <div className="h-28 md:hidden" />
+      <div className="h-24 md:hidden" />
 
-      <div className="md:hidden fixed bottom-0 left-0 z-50 w-full">
+      <div className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
         <div
-          className={`
-            relative overflow-hidden
-            rounded-t-3xl
-            border
-            shadow-[0_20px_80px_rgba(0,0,0,0.35)]
-            backdrop-blur-3xl
-            transition-all duration-300
-            ${dark ? "bg-[#0b1120]/90 border-white/10" : "bg-white/90 border-gray-200"}
-          `}>
-
-          {/* BACKGROUND GLOW */}
-
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-indigo-500/10 via-purple-500/5 to-cyan-500/10" />
-
-            <div className="absolute -top-10 left-10 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full" />
-
-            <div className="absolute -bottom-10 right-10 w-32 h-32 bg-purple-500/10 blur-3xl rounded-full" />
-          </div>
-
-          {/* NAV ITEMS */}
-
-          <div className="relative flex items-center justify-between px-1 py-2">
-            {navItems.map((item, index) => {
+          className={`relative mx-auto max-w-xl rounded-2xl border p-1.5 shadow-[0_12px_40px_rgba(15,23,42,0.18)] backdrop-blur-xl ${
+            dark ? "border-white/10 bg-[#0b1120]/95" : "border-slate-200 bg-white/95"
+          }`}
+        >
+          <nav aria-label="Main navigation" className="flex items-center justify-around gap-1">
+            {navItems.map((item) => {
               const Icon = item.icon;
 
               return (
                 <NavLink
-                  key={index}
+                  key={item.path}
                   to={item.path}
-                  className={({ isActive }) => `
-                    relative flex flex-col items-center justify-center
-                    flex-1
-                    min-w-0
-                    py-2
-                    rounded-2xl
-                    transition-all duration-300
-                    active:scale-95
-
-                    ${
+                  end={item.path === "/"}
+                  className={({ isActive: routeIsActive }) => {
+                    const isActive = item.path === "/community"
+                      ? routeIsActive || location.pathname === "/messages" || location.pathname.startsWith("/community/")
+                      : routeIsActive;
+                    return `group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset active:scale-95 ${
                       isActive
                         ? dark
-                          ? "text-white"
-                          : "text-indigo-600"
+                          ? "bg-indigo-500/15 text-indigo-300"
+                          : "bg-indigo-50 text-indigo-700"
                         : dark
-                        ? "text-slate-400"
-                        : "text-slate-500"
-                    }
-                  `}
+                          ? "text-slate-400 hover:bg-white/5 hover:text-slate-100"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    }`;
+                  }}
                 >
-                  {({ isActive }) => (
-                    <>
-                      {/* ACTIVE BG */}
-
-                      {isActive && (
-                        <>
-                          <div
-                            className={`
-                              absolute inset-1 rounded-2xl
-                              ${
-                                dark
-                                  ? "bg-indigo-500/20 border border-indigo-400/20"
-                                  : "bg-indigo-50 border border-indigo-100"
-                              }
-                            `}
-                          />
-
-                          {/* TOP INDICATOR */}
-
-                          <div className="absolute top-0 w-8 h-1 rounded-full bg-indigo-500" />
-                        </>
-                      )}
-
-                      {/* ICON */}
-
-                      <div
-                        className={`
-                          relative z-10
-                          h-10 w-10
-                          rounded-2xl
-                          flex items-center justify-center
-                          transition-all duration-300
-
-                          ${
-                            isActive
-                              ? dark
-                                ? "bg-indigo-500 shadow-lg shadow-indigo-500/30"
-                                : "bg-indigo-500 text-white shadow-lg shadow-indigo-200"
-                              : dark
-                              ? "bg-white/5"
-                              : "bg-gray-100"
-                          }
-                        `}
-                      >
+                  {({ isActive: routeIsActive }) => {
+                    const isActive = item.path === "/community"
+                      ? routeIsActive || location.pathname === "/messages" || location.pathname.startsWith("/community/")
+                      : routeIsActive;
+                    return (
+                      <>
                         <Icon
                           size={20}
-                          className={`transition-all duration-300 ${
-                            isActive
-                              ? "scale-110"
-                              : "scale-100"
-                          }`}
+                          strokeWidth={isActive ? 2.4 : 1.9}
+                          aria-hidden="true"
+                          className="transition-transform duration-200 group-hover:-translate-y-0.5"
                         />
-                      </div>
-
-                      {/* LABEL */}
-
-                      <span
-                        className={`
-                          relative z-10
-                          mt-1.5
-                          text-[10px] sm:text-[11px]
-                          font-semibold
-                          tracking-wide
-                          transition-all duration-300
-
-                          ${
-                            isActive
-                              ? "opacity-100"
-                              : "opacity-75"
-                          }
-                        `}>
-                        {item.name}
-                      </span>
-                    </>
-                  )}
+                        <span className={`relative z-10 text-[10px] font-semibold leading-none sm:text-[11px] ${
+                          isActive ? "font-bold" : ""
+                        }`}>
+                          {item.name}
+                        </span>
+                      </>
+                    );
+                  }}
                 </NavLink>
               );
             })}
-          </div>
+          </nav>
         </div>
       </div>
     </>
