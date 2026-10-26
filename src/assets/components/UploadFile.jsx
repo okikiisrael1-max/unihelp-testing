@@ -33,8 +33,6 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  doc,
-  getDoc,
 } from "firebase/firestore";
 
 import {
@@ -215,22 +213,6 @@ export default function UploadFile({ dark }) {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [schoolType, setSchoolType] = useState("university");
   const { user } = useContext(AuthContext);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingRole, setCheckingRole] = useState(true);
-
-  useEffect(() => {
-    const checkRole = async () => {
-      if (user?.uid) {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().admin === true) {
-          setIsAdmin(true);
-        }
-      }
-      setCheckingRole(false);
-    };
-    checkRole();
-  }, [user]);
 
   const [form, setForm] = useState({
     school: "", title: "", courseCode: "", year: "", department: "", level: "",
@@ -302,7 +284,7 @@ export default function UploadFile({ dark }) {
   };
 
   const handleUpload = async () => {
-    if (!auth.currentUser) { setError("Please log in to upload files."); return; }
+    if (!auth.currentUser || !user?.uid) { setError("Please log in to upload files."); return; }
     if (!isFormValid()) { setError("Please fill out all document details and select at least one file."); return; }
     setUploading(true);
     setError("");
@@ -317,48 +299,30 @@ export default function UploadFile({ dark }) {
           resourceType: result.resource_type, size: file.size, type: file.type,
         });
       }
+      const originalFile = uploadedFiles[0];
       await addDoc(collection(db, "questions"), {
         ...form, school: form.school, department: form.department, level: form.level,
-        files: uploadedFiles, userId: auth.currentUser.uid,
-        userEmail: auth.currentUser.email, createdAt: serverTimestamp(),
+        files: uploadedFiles,
+        originalFile,
+        fileUrl: originalFile.url,
+        previewUrl: originalFile.url,
+        ownerId: auth.currentUser.uid,
+        uploadedBy: auth.currentUser.uid,
+        userId: auth.currentUser.uid,
+        createdBy: auth.currentUser.uid,
+        userEmail: auth.currentUser.email,
+        status: "published",
+        processingStatus: "published",
+        processing: { status: "ready", source: "user_submission", warnings: [] },
+        createdAt: serverTimestamp(),
       });
       navigate("/resources");
-    } catch { setError("Upload failed. Please check your network and try again."); }
-    setUploading(false);
+    } catch (uploadError) {
+      setError(uploadError.message || "Upload failed. Please check your network and try again.");
+    } finally {
+      setUploading(false);
+    }
   };
-
-  if (checkingRole) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="animate-spin text-indigo-500" size={36} />
-        <p className={`text-xs font-medium ${dark ? "text-slate-400" : "text-slate-500"}`}>Checking permissions...</p>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <div className={`w-full max-w-md rounded-3xl p-8 text-center border backdrop-blur-xl shadow-2xl ${
-          dark ? "bg-slate-900/80 border-slate-800 text-slate-100" : "bg-white border-slate-100 text-slate-800"
-        }`}>
-          <div className="mx-auto w-16 h-16 mb-5 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
-            <AlertCircle size={32} />
-          </div>
-          <h2 className="text-xl font-bold mb-2">Access Restricted</h2>
-          <p className="text-xs text-slate-400 leading-relaxed mb-6">
-            Only verified administrators can publish study materials and past question papers.
-          </p>
-          <button 
-            onClick={() => navigate("/")}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 shadow-lg shadow-indigo-600/20 text-xs"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`min-h-screen md:mt-10 px-4 py-8 font-sans ${dark ? "text-slate-100" : "text-slate-800"}`}>

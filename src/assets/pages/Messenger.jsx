@@ -262,13 +262,6 @@ const formatVoiceDuration = (seconds = 0) => {
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 };
 
-const isPremiumActive = (profile = {}) => {
-  if (!profile.premium || profile.subscriptionStatus === "expired") return false;
-  const expiry = profile.subscriptionExpiresAt || profile.premiumExpiresAt;
-  const expiryDate = toDate(expiry);
-  return !expiryDate || expiryDate.getTime() > Date.now();
-};
-
 const VoiceMessage = ({ message, mine }) => {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -323,7 +316,7 @@ const VoiceMessage = ({ message, mine }) => {
   );
 };
 
-const VoiceRecorder = ({ isPremium, disabled, onSend, onUpgrade, onError, onStateChange }) => {
+const VoiceRecorder = ({ disabled, onSend, onError, onStateChange }) => {
   const [state, setState] = useState("idle");
   const [elapsed, setElapsed] = useState(0);
   const recorderRef = useRef(null);
@@ -375,10 +368,6 @@ const VoiceRecorder = ({ isPremium, disabled, onSend, onUpgrade, onError, onStat
 
   const start = async () => {
     if (disabled || state !== "idle") return;
-    if (!isPremium) {
-      onUpgrade?.();
-      return;
-    }
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       onError?.("Voice recording is not supported in this browser.");
       return;
@@ -443,7 +432,7 @@ const VoiceRecorder = ({ isPremium, disabled, onSend, onUpgrade, onError, onStat
   if (state === "uploading") {
     return <div className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-sm font-bold text-indigo-600"><Loader2 size={17} className="animate-spin" /> Uploading voice message…</div>;
   }
-  return <button type="button" onClick={start} disabled={disabled} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-indigo-500/10 disabled:opacity-40" aria-label={isPremium ? "Record voice message" : "Voice messages are a Premium feature"} title={isPremium ? "Record voice message" : "Voice messages are a Premium feature"}><Mic size={19} /></button>;
+  return <button type="button" onClick={start} disabled={disabled} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-indigo-500/10 disabled:opacity-40" aria-label="Record voice message" title="Record voice message"><Mic size={19} /></button>;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -633,7 +622,6 @@ export default function Messenger({ dark = false }) {
   const nonFriendMessageUsed = !activeAreFriends && Number(activeConversation?.messageCount || 0) >= 1;
   const canUseComposer = activeAreFriends || !nonFriendMessageUsed;
   const voiceComposerActive = voiceRecorderState !== "idle";
-  const canRecordVoice = isPremiumActive(profile);
 
   // Which of my messages the other person has not read yet.
   const unreadMineIds = useMemo(() => {
@@ -2454,12 +2442,10 @@ export default function Messenger({ dark = false }) {
           </>}
           <VoiceRecorder
             key={activeId}
-            isPremium={canRecordVoice}
             disabled={sending || Boolean(file) || Boolean(text.trim())}
             onStateChange={setVoiceRecorderState}
             onSend={sendVoice}
             onError={(message) => setNotice(message)}
-            onUpgrade={() => navigate("/premium")}
           />
           {!voiceComposerActive && <>
             <textarea
