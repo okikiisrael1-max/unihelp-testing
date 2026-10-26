@@ -1215,8 +1215,8 @@ function GroupDiscovery() {
   const showSkeleton = view === "discover" ? loading && groups.length === 0 : mineLoading;
 
   return (
-    <div className="md:mt-20">
-      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+    <div className="md:mt-16">
+      <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
         {/* Header */}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -1716,324 +1716,399 @@ function GroupDetail({ groupId }) {
   );
 
   return (
-    <div className="md:mt-20">
-      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        <Link to="/community" className={`${cx.ghostBtn} mb-4 h-9 px-3`}>
-          <ChevronLeft size={16} /> All groups
-        </Link>
-
-        {/* Header */}
-        <div className={`overflow-hidden ${cx.panel}`}>
-          <div className="h-36 md:h-52"><CoverPattern group={group} /></div>
-          <div className="px-5 pb-6 md:px-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                <div className="-mt-12 md:-mt-14"><GroupAvatar group={group} size="xl" ring /></div>
+    <div className="md:mt-16">
+      <div className="mx-auto max-w-7xl px-3 py-3 md:px-6 md:py-4">
+        {/* CHAT TAB: Dedicated, streamlined chat view without giant banners */}
+        {isMember && tab === "Chat" ? (
+          <div className={`flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100dvh-5.5rem)] overflow-hidden rounded-2xl border ${cx.panel}`}>
+            {/* Sleek chat top header bar */}
+            <div className="flex shrink-0 items-center justify-between border-b px-3.5 py-2.5 [border-color:var(--line)] [background:var(--paper-raised)]">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Link to="/community" className={`${cx.ghostBtn} -ml-1 h-8 px-2 text-xs`} title="Back to all groups">
+                  <ChevronLeft size={16} /> <span className="hidden sm:inline">Groups</span>
+                </Link>
+                <GroupAvatar group={group} size="md" />
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{group.name}</h1>
+                  <div className="flex items-center gap-2">
+                    <h2 className="truncate text-sm sm:text-base font-bold">{group.name}</h2>
                     {isMember && <RoleBadge role={membership?.role || "member"} />}
                     <PrivacyBadge privacy={group.privacy} />
                   </div>
-                  <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${cx.muted}`}>
-                    <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold [background:var(--paper-sunken)]">{group.category}</span>
-                    <span className="inline-flex items-center gap-1.5"><Users size={14} /> {group.memberCount || 0} members</span>
-                    <span className="inline-flex items-center gap-1.5"><Calendar size={14} /> Since {formatShortTime(group.createdAt)}</span>
+                  <div className={`flex items-center gap-1.5 text-xs ${cx.muted}`}>
+                    <span className="inline-flex items-center gap-1"><Users size={12} /> {group.memberCount || 0} members</span>
+                    <span className="opacity-40">•</span>
+                    <span className="capitalize">{group.category}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {isMember ? (
-                  <>
-                    <button onClick={() => setTab("Chat")} className={cx.primaryBtn}><MessageCircle size={16} /> Open chat</button>
-                    <Menu
-                      label="More actions"
-                      trigger={<span className={cx.ghostIcon}><MoreHorizontal size={18} /></span>}
+              {/* Tab switcher pills in header + menu */}
+              <div className="flex items-center gap-1.5">
+                <div className="hidden md:flex items-center gap-1 rounded-xl p-1 [background:var(--paper-sunken)]">
+                  {DETAIL_TABS.map(({ key, icon: Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => setTab(key)}
+                      className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                        tab === key
+                          ? "[background:var(--brand)] [color:var(--on-brand)] shadow-sm"
+                          : "[color:var(--ink-soft)] hover:[color:var(--ink)]"
+                      }`}
                     >
-                      {(close) => (
-                        <>
-                          <MenuItem icon={Copy} label="Copy group link" onClick={() => { close(); copyLink(); }} />
-                          <MenuItem icon={MessageCircle} label="Direct messages" onClick={() => { close(); navigate("/messages"); }} />
-                          <MenuItem icon={Settings} label="Messaging settings" onClick={() => { close(); navigate("/community-settings"); }} />
-                          {canManage && <MenuItem icon={ShieldCheck} label="Manage group" onClick={() => { close(); navigate(`/community/${groupId}/manage`); }} />}
-                          {membership?.role !== "owner" && <MenuItem icon={UserMinus} label="Leave group" tone="danger" onClick={() => { close(); leave(); }} />}
-                        </>
-                      )}
-                    </Menu>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={copyLink} className={cx.ghostIcon} aria-label="Copy group link" title="Copy link"><Copy size={16} /></button>
-                    <button onClick={join} disabled={busy || pendingRequest} className={cx.primaryBtn}>
-                      {busy ? <Loader2 className="animate-spin" size={16} /> : pendingRequest ? <Clock size={16} /> : group.privacy === "private" ? <Lock size={15} /> : <Plus size={16} />}
-                      {pendingRequest ? "Request sent" : group.privacy === "private" ? "Request to join" : "Join group"}
+                      <Icon size={13} /> {key}
                     </button>
-                  </>
-                )}
+                  ))}
+                </div>
+
+                <div className="md:hidden">
+                  <select
+                    value={tab}
+                    onChange={(e) => setTab(e.target.value)}
+                    className="h-8 rounded-lg border px-2 text-xs font-semibold [border-color:var(--line)] [background:var(--paper-sunken)]"
+                  >
+                    {DETAIL_TABS.map(({ key }) => (
+                      <option key={key} value={key}>{key}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <Menu
+                  label="More actions"
+                  trigger={<span className={cx.ghostIcon}><MoreHorizontal size={18} /></span>}
+                >
+                  {(close) => (
+                    <>
+                      <MenuItem icon={Copy} label="Copy group link" onClick={() => { close(); copyLink(); }} />
+                      <MenuItem icon={MessageCircle} label="Direct messages" onClick={() => { close(); navigate("/messages"); }} />
+                      <MenuItem icon={Settings} label="Messaging settings" onClick={() => { close(); navigate("/community-settings"); }} />
+                      {canManage && <MenuItem icon={ShieldCheck} label="Manage group" onClick={() => { close(); navigate(`/community/${groupId}/manage`); }} />}
+                      {membership?.role !== "owner" && <MenuItem icon={UserMinus} label="Leave group" tone="danger" onClick={() => { close(); leave(); }} />}
+                    </>
+                  )}
+                </Menu>
               </div>
             </div>
-          </div>
-        </div>
 
-        {!isMember ? (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className={`p-6 ${cx.panel}`}>{aboutBlock}</div>
-            <div className={`h-fit p-6 text-center ${cx.panel}`}>
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl [background:var(--brand-soft)] [color:var(--brand-text)]">
-                {group.privacy === "private" ? <Lock size={22} /> : <Users size={22} />}
-              </div>
-              <h2 className="mt-4 text-base font-semibold">{group.privacy === "private" ? "This is a private group" : "Join to take part"}</h2>
-              <p className={`mt-1.5 text-sm leading-6 ${cx.muted}`}>
-                {pendingRequest
-                  ? "Your request is waiting for an admin. You'll get a notification once it's approved."
-                  : group.privacy === "private"
-                    ? "Request access and an admin will review it. Posts, chat, media and files unlock after you're approved."
-                    : "Join to see posts, chat with members, and share files."}
-              </p>
-              <button onClick={join} disabled={busy || pendingRequest} className={`${cx.primaryBtn} mt-5 w-full`}>
-                {busy ? <Loader2 className="animate-spin" size={16} /> : pendingRequest ? <Clock size={16} /> : group.privacy === "private" ? <Lock size={15} /> : <Plus size={16} />}
-                {pendingRequest ? "Request sent" : group.privacy === "private" ? "Request to join" : "Join group"}
-              </button>
+            {/* Chat messages viewport */}
+            <div
+              ref={chatScrollRef}
+              onScroll={() => {
+                const el = chatScrollRef.current;
+                if (el) chatStickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+              }}
+              className="min-h-0 flex-1 overflow-y-auto p-4"
+            >
+              {hasOlder && (
+                <button onClick={loadOlder} disabled={loadingOlder} className={`mx-auto mb-4 block rounded-full border px-4 py-1.5 text-xs font-semibold disabled:opacity-60 [border-color:var(--line)] ${cx.muted}`}>
+                  {loadingOlder ? "Loading…" : "Load older messages"}
+                </button>
+              )}
+              {messages.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center text-center">
+                  <MessageCircle size={32} className={cx.faint} />
+                  <p className="mt-3 text-sm font-semibold">No messages yet</p>
+                  <p className={`mt-1 text-xs ${cx.muted}`}>Say hello to the group.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((message) => {
+                    const mine = message.senderId === user.uid;
+                    return (
+                      <ChatMessage
+                        key={message.id}
+                        message={message}
+                        mine={mine}
+                        name={message.senderName || "Student"}
+                        avatar={mine ? message.senderAvatar || profile.photo || user?.photoURL || "" : message.senderAvatar || ""}
+                        onReply={setReplyTo}
+                        onOpenDM={openDirectMessage}
+                        groupId={groupId}
+                        uid={user.uid}
+                        onVotePoll={votePoll}
+                        onEditPoll={(message) => setPollBuilder(message)}
+                        onTogglePollClosed={togglePollClosed}
+                      />
+                    );
+                  })}
+                  <div ref={chatBottomRef} />
+                </div>
+              )}
+            </div>
+
+            {/* Composer */}
+            <div className="border-t p-3 [border-color:var(--line)] [background:var(--paper-raised)]">
+              <button onClick={() => setPollBuilder({})} className={`mb-2 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold ${cx.soft}`}>Create poll</button>
+              <Composer
+                placeholder="Message the group. Type @ to mention someone."
+                onSend={sendChat}
+                allowVideo={isPremium}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
+                mentionMembers={members.filter((m) => m.id !== user?.uid)}
+                enterToSend
+              />
             </div>
           </div>
         ) : (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <section className="min-w-0">
-              <div className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto border-b px-4 [border-color:var(--line)] md:mx-0 md:px-0" role="tablist">
-                {DETAIL_TABS.map(({ key, icon: Icon }) => {
-                  const active = tab === key;
-                  const count = key === "Members" && canManage && requests.length > 0 ? requests.length : null;
-                  return (
-                    <button
-                      key={key}
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setTab(key)}
-                      className={`-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition ${
-                        active ? "[border-color:var(--brand)] [color:var(--brand-text)]" : "border-transparent [color:var(--ink-soft)] hover:[color:var(--ink)]"
-                      }`}
-                    >
-                      <Icon size={16} /> {key}
-                      {count && <span className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold [background:var(--danger)] text-white">{count}</span>}
-                      {!count && tabCount[key] > 0 && <span className={`text-xs font-medium ${cx.faint}`}>{tabCount[key]}</span>}
-                    </button>
-                  );
-                })}
-              </div>
+          /* REGULAR TABS (Feed, Members, Media, Files, About) OR NON-MEMBER VIEW */
+          <>
+            <Link to="/community" className={`${cx.ghostBtn} mb-3 h-8 px-2.5 text-xs`}>
+              <ChevronLeft size={15} /> All groups
+            </Link>
 
-              <div className="mt-5 space-y-4">
-                {tab === "Feed" && (
-                  <>
-                    <Composer placeholder="Share an update, question, or study resource…" onSend={sendPost} allowVideo={isPremium} sendLabel="Post" />
-                    {posts.length === 0 ? (
-                      <EmptyState icon={Newspaper} title="No posts yet" text="Be the first to share something helpful with the group." />
+            {/* Header: compact modern banner */}
+            <div className={`overflow-hidden rounded-2xl border ${cx.panel}`}>
+              <div className="h-20 sm:h-28"><CoverPattern group={group} /></div>
+              <div className="px-4 pb-4 sm:px-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="flex items-end gap-3">
+                    <div className="-mt-8 sm:-mt-10 shrink-0"><GroupAvatar group={group} size="lg" ring /></div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{group.name}</h1>
+                        {isMember && <RoleBadge role={membership?.role || "member"} />}
+                        <PrivacyBadge privacy={group.privacy} />
+                      </div>
+                      <div className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${cx.muted}`}>
+                        <span className="rounded-full px-2 py-0.5 font-semibold [background:var(--paper-sunken)]">{group.category}</span>
+                        <span className="inline-flex items-center gap-1"><Users size={12} /> {group.memberCount || 0} members</span>
+                        <span className="inline-flex items-center gap-1"><Calendar size={12} /> Since {formatShortTime(group.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isMember ? (
+                      <>
+                        <button onClick={() => setTab("Chat")} className={`${cx.primaryBtn} h-9 px-3 text-xs`}><MessageCircle size={15} /> Chat</button>
+                        <Menu
+                          label="More actions"
+                          trigger={<span className={cx.ghostIcon}><MoreHorizontal size={18} /></span>}
+                        >
+                          {(close) => (
+                            <>
+                              <MenuItem icon={Copy} label="Copy group link" onClick={() => { close(); copyLink(); }} />
+                              <MenuItem icon={MessageCircle} label="Direct messages" onClick={() => { close(); navigate("/messages"); }} />
+                              <MenuItem icon={Settings} label="Messaging settings" onClick={() => { close(); navigate("/community-settings"); }} />
+                              {canManage && <MenuItem icon={ShieldCheck} label="Manage group" onClick={() => { close(); navigate(`/community/${groupId}/manage`); }} />}
+                              {membership?.role !== "owner" && <MenuItem icon={UserMinus} label="Leave group" tone="danger" onClick={() => { close(); leave(); }} />}
+                            </>
+                          )}
+                        </Menu>
+                      </>
                     ) : (
-                      posts.map((post) => <PostCard key={post.id} post={post} groupId={groupId} uid={user.uid} onDelete={deletePost} />)
-                    )}
-                  </>
-                )}
-
-                {tab === "Chat" && (
-                  <div className={`flex h-[70dvh] flex-col overflow-hidden md:h-[72dvh] ${cx.panel}`}>
-                    <div
-                      ref={chatScrollRef}
-                      onScroll={() => {
-                        const el = chatScrollRef.current;
-                        if (el) chatStickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-                      }}
-                      className="min-h-0 flex-1 overflow-y-auto p-4"
-                    >
-                      {hasOlder && (
-                        <button onClick={loadOlder} disabled={loadingOlder} className={`mx-auto mb-4 block rounded-full border px-4 py-1.5 text-xs font-semibold disabled:opacity-60 [border-color:var(--line)] ${cx.muted}`}>
-                          {loadingOlder ? "Loading…" : "Load older messages"}
+                      <>
+                        <button onClick={copyLink} className={cx.ghostIcon} aria-label="Copy group link" title="Copy link"><Copy size={16} /></button>
+                        <button onClick={join} disabled={busy || pendingRequest} className={cx.primaryBtn}>
+                          {busy ? <Loader2 className="animate-spin" size={16} /> : pendingRequest ? <Clock size={16} /> : group.privacy === "private" ? <Lock size={15} /> : <Plus size={16} />}
+                          {pendingRequest ? "Request sent" : group.privacy === "private" ? "Request to join" : "Join group"}
                         </button>
-                      )}
-                      {messages.length === 0 ? (
-                        <div className="flex h-full flex-col items-center justify-center text-center">
-                          <MessageCircle size={32} className={cx.faint} />
-                          <p className="mt-3 text-sm font-semibold">No messages yet</p>
-                          <p className={`mt-1 text-xs ${cx.muted}`}>Say hello to the group.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {!isMember ? (
+              <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className={`p-5 ${cx.panel}`}>{aboutBlock}</div>
+                <div className={`h-fit p-5 text-center ${cx.panel}`}>
+                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl [background:var(--brand-soft)] [color:var(--brand-text)]">
+                    {group.privacy === "private" ? <Lock size={20} /> : <Users size={20} />}
+                  </div>
+                  <h2 className="mt-3 text-sm font-semibold">{group.privacy === "private" ? "This is a private group" : "Join to take part"}</h2>
+                  <p className={`mt-1 text-xs leading-5 ${cx.muted}`}>
+                    {pendingRequest
+                      ? "Your request is waiting for an admin. You'll get a notification once it's approved."
+                      : group.privacy === "private"
+                        ? "Request access and an admin will review it. Posts, chat, media and files unlock after you're approved."
+                        : "Join to see posts, chat with members, and share files."}
+                  </p>
+                  <button onClick={join} disabled={busy || pendingRequest} className={`${cx.primaryBtn} mt-4 w-full text-xs`}>
+                    {busy ? <Loader2 className="animate-spin" size={15} /> : pendingRequest ? <Clock size={15} /> : group.privacy === "private" ? <Lock size={14} /> : <Plus size={15} />}
+                    {pendingRequest ? "Request sent" : group.privacy === "private" ? "Request to join" : "Join group"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+                <section className="min-w-0">
+                  <div className="no-scrollbar -mx-3 flex gap-1 overflow-x-auto border-b px-3 [border-color:var(--line)] md:mx-0 md:px-0" role="tablist">
+                    {DETAIL_TABS.map(({ key, icon: Icon }) => {
+                      const active = tab === key;
+                      const count = key === "Members" && canManage && requests.length > 0 ? requests.length : null;
+                      return (
+                        <button
+                          key={key}
+                          role="tab"
+                          aria-selected={active}
+                          onClick={() => setTab(key)}
+                          className={`-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-xs font-semibold transition ${
+                            active ? "[border-color:var(--brand)] [color:var(--brand-text)]" : "border-transparent [color:var(--ink-soft)] hover:[color:var(--ink)]"
+                          }`}
+                        >
+                          <Icon size={14} /> {key}
+                          {count && <span className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold [background:var(--danger)] text-white">{count}</span>}
+                          {!count && tabCount[key] > 0 && <span className={`text-[11px] font-medium ${cx.faint}`}>{tabCount[key]}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 space-y-4">
+                    {tab === "Feed" && (
+                      <>
+                        <Composer placeholder="Share an update, question, or study resource…" onSend={sendPost} allowVideo={isPremium} sendLabel="Post" />
+                        {posts.length === 0 ? (
+                          <EmptyState icon={Newspaper} title="No posts yet" text="Be the first to share something helpful with the group." />
+                        ) : (
+                          posts.map((post) => <PostCard key={post.id} post={post} groupId={groupId} uid={user.uid} onDelete={deletePost} />)
+                        )}
+                      </>
+                    )}
+
+                    {tab === "Members" && (
+                      <div className="space-y-4">
+                        {canManage && requests.length > 0 && (
+                          <div className={`p-4 ${cx.panel}`}>
+                            <h2 className="text-sm font-semibold">Join requests ({requests.length})</h2>
+                            <div className="mt-3 space-y-2">
+                              {requests.map((request) => (
+                                <div key={request.id} className={`flex flex-wrap items-center justify-between gap-3 p-3 ${cx.soft}`}>
+                                  <span className="text-sm font-semibold">{request.name}</span>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await approveJoinRequest(group, request);
+                                          setRequests((items) => items.filter((i) => i.id !== request.id));
+                                          membersLoadedRef.current = "";
+                                          push(`${request.name} was approved.`, { tone: "success" });
+                                        } catch (err) {
+                                          push(err?.message || "Could not approve.", { tone: "error" });
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold [background:var(--ok-soft)] [color:var(--ok)]"
+                                    >
+                                      <Check size={14} /> Approve
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await rejectJoinRequest(group, request);
+                                          setRequests((items) => items.filter((i) => i.id !== request.id));
+                                        } catch (err) {
+                                          push(err?.message || "Could not decline.", { tone: "error" });
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold [background:var(--danger-soft)] [color:var(--danger)]"
+                                    >
+                                      <X size={14} /> Decline
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3 rounded-xl border px-4 [border-color:var(--line)] [background:var(--paper-raised)] focus-within:[border-color:var(--brand)]">
+                          <Search size={16} className={cx.faint} />
+                          <input value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search members" aria-label="Search members" className="h-11 w-full bg-transparent text-sm outline-none placeholder:[color:var(--ink-faint)]" />
+                        </div>
+
+                        {filteredMembers.length === 0 ? (
+                          <EmptyState icon={Users} title={memberSearch ? "No members match" : "No members to show"} text={memberSearch ? "Try a different name." : "Members will appear here."} />
+                        ) : (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {filteredMembers.map((member) => {
+                              const self = member.id === user.uid;
+                              return (
+                                <div key={member.id} className={`flex items-center gap-3 p-3 ${cx.panel}`}>
+                                  <UserAvatar src={member.avatar} name={member.name} size="md" />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold">{member.name}{self && <span className={`ml-1 font-normal ${cx.faint}`}>(you)</span>}</p>
+                                    <p className={`text-xs capitalize ${cx.muted}`}>{member.role || "member"}</p>
+                                  </div>
+                                  {!self && (
+                                    <button onClick={() => openDirectMessage(member.id)} className={cx.ghostIcon} aria-label={`Message ${member.name}`} title="Message">
+                                      <MessageCircle size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {tab === "Media" &&
+                      (mediaItems.length ? (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          {mediaItems.map((item, i) => <AttachmentPreview key={i} attachment={item} compact />)}
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          {messages.map((message) => {
-                            const mine = message.senderId === user.uid;
-                            return (
-                              <ChatMessage
-                                key={message.id}
-                                message={message}
-                                mine={mine}
-                                name={message.senderName || "Student"}
-                                avatar={mine ? message.senderAvatar || profile.photo || user?.photoURL || "" : message.senderAvatar || ""}
-                                onReply={setReplyTo}
-                                onOpenDM={openDirectMessage}
-                                groupId={groupId}
-                                uid={user.uid}
-                                onVotePoll={votePoll}
-                                onEditPoll={(message) => setPollBuilder(message)}
-                                onTogglePollClosed={togglePollClosed}
-                              />
-                            );
-                          })}
-                          <div ref={chatBottomRef} />
+                        <EmptyState icon={ImageIcon} title="No media yet" text="Photos and videos shared in posts will appear here." />
+                      ))}
+
+                    {tab === "Files" &&
+                      (fileItems.length ? (
+                        <div className="space-y-1">{fileItems.map((item, i) => <AttachmentPreview key={i} attachment={item} />)}</div>
+                      ) : (
+                        <EmptyState icon={FileText} title="No files yet" text="PDFs and documents shared in posts will appear here." />
+                      ))}
+
+                    {tab === "About" && <div className={`p-6 ${cx.panel}`}>{aboutBlock}</div>}
+                  </div>
+                </section>
+
+                <aside className="space-y-4">
+                  <div className={`p-4 sm:p-5 ${cx.panel}`}>
+                    <h3 className="text-sm font-semibold">Activity</h3>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                      {[
+                        { label: "Members", value: group.memberCount },
+                        { label: "Posts", value: group.postCount },
+                        { label: "Files", value: group.fileCount },
+                      ].map((s) => (
+                        <div key={s.label} className={`p-2.5 ${cx.soft}`}>
+                          <p className="text-base font-bold">{s.value || 0}</p>
+                          <p className={`text-[11px] ${cx.faint}`}>{s.label}</p>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {group.rules && (
+                    <div className={`p-4 sm:p-5 ${cx.panel}`}>
+                      <h3 className="text-sm font-semibold">Group rules</h3>
+                      <p className={`mt-2 line-clamp-4 text-xs leading-5 ${cx.muted}`}>{group.rules}</p>
+                      <button onClick={() => setTab("About")} className="mt-2 text-xs font-semibold [color:var(--brand-text)] hover:underline">Read more</button>
+                    </div>
+                  )}
+
+                  <div className={`overflow-hidden ${cx.panel}`}>
+                    <h3 className="px-4 pt-4 sm:px-5 sm:pt-5 text-sm font-semibold">Shortcuts</h3>
+                    <div className="mt-2 pb-2">
+                      <Link to="/messages" className="flex items-center justify-between px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-medium transition hover:[background:var(--paper-sunken)]">
+                        Direct messages <MessageCircle size={15} className={cx.muted} />
+                      </Link>
+                      <Link to="/community-settings" className="flex items-center justify-between px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-medium transition hover:[background:var(--paper-sunken)]">
+                        Messaging settings <Settings size={15} className={cx.muted} />
+                      </Link>
+                      {canManage && (
+                        <Link to={`/community/${groupId}/manage`} className="flex items-center justify-between px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-medium transition hover:[background:var(--paper-sunken)]">
+                          Manage group <ShieldCheck size={15} className="[color:var(--brand-text)]" />
+                        </Link>
                       )}
                     </div>
-                    <div className="border-t p-3 [border-color:var(--line)]">
-                      <button onClick={() => setPollBuilder({})} className={`mb-2 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${cx.soft}`}>Create poll</button>
-                      <Composer
-                        placeholder="Message the group. Type @ to mention someone."
-                        onSend={sendChat}
-                        allowVideo={isPremium}
-                        replyTo={replyTo}
-                        onCancelReply={() => setReplyTo(null)}
-                        mentionMembers={members.filter((m) => m.id !== user?.uid)}
-                        enterToSend
-                      />
-                    </div>
                   </div>
-                )}
-
-                {tab === "Members" && (
-                  <div className="space-y-4">
-                    {canManage && requests.length > 0 && (
-                      <div className={`p-4 ${cx.panel}`}>
-                        <h2 className="text-sm font-semibold">Join requests ({requests.length})</h2>
-                        <div className="mt-3 space-y-2">
-                          {requests.map((request) => (
-                            <div key={request.id} className={`flex flex-wrap items-center justify-between gap-3 p-3 ${cx.soft}`}>
-                              <span className="text-sm font-semibold">{request.name}</span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await approveJoinRequest(group, request);
-                                      setRequests((items) => items.filter((i) => i.id !== request.id));
-                                      membersLoadedRef.current = "";
-                                      push(`${request.name} was approved.`, { tone: "success" });
-                                    } catch (err) {
-                                      push(err?.message || "Could not approve.", { tone: "error" });
-                                    }
-                                  }}
-                                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold [background:var(--ok-soft)] [color:var(--ok)]"
-                                >
-                                  <Check size={14} /> Approve
-                                </button>
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await rejectJoinRequest(group, request);
-                                      setRequests((items) => items.filter((i) => i.id !== request.id));
-                                    } catch (err) {
-                                      push(err?.message || "Could not decline.", { tone: "error" });
-                                    }
-                                  }}
-                                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold [background:var(--danger-soft)] [color:var(--danger)]"
-                                >
-                                  <X size={14} /> Decline
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3 rounded-xl border px-4 [border-color:var(--line)] [background:var(--paper-raised)] focus-within:[border-color:var(--brand)]">
-                      <Search size={16} className={cx.faint} />
-                      <input value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search members" aria-label="Search members" className="h-11 w-full bg-transparent text-sm outline-none placeholder:[color:var(--ink-faint)]" />
-                    </div>
-
-                    {filteredMembers.length === 0 ? (
-                      <EmptyState icon={Users} title={memberSearch ? "No members match" : "No members to show"} text={memberSearch ? "Try a different name." : "Members will appear here."} />
-                    ) : (
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {filteredMembers.map((member) => {
-                          const self = member.id === user.uid;
-                          return (
-                            <div key={member.id} className={`flex items-center gap-3 p-3 ${cx.panel}`}>
-                              <UserAvatar src={member.avatar} name={member.name} size="md" />
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold">{member.name}{self && <span className={`ml-1 font-normal ${cx.faint}`}>(you)</span>}</p>
-                                <p className={`text-xs capitalize ${cx.muted}`}>{member.role || "member"}</p>
-                              </div>
-                              {!self && (
-                                <button onClick={() => openDirectMessage(member.id)} className={cx.ghostIcon} aria-label={`Message ${member.name}`} title="Message">
-                                  <MessageCircle size={16} />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {tab === "Media" &&
-                  (mediaItems.length ? (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {mediaItems.map((item, i) => <AttachmentPreview key={i} attachment={item} compact />)}
-                    </div>
-                  ) : (
-                    <EmptyState icon={ImageIcon} title="No media yet" text="Photos and videos shared in posts will appear here." />
-                  ))}
-
-                {tab === "Files" &&
-                  (fileItems.length ? (
-                    <div className="space-y-1">{fileItems.map((item, i) => <AttachmentPreview key={i} attachment={item} />)}</div>
-                  ) : (
-                    <EmptyState icon={FileText} title="No files yet" text="PDFs and documents shared in posts will appear here." />
-                  ))}
-
-                {tab === "About" && <div className={`p-6 ${cx.panel}`}>{aboutBlock}</div>}
+                </aside>
               </div>
-            </section>
-
-            <aside className="space-y-4">
-              <div className={`p-5 ${cx.panel}`}>
-                <h3 className="text-sm font-semibold">Activity</h3>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  {[
-                    { label: "Members", value: group.memberCount },
-                    { label: "Posts", value: group.postCount },
-                    { label: "Files", value: group.fileCount },
-                  ].map((s) => (
-                    <div key={s.label} className={`p-3 ${cx.soft}`}>
-                      <p className="text-lg font-bold">{s.value || 0}</p>
-                      <p className={`text-[11px] ${cx.faint}`}>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {group.rules && (
-                <div className={`p-5 ${cx.panel}`}>
-                  <h3 className="text-sm font-semibold">Group rules</h3>
-                  <p className={`mt-2 line-clamp-5 text-sm leading-6 ${cx.muted}`}>{group.rules}</p>
-                  <button onClick={() => setTab("About")} className="mt-2 text-xs font-semibold [color:var(--brand-text)] hover:underline">Read more</button>
-                </div>
-              )}
-
-              <div className={`overflow-hidden ${cx.panel}`}>
-                <h3 className="px-5 pt-5 text-sm font-semibold">Shortcuts</h3>
-                <div className="mt-2 pb-2">
-                  <Link to="/messages" className="flex items-center justify-between px-5 py-3 text-sm font-medium transition hover:[background:var(--paper-sunken)]">
-                    Direct messages <MessageCircle size={16} className={cx.muted} />
-                  </Link>
-                  <Link to="/community-settings" className="flex items-center justify-between px-5 py-3 text-sm font-medium transition hover:[background:var(--paper-sunken)]">
-                    Messaging settings <Settings size={16} className={cx.muted} />
-                  </Link>
-                  {canManage && (
-                    <Link to={`/community/${groupId}/manage`} className="flex items-center justify-between px-5 py-3 text-sm font-medium transition hover:[background:var(--paper-sunken)]">
-                      Manage group <ShieldCheck size={16} className="[color:var(--brand-text)]" />
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </aside>
-          </div>
+            )}
+          </>
         )}
       </div>
       <ToastHost items={toasts} dismiss={dismiss} />

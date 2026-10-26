@@ -125,7 +125,7 @@ const fresh = (entry) => !!entry && Date.now() - entry.at < CACHE_TTL_MS;
 
 // Panel heights: full screen on phones, fits under the nav offset on larger screens.
 const PANEL_H =
-  "h-[calc(100dvh-var(--nav-offset,0px))] sm:h-[calc(100dvh-3rem-var(--nav-offset,0px))]";
+  "h-[calc(100dvh-var(--nav-offset,0px))] sm:h-[calc(100dvh-1.5rem-var(--nav-offset,0px))]";
 
 const theme = (dark) => ({
   page: dark ? "bg-[#050816] text-white" : "bg-[#f6f8fc] text-slate-950",
@@ -1953,37 +1953,36 @@ export default function Messenger({ dark = false }) {
     const isOutgoing = !!activeOutgoingRequest;
     const title = isIncoming ? "Friend request waiting" : isOutgoing ? "Friend request sent" : "Add friend to keep chatting";
     const body = isIncoming
-      ? `${otherUser?.name || "This student"} wants to connect. Accept to chat freely.`
+      ? `${otherUser?.name || "This student"} wants to connect.`
       : isOutgoing
-        ? "You can keep chatting once they accept."
+        ? "Chat unlocks once accepted."
         : nonFriendMessageUsed
-          ? "You've used your intro message. Add them as a friend to send more."
-          : "You can send one intro message before becoming friends.";
+          ? "Intro message sent. Add friend to chat more."
+          : "1 intro message available before friending.";
 
     return (
-      <div className={`mx-3 mb-2 flex items-center gap-3 rounded-2xl border p-3 ${dark ? "border-indigo-400/20 bg-indigo-400/10" : "border-indigo-100 bg-indigo-50"}`}>
-        <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm sm:flex">
-          <PromptIcon size={18} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-extrabold">{title}</p>
-          <p className={`text-xs ${t.muted}`}>{body}</p>
+      <div className={`mx-3 mb-2 flex items-center justify-between gap-2.5 rounded-xl border px-3 py-2 text-xs ${dark ? "border-indigo-400/20 bg-indigo-400/10" : "border-indigo-100 bg-indigo-50"}`}>
+        <div className="flex min-w-0 items-center gap-2">
+          <PromptIcon size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+          <div className="min-w-0 truncate">
+            <span className="font-bold">{title}:</span> <span className={t.muted}>{body}</span>
+          </div>
         </div>
         {isIncoming ? (
-          <button onClick={() => handleAcceptRequest(activeIncomingRequest)} className={`flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-extrabold text-white hover:bg-emerald-600 ${focusRing}`}>
-            <UserCheck size={15} /> Accept
+          <button onClick={() => handleAcceptRequest(activeIncomingRequest)} className={`flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-500 px-2.5 py-1 text-xs font-bold text-white hover:bg-emerald-600 ${focusRing}`}>
+            <UserCheck size={13} /> Accept
           </button>
         ) : isOutgoing ? (
-          <span className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-extrabold ${t.soft}`}>
-            <Clock size={15} /> Pending
+          <span className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${t.soft}`}>
+            <Clock size={13} /> Pending
           </span>
         ) : (
           <button
             onClick={() => handleSendRequest({ id: activeOtherId, uid: activeOtherId, ...(otherUser || {}) })}
             disabled={requestSending}
-            className={`flex shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-extrabold text-white hover:bg-indigo-700 disabled:opacity-60 ${focusRing}`}
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60 ${focusRing}`}
           >
-            <UserPlus size={15} /> Add friend
+            <UserPlus size={13} /> Add friend
           </button>
         )}
       </div>
@@ -2296,24 +2295,24 @@ export default function Messenger({ dark = false }) {
   const renderChatHeader = () => {
     const identity = (
       <>
-        <Avatar src={pickAvatar(otherUser)} name={otherUser?.name} size="lg" />
+        <Avatar src={pickAvatar(otherUser)} name={otherUser?.name} size="md" />
         <div className="min-w-0">
-          <h2 className="truncate font-black">{otherUser?.name || "Student"}</h2>
+          <h2 className="truncate text-sm sm:text-base font-bold">{otherUser?.name || "Student"}</h2>
           <p className={`truncate text-xs ${otherTyping ? "font-bold text-emerald-500" : t.muted}`}>{headerSubtitle}</p>
         </div>
       </>
     );
     return (
-      <div className={`flex items-center gap-2 border-b p-3 sm:p-4 ${t.divider}`}>
+      <div className={`flex items-center gap-2 border-b px-3 py-2.5 sm:px-4 sm:py-3 ${t.divider}`}>
         <button onClick={() => setActiveId("")} className={`${iconBtn} -ml-1 md:hidden`} aria-label="Back to chats">
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
         {activeAreFriends && activeOtherId ? (
-          <Link to={`/profile/${activeOtherId}`} className="group flex min-w-0 flex-1 items-center gap-3" title="View profile">
+          <Link to={`/profile/${activeOtherId}`} className="group flex min-w-0 flex-1 items-center gap-2.5" title="View profile">
             {identity}
           </Link>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">{identity}</div>
         )}
         <button
           onClick={() => setConversationSettingsOpen(true)}
@@ -2636,19 +2635,19 @@ export default function Messenger({ dark = false }) {
   };
 
   return (
-    <div className={`min-h-[100dvh] ${t.page}`}>
+    <div className={`h-[100dvh] overflow-hidden ${t.page}`}>
       {renderToast()}
 
-      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-0 sm:gap-4 sm:px-4 sm:py-6 md:grid-cols-[320px_minmax(0,1fr)] md:px-6 xl:grid-cols-[400px_minmax(0,1fr)]">
+      <div className="mx-auto grid h-full max-w-[1400px] grid-cols-1 gap-0 sm:gap-4 sm:px-4 sm:py-3 md:grid-cols-[320px_minmax(0,1fr)] md:px-6 xl:grid-cols-[400px_minmax(0,1fr)]">
         {/* Left panel: lists. Full screen on phones until a chat is opened. */}
         <aside className={`${activeId ? "hidden" : "flex"} flex-col overflow-hidden rounded-none border-0 md:flex sm:rounded-3xl sm:border ${PANEL_H} ${t.panel}`}>
-          <div className={`border-b p-4 ${t.divider}`}>
+          <div className={`border-b p-3 sm:p-4 ${t.divider}`}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-1">
                 <button onClick={goBack} className={`${iconBtn} -ml-2`} aria-label="Go back">
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={18} />
                 </button>
-                <h1 className="text-2xl font-black">Messenger</h1>
+                <h1 className="text-xl sm:text-2xl font-black">Messenger</h1>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => setShowFindModal(true)} className={`${iconBtn} border ${t.divider}`} aria-label="Find friends" title="Find friends">
