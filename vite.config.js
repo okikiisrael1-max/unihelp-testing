@@ -20,7 +20,13 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: "auto",
       strategies: "generateSW",
-      includeAssets: ["favicon.png", "logo.png"],
+      includeAssets: [
+        "apple-touch-icon.png",
+        "favicon.png",
+        "logo.png",
+        "pwa-192.png",
+        "pwa-512.png",
+      ],
       workbox: {
         clientsClaim: true,
         skipWaiting: true,
@@ -43,21 +49,21 @@ export default defineConfig({
         background_color: "#0b0f1a",
         icons: [
           {
-            src: "/favicon.png",
+            src: "/pwa-192.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "any",
           },
           {
-            src: "/logo.png",
+            src: "/pwa-512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "any",
           },
         ],
       },
       apple: {
-        icon: "/logo.png",
+        icon: "/apple-touch-icon.png",
         statusBarStyle: "black-translucent",
       },
     }),

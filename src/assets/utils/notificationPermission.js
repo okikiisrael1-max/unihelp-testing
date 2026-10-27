@@ -60,7 +60,7 @@ const showForegroundNotification = (payload = {}) => {
 
   const notification = new Notification(title, {
     body,
-    icon: "/favicon.png",
+    icon: "/pwa-192.png",
     data: { url },
   });
 

@@ -30,7 +30,7 @@ onBackgroundMessage(messaging, (payload) => {
 
   self.registration.showNotification(title, {
     body,
-    icon: "/favicon.png",
+    icon: "/pwa-192.png",
     data: { url },
   });
 });
