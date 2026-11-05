@@ -41,6 +41,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const showFooter = pathname === "/" || pathname === "/profile";
+  const isGroupRoom = /^\/community\/[^/]+$/.test(pathname);
 
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -99,7 +100,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
   return (
     <div className="flex h-dvh w-full overflow-hidden">
 
-      <Navbar dark={dark} setMenuOpen={setMenuOpen} menuOpen={menuOpen} setDark={setDark}/>
+      {!isGroupRoom && <Navbar dark={dark} setMenuOpen={setMenuOpen} menuOpen={menuOpen} setDark={setDark} />}
 
       <div className="relative z-50 lg:hidden">
         <SideBar dark={dark} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
@@ -108,7 +109,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
 
       <main
         onClick={() => setMenuOpen(false)}
-        className={`flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pb-28 md:pb-0 pt-16 md:pt-0 ${
+        className={`flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pb-28 md:pb-0 ${isGroupRoom ? "pt-0" : "pt-16 md:pt-0"} ${
           dark ? "bg-[#0b0f1a] text-white" : "bg-gray-100 text-gray-900"
         }`}>
         <Outlet />

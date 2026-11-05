@@ -2252,7 +2252,7 @@ function GroupDetail({ groupId }) {
 
   if (loading) {
     return (
-      <div className="md:mt-16">
+      <div>
         <div className="mx-auto max-w-5xl px-4 py-6">
           <div className={`h-14 animate-pulse ${cx.soft}`} />
           <div className="mt-4"><SkeletonCards count={3} /></div>
@@ -2263,7 +2263,7 @@ function GroupDetail({ groupId }) {
 
   if (!group) {
     return (
-      <div className="md:mt-16">
+      <div>
         <div className="mx-auto max-w-3xl px-4 py-10">
           <EmptyState
             icon={Users}
@@ -2344,9 +2344,9 @@ function GroupDetail({ groupId }) {
   };
 
   return (
-    <div className={`md:mt-16 ${chatMode ? "flex h-[100dvh] flex-col md:h-[calc(100dvh-4rem)]" : ""}`}>
+    <div className={chatMode ? "flex h-[100dvh] flex-col" : ""}>
       {/* Compact header + tabs */}
-      <header className={`z-30 border-b [border-color:var(--line)] [background:var(--paper-raised)] ${chatMode ? "shrink-0" : "sticky top-0 md:top-16"}`}>
+      <header className={`z-30 border-b [border-color:var(--line)] [background:var(--paper-raised)] ${chatMode ? "shrink-0" : "sticky top-0"}`}>
         <div className="mx-auto flex max-w-5xl items-center gap-2 px-2 py-2 md:px-6">
           <Link to="/community" className={cx.plainIcon} aria-label="All groups" title="All groups"><ChevronLeft size={20} /></Link>
           <GroupAvatar group={group} size="sm" className="!rounded-xl" />
