@@ -50,6 +50,7 @@ import {
   formatShortTime,
   getCurrentUserProfile,
   getGroup,
+  getGroupPollParticipants,
   getMembership,
   joinPublicGroup,
   leaveGroup,
@@ -1325,7 +1326,7 @@ function GroupDiscovery() {
   const showSkeleton = view === "discover" ? loading && groups.length === 0 : !joinedReady || (mineLoading && mine.length === 0);
 
   return (
-    <div className="md:mt-16">
+    <div className="">
       <div className="mx-auto max-w-7xl px-4 pb-28 pt-4 md:px-6 md:pb-10 md:pt-6">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -1333,7 +1334,7 @@ function GroupDiscovery() {
             <p className={`mt-1 max-w-xl text-sm leading-6 ${cx.muted}`}>Join classmates and clubs, and keep everything for a class in one place.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button onClick={() => setCreateOpen(true)} className={`${cx.primaryBtn} hidden sm:inline-flex`}><Plus size={17} /> Create group</button>
+            <button onClick={() => setCreateOpen(true)} className={`${cx.primaryBtn} hidden sm:inline-flex`}><Plus size={17} /> </button>
             <Menu
               label="Groups options"
               items={[
@@ -1566,6 +1567,29 @@ const ChatMessage = memo(function ChatMessage({ message, mine, grouped, lastInGr
   const poll = message.type === "poll" ? message.poll : null;
   const name = message.senderName || "Student";
   const totalVotes = poll ? new Set(poll.options?.flatMap((option) => option.voterIds || []) || []).size : 0;
+  const [expandedVoters, setExpandedVoters] = useState("");
+  const [pollVoters, setPollVoters] = useState({});
+  const [votersLoading, setVotersLoading] = useState("");
+  const [votersError, setVotersError] = useState("");
+
+  const toggleVoters = async (option) => {
+    if (expandedVoters === option.id) {
+      setExpandedVoters("");
+      return;
+    }
+
+    setExpandedVoters(option.id);
+    setVotersError("");
+    setVotersLoading(option.id);
+    try {
+      const participants = await h.pollVoters(option.voterIds || []);
+      setPollVoters((current) => ({ ...current, [option.id]: participants }));
+    } catch {
+      setVotersError(option.id);
+    } finally {
+      setVotersLoading("");
+    }
+  };
 
   const menu = (
     <Menu
@@ -1607,15 +1631,41 @@ const ChatMessage = memo(function ChatMessage({ message, mine, grouped, lastInGr
                 const selected = option.voterIds?.includes(uid);
                 const percent = totalVotes ? Math.round((count / totalVotes) * 100) : 0;
                 return (
-                  <button
-                    key={option.id}
-                    disabled={poll.isClosed}
-                    onClick={() => h.vote(message, option.id)}
-                    className={`relative w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-80 ${mine ? "border-white/30 bg-white/10" : "[border-color:var(--line)] [background:var(--paper-raised)]"}`}
-                  >
-                    <span className={`absolute inset-y-0 left-0 transition-all ${mine ? "bg-white/15" : "[background:var(--brand-soft)]"}`} style={{ width: `${percent}%` }} />
-                    <span className="relative flex justify-between gap-3"><span>{selected ? "✓ " : ""}{option.text}</span><span>{percent}%</span></span>
-                  </button>
+                  <div key={option.id}>
+                    <button
+                      disabled={poll.isClosed}
+                      onClick={() => h.vote(message, option.id)}
+                      className={`relative w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-80 ${mine ? "border-white/30 bg-white/10" : "[border-color:var(--line)] [background:var(--paper-raised)]"}`}
+                    >
+                      <span className={`absolute inset-y-0 left-0 transition-all ${mine ? "bg-white/15" : "[background:var(--brand-soft)]"}`} style={{ width: `${percent}%` }} />
+                      <span className="relative flex justify-between gap-3"><span>{selected ? "✓ " : ""}{option.text}</span><span>{percent}%</span></span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!count}
+                      onClick={() => toggleVoters(option)}
+                      aria-expanded={expandedVoters === option.id}
+                      className={`mt-1 inline-flex items-center gap-1 text-[11px] font-semibold opacity-80 hover:opacity-100 disabled:cursor-default ${mine ? "text-white" : "[color:var(--ink-soft)]"}`}
+                    >
+                      <Users size={12} /> {count} {count === 1 ? "vote" : "votes"}
+                    </button>
+                    {expandedVoters === option.id && (
+                      <div className={`mt-1 space-y-1 rounded-lg p-2 text-xs ${mine ? "bg-white/10" : "[background:var(--paper-raised)]"}`}>
+                        {votersLoading === option.id ? (
+                          <span className="inline-flex items-center gap-2"><Loader2 size={13} className="animate-spin" /> Loading voters...</span>
+                        ) : votersError === option.id ? (
+                          <span>Could not load voters.</span>
+                        ) : (
+                          (pollVoters[option.id] || []).map((participant) => (
+                            <div key={participant.id} className="flex items-center gap-2">
+                              <UserAvatar src={participant.avatar} name={participant.name || "Student"} size="sm" />
+                              <span className="truncate">{participant.name || "Student"}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -2141,6 +2191,7 @@ function GroupDetail({ groupId }) {
           push(err?.message || "Could not record your vote.", { tone: "error" });
         }
       },
+      pollVoters: (voterIds) => getGroupPollParticipants(groupId, voterIds),
     }),
     [copyText, openDirectMessage, groupId, uid, push]
   );

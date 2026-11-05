@@ -1159,7 +1159,7 @@ function Composer({
 /*  Messenger                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export default function Messenger({ dark = false }) {
+export default function Messenger({ dark = false, onActiveChatChange }) {
   const t = dark ? THEME_DARK : THEME_LIGHT;
   const { user } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1192,6 +1192,10 @@ export default function Messenger({ dark = false }) {
   const [reactionViewerId, setReactionViewerId] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    onActiveChatChange?.(Boolean(activeId));
+  }, [activeId, onActiveChatChange]);
 
   // Stickers
   const [stickerPickerOpen, setStickerPickerOpen] = useState(false);

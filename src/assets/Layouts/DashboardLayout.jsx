@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import SideBar from "../components/SideBar";
 import BottomBar from "../components/BottomBar";
 import { auth } from "../../firebase/config";
@@ -39,6 +39,8 @@ import Footer from "../components/Footer";
 const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const showFooter = pathname === "/" || pathname === "/profile";
 
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -110,7 +112,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
           dark ? "bg-[#0b0f1a] text-white" : "bg-gray-100 text-gray-900"
         }`}>
         <Outlet />
-        <Footer dark={dark}/>
+        {showFooter && <Footer dark={dark} />}
         <DraggableCalculatorButton dark={dark} onClick={() => navigate("/calculator")} />
       </main>
     </div>

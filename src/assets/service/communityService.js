@@ -4,6 +4,7 @@ import {
   arrayUnion,
   collection,
   deleteDoc,
+  documentId,
   doc,
   getDoc,
   getDocs,
@@ -417,6 +418,26 @@ export const voteGroupPoll = async (groupId, messageId, optionId, uid) => {
     selected.voterIds = selected.voterIds.includes(uid) ? selected.voterIds.filter((id) => id !== uid) : [...selected.voterIds, uid];
     transaction.update(messageRef, { poll: { ...poll, options }, updatedAt: serverTimestamp() });
   });
+};
+
+export const getGroupPollParticipants = async (groupId, voterIds = []) => {
+  const uniqueIds = [...new Set(voterIds.filter(Boolean))];
+  if (!groupId || uniqueIds.length === 0) return [];
+
+  const chunks = [];
+  for (let index = 0; index < uniqueIds.length; index += 30) {
+    chunks.push(uniqueIds.slice(index, index + 30));
+  }
+
+  const snapshots = await Promise.all(chunks.map((ids) =>
+    getDocs(query(collection(db, "groups", groupId, "members"), where(documentId(), "in", ids)))
+  ));
+  const participants = new Map();
+  snapshots.forEach((snapshot) => snapshot.docs.forEach((entry) => {
+    participants.set(entry.id, { id: entry.id, ...entry.data() });
+  }));
+
+  return uniqueIds.map((id) => participants.get(id) || { id, name: "Student", avatar: "" });
 };
 
 export const editGroupPoll = async (groupId, messageId, uid, input) => {

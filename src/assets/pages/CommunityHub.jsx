@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ArrowLeft, MessageCircle, Users } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Community from "./Community";
@@ -8,6 +8,7 @@ const CommunityHub = ({ dark = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const showChats = location.pathname === "/messages";
+  const [chatOpen, setChatOpen] = useState(false);
   const tabs = [
     { label: "Chats", path: "/messages", icon: MessageCircle, selected: showChats },
     { label: "Groups", path: "/community", icon: Users, selected: !showChats },
@@ -15,6 +16,7 @@ const CommunityHub = ({ dark = false }) => {
 
   return (
     <div className={dark ? "min-h-screen bg-[#050816] text-slate-100" : "min-h-screen bg-[#f5f7ff] text-slate-900"}>
+      {(!showChats || !chatOpen) && (
       <header className={`border-b ${dark ? "border-slate-800 bg-[#0b1224]" : "border-slate-200 bg-white"}`}>
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
@@ -78,8 +80,9 @@ const CommunityHub = ({ dark = false }) => {
           </div>
         </div>
       </header>
+      )}
       <div id="community-section-panel" role="tabpanel">
-        {showChats ? <Messenger dark={dark} /> : <Community dark={dark} />}
+        {showChats ? <Messenger dark={dark} onActiveChatChange={setChatOpen} /> : <Community dark={dark} />}
       </div>
     </div>
   );
