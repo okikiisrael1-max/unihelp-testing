@@ -55,7 +55,6 @@ import DashboardLayout from "./assets/Layouts/DashboardLayout";
 
 import ProtectedRoute from "./assets/components/ProtectedRoutes";
 import AdminRoute from "./assets/components/AdminRoute";
-import InstallPrompt from "./assets/components/InstallPrompt";
 import PromoSpotlight from "./assets/components/PromoSpotlight";
 import AcademicCalculator from "./assets/components/AcademicCalculator";
 import { listenToForegroundMessages } from "./assets/utils/notificationPermission";
@@ -285,7 +284,6 @@ const App = () => {
 
   return (
     <div>
-      <InstallPrompt />
       <ToastContainer />
       <PromoSpotlight user={currentUser} onNavigate={navigate} />
 

@@ -2364,7 +2364,7 @@ function GroupDetail({ groupId }) {
           <Menu label="Group options" items={headerMenuItems} buttonClass={cx.plainIcon} />
         </div>
 
-        {isMember && (
+        {isMember && !chatMode && (
           <nav className="no-scrollbar mx-auto flex max-w-5xl gap-1 overflow-x-auto px-2 md:px-6" role="tablist" aria-label="Group sections">
             {TAB_KEYS.map((key) => {
               const Icon = TAB_ICONS[key];

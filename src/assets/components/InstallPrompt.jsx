@@ -1,267 +1,142 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Download, MoreVertical, Share, Sparkles, X, Zap } from "lucide-react";
-
-const INSTALL_COMPLETED_KEY = "unihelp.installCompleted";
-
-const getInstallPlatform = () => {
-  if (typeof navigator === "undefined") return "other";
-
-  const userAgent = navigator.userAgent || "";
-  const isAppleMobile =
-    /iPhone|iPad|iPod/i.test(userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-
-  if (isAppleMobile) return "ios";
-  if (/Android/i.test(userAgent)) return "android";
-  return "other";
-};
-
-const isStandaloneDisplay = () => {
-  if (typeof window === "undefined") return false;
-
-  return (
-    window.matchMedia?.("(display-mode: standalone)")?.matches ||
-    window.matchMedia?.("(display-mode: minimal-ui)")?.matches ||
-    window.matchMedia?.("(display-mode: fullscreen)")?.matches ||
-    window.navigator?.standalone === true
-  );
-};
-
-const wasInstalled = () => {
-  try {
-    return window.localStorage.getItem(INSTALL_COMPLETED_KEY) === "true";
-  } catch {
-    return false;
-  }
-};
-
-const rememberInstallation = () => {
-  try {
-    window.localStorage.setItem(INSTALL_COMPLETED_KEY, "true");
-  } catch {
-    // Standalone display detection still suppresses the prompt if storage is unavailable.
-  }
-};
-
-const FEATURES = [
-  { icon: CheckCircle2, text: "Launch straight from your home screen", tone: "text-emerald-500" },
-  { icon: Zap, text: "Faster startup, smoother navigation", tone: "text-emerald-500" },
-  { icon: CheckCircle2, text: "Offline support where available", tone: "text-emerald-500" },
-  { icon: Sparkles, text: "Feels like a real mobile app", tone: "text-indigo-500" },
-];
+import { Check, Download, MoreVertical, Plus, Share, Smartphone, X } from "lucide-react";
+import usePwaInstall from "../hooks/usePwaInstall";
 
 export default function InstallPrompt() {
-  const [promptEvent, setPromptEvent] = useState(null);
-  const [platform, setPlatform] = useState("other");
-  const [show, setShow] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [installed, setInstalled] = useState(false);
-  const [installing, setInstalling] = useState(false);
+  const { platform, isSafari, canInstall, install, installError, installOutcome, installing, isInstalled } = usePwaInstall();
   const [showInstructions, setShowInstructions] = useState(false);
-  const [installError, setInstallError] = useState("");
 
   useEffect(() => {
-    if (isStandaloneDisplay() || wasInstalled()) {
-      setInstalled(true);
-      rememberInstallation();
-      return;
-    }
+    if (!showInstructions) return undefined;
 
-    const detectedPlatform = getInstallPlatform();
-    setPlatform(detectedPlatform);
-
-    const showManualPrompt =
-      detectedPlatform === "ios" || detectedPlatform === "android";
-    const promptTimer = showManualPrompt
-      ? window.setTimeout(() => setShow(true), 700)
-      : undefined;
-
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setPromptEvent(event);
-      setShowInstructions(false);
-      setShow(true);
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setShowInstructions(false);
     };
-
-    const handleAppInstalled = () => {
-      rememberInstallation();
-      setInstalled(true);
-      setShow(false);
-      setPromptEvent(null);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
 
     return () => {
-      if (promptTimer !== undefined) window.clearTimeout(promptTimer);
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
     };
-  }, []);
+  }, [showInstructions]);
 
-  useEffect(() => {
-    if (show) {
-      const raf = requestAnimationFrame(() => setVisible(true));
-      return () => cancelAnimationFrame(raf);
-    }
-    setVisible(false);
-  }, [show]);
+  const showButton = !isInstalled && (canInstall || platform === "ios" || platform === "android" || Boolean(installError));
+  if (!showButton) return null;
 
-  const dismiss = () => {
-    setVisible(false);
-    window.setTimeout(() => setShow(false), 200);
-  };
-
-  const install = async () => {
-    if (!promptEvent) {
-      setShowInstructions(true);
+  const ios = platform === "ios";
+  const openInstallOptions = () => {
+    if (canInstall && !ios) {
+      install();
       return;
     }
-
-    setInstalling(true);
-    setInstallError("");
-
-    try {
-      await promptEvent.prompt();
-      await promptEvent.userChoice;
-      setPromptEvent(null);
-      dismiss();
-    } catch {
-      setInstallError("The install prompt could not be opened. Please use your browser menu to install UniHelp.");
-      setPromptEvent(null);
-    } finally {
-      setInstalling(false);
-    }
+    setShowInstructions(true);
   };
 
-  if (!show || installed) return null;
-
-  const platformSteps =
-    platform === "ios"
-      ? [
-          { icon: Share, text: "Tap the Share button in your browser." },
-          { icon: Download, text: "Choose “Add to Home Screen”." },
-          { icon: CheckCircle2, text: "Tap “Add” to finish installing UniHelp." },
-        ]
-      : [
-          { icon: MoreVertical, text: "Open your browser menu." },
-          { icon: Download, text: "Choose “Install app” or “Add to Home screen”." },
-          { icon: CheckCircle2, text: "Confirm to add UniHelp to your device." },
-        ];
-
   return (
-    <div
-      className={`fixed inset-0 z-[9999] flex items-end justify-center bg-slate-950/60 backdrop-blur-sm transition-opacity duration-200 sm:items-center sm:p-4 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
-      onClick={dismiss}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="install-prompt-title"
-        onClick={(event) => event.stopPropagation()}
-        className={`relative w-full max-w-md overflow-hidden bg-white shadow-[0_25px_80px_-15px_rgba(67,56,202,0.35)] transition-all duration-300 ease-out
-        rounded-t-[28px] sm:rounded-[28px]
-        ${visible ? "translate-y-0 opacity-100 sm:scale-100" : "translate-y-8 opacity-0 sm:translate-y-0 sm:scale-95"}`}
+    <>
+      <button
+        type="button"
+        onClick={openInstallOptions}
+        disabled={installing}
+        className="fixed bottom-24 left-4 z-[70] inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-70 sm:bottom-5 sm:left-5"
+        aria-haspopup={ios || !canInstall ? "dialog" : undefined}
       >
-        <div className="relative overflow-hidden bg-[#4338ca] px-6 pb-8 pt-6 text-white sm:px-8 sm:pt-8">
-          <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="pointer-events-none absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-purple-400/20 blur-2xl" />
+        <Download size={17} aria-hidden="true" />
+        {installing ? "Opening install…" : "Install UniHelp"}
+      </button>
+      {(installError || installOutcome === "dismissed") && (
+        <p role={installError ? "alert" : "status"} className="fixed bottom-36 left-4 z-[70] max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-lg sm:bottom-16 sm:left-5">
+          {installError || "Installation was cancelled. Tap Install UniHelp for browser-menu instructions."}
+        </p>
+      )}
 
-          <button
-            onClick={dismiss}
-            className="absolute right-4 top-4 rounded-full bg-white/15 p-2 transition-colors hover:bg-white/25"
-            aria-label="Dismiss install prompt"
+      {showInstructions && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          onClick={() => setShowInstructions(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pwa-install-title"
+            className="w-full max-w-md overflow-y-auto rounded-t-2xl bg-white shadow-2xl transition duration-200 animate-in fade-in slide-in-from-bottom-3 sm:max-h-[min(90vh,42rem)] sm:rounded-2xl"
+            style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+            onClick={(event) => event.stopPropagation()}
           >
-            <X size={16} />
-          </button>
-
-          <div className="relative z-10 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
-              <Download size={26} />
-            </div>
-            <div className="min-w-0 pt-0.5">
-              <span className="inline-block rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide">
-                Recommended
+            <header className="flex items-start gap-3 bg-slate-900 px-5 py-5 text-white sm:px-6">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600">
+                <Smartphone size={22} />
               </span>
-              <h2 id="install-prompt-title" className="mt-3 text-2xl font-black leading-tight sm:text-[1.75rem]">
-                Install UniHelp
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-indigo-100">
-                Get faster access and a more native experience.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-5 px-6 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-8 sm:py-7 sm:pb-7">
-          {showInstructions ? (
-            <ol className="space-y-4">
-              {platformSteps.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-                    <Icon size={17} />
-                  </span>
-                  <span className="text-[15px] leading-relaxed text-slate-700">{text}</span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div className="space-y-3">
-              {FEATURES.map(({ icon: Icon, text, tone }) => (
-                <div key={text} className="flex items-center gap-3">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 ${tone}`}>
-                    <Icon size={16} />
-                  </div>
-                  <span className="text-[15px] text-slate-700">{text}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {installError && (
-            <p role="alert" className="text-sm text-red-600">
-              {installError}
-            </p>
-          )}
-
-          <div className="space-y-2.5 pt-1">
-            <button
-              onClick={showInstructions ? dismiss : install}
-              disabled={installing}
-              className={`w-full rounded-2xl py-4 text-[15px] font-bold text-white shadow-lg transition-all ${
-                installing
-                  ? "cursor-not-allowed bg-indigo-400 shadow-none"
-                  : "bg-[#4338ca] hover:bg-[#3730a3] hover:shadow-[#4338ca]/30 active:scale-[0.98]"
-              }`}
-            >
-              {installing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Installing…
-                </span>
-              ) : showInstructions ? (
-                "Got it"
-              ) : promptEvent ? (
-                "Install Now"
-              ) : (
-                "How to install"
-              )}
-            </button>
-
-            {!showInstructions && (
+              <div className="min-w-0 flex-1">
+                <h2 id="pwa-install-title" className="text-lg font-bold">Install UniHelp</h2>
+                <p className="mt-1 text-sm text-slate-300">
+                  {ios
+                    ? isSafari
+                      ? "Add UniHelp to your Home Screen from Safari."
+                      : "On iPhone and iPad, installation is available through Safari. Open this page there to continue."
+                    : platform === "android"
+                      ? "Use your browser menu to add UniHelp to your device."
+                      : "Use Chrome or Edge and their browser menu to install this app."}
+                </p>
+              </div>
               <button
-                onClick={dismiss}
-                className="w-full rounded-2xl border-2 border-gray-200 py-3.5 text-[15px] font-bold text-slate-600 transition-colors hover:bg-gray-50"
+                type="button"
+                onClick={() => setShowInstructions(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                aria-label="Close installation instructions"
               >
-                Maybe later
+                <X size={19} />
               </button>
-            )}
-          </div>
+            </header>
+
+            <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+              {ios && !isSafari ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                  iOS does not let websites open the installation dialog. Copy this page’s address, open Safari, and follow the steps there.
+                </div>
+              ) : ios ? (
+                <ol className="space-y-3">
+                  {[
+                    { icon: Smartphone, text: "Open UniHelp in Safari." },
+                    { icon: Share, text: "Tap the Share icon in Safari." },
+                    { icon: Plus, text: "Select Add to Home Screen." },
+                    { icon: Check, text: "Tap Add to finish." },
+                  ].map(({ icon: Icon, text }, index) => (
+                    <li key={text} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3.5">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><Icon size={18} /></span>
+                      <span className="flex-1 text-sm font-medium leading-5 text-slate-800">{text}</span>
+                      <span className="text-xs font-bold text-slate-400">{index + 1}</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <ol className="space-y-3">
+                  {[
+                    { icon: MoreVertical, text: "Open your browser’s menu." },
+                    { icon: Download, text: "Choose Install app or Add to Home screen." },
+                    { icon: Check, text: "Confirm the installation." },
+                  ].map(({ icon: Icon, text }, index) => (
+                    <li key={text} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3.5">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><Icon size={18} /></span>
+                      <span className="flex-1 text-sm font-medium leading-5 text-slate-800">{text}</span>
+                      <span className="text-xs font-bold text-slate-400">{index + 1}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowInstructions(false)}
+                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                Close
+              </button>
+            </div>
+          </section>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
