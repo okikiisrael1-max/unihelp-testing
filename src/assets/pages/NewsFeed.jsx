@@ -765,7 +765,19 @@ const PostCard = memo(function PostCard({
   const audience = audiences.find((a) => a.value === item.audience) || audiences[2];
   const AudienceIcon = audience.Icon;
   const content = item.content || "";
-  const long = content.length > LONG_POST;
+  const lines = useMemo(() => content.split(/\r?\n/).filter((l) => l.trim().length > 0), [content]);
+  const isLineExceeded = lines.length > 3;
+  const isCharExceeded = content.length > 140;
+  const long = isLineExceeded || isCharExceeded;
+
+  const previewContent = useMemo(() => {
+    if (!long || expanded) return content;
+    if (isLineExceeded) {
+      const top3 = lines.slice(0, 3).join("\n");
+      return top3.length > 140 ? `${top3.slice(0, 140).trimEnd()}…` : `${top3.trimEnd()}…`;
+    }
+    return `${content.slice(0, 140).trimEnd()}…`;
+  }, [content, long, expanded, isLineExceeded, lines]);
 
   return (
     <article
@@ -851,8 +863,12 @@ const PostCard = memo(function PostCard({
         <>
           {content && (
             <div className="px-4 pb-3 sm:px-5">
-              <p className={`whitespace-pre-wrap break-words text-[15px] leading-6 ${t.body}`}>
-                {long && !expanded ? `${content.slice(0, LONG_POST).trimEnd()}…` : content}
+              <p
+                className={`whitespace-pre-wrap break-words text-[15px] leading-6 ${t.body} ${
+                  long && !expanded ? "line-clamp-3 sm:line-clamp-4" : ""
+                }`}
+              >
+                {long && !expanded ? previewContent : content}
               </p>
               {long && (
                 <button

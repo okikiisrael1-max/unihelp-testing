@@ -601,75 +601,50 @@ export default function LectureNotesMarketplace({ dark }) {
         <div className="absolute bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-violet-600/10 blur-[120px]" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 md:py-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className={`flex flex-1 items-center gap-3 rounded-2xl px-4 py-3 ${card}`}>
-            <Search size={18} className="opacity-60" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by title, course, department, or lecturer..."
-              className="w-full bg-transparent outline-none"
-            />
-          </div>
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-2 sm:py-6">
+        <div className="flex flex-col gap-2.5 sm:gap-3">
+          {/* Top Row: Search + Upload Note + Bell */}
+          <div className="flex items-center gap-2">
+            <div className={`flex flex-1 items-center gap-2.5 rounded-xl sm:rounded-2xl px-3 py-2 sm:py-3 ${card}`}>
+              <Search size={16} className="opacity-60 flex-none" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search notes, courses, departments..."
+                className="w-full bg-transparent text-xs sm:text-sm outline-none"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                  className="rounded-full p-0.5 opacity-60 hover:opacity-100"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={() => setShowUpload(true)}
-              className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 font-semibold text-white hover:bg-indigo-700 text-xs sm:text-sm shrink-0 shadow-sm shadow-indigo-600/30"
+              className="flex h-10 sm:h-11 items-center justify-center gap-1.5 rounded-xl sm:rounded-2xl bg-indigo-600 px-3 sm:px-4 font-semibold text-white hover:bg-indigo-700 text-xs sm:text-sm shrink-0 shadow-sm shadow-indigo-600/30 transition"
             >
-              <Upload size={16} />
-              <span>Upload Note</span>
+              <Upload size={15} />
+              <span className="hidden xs:inline sm:inline">Upload</span>
+              <span className="hidden sm:inline">Note</span>
             </button>
-            <div
-              role="tablist"
-              aria-label="View"
-              className={`grid grid-cols-2 gap-1 rounded-2xl p-1 ${
-                dark ? "bg-white/5" : "bg-slate-100"
-              }`}
-            >
-              <button
-                role="tab"
-                aria-selected={tab === "notes"}
-                onClick={() => setTab("notes")}
-                className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all duration-200 ${
-                  tab === "notes"
-                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
-                    : dark
-                      ? "text-slate-300 hover:text-white"
-                      : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <LayoutGrid size={16} className={tab === "notes" ? "opacity-100" : "opacity-60"} />
-                Notes
-              </button>
-              <button
-                role="tab"
-                aria-selected={tab === "requests"}
-                onClick={() => setTab("requests")}
-                className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all duration-200 ${
-                  tab === "requests"
-                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
-                    : dark
-                      ? "text-slate-300 hover:text-white"
-                      : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <MessageSquareMore size={16} className={tab === "requests" ? "opacity-100" : "opacity-60"} />
-                Requests
-              </button>
-            </div>
 
             <div className="relative">
               <button
                 onClick={() => setShowNotifications((current) => !current)}
-                className={`relative inline-flex h-12 w-12 items-center justify-center rounded-2xl ${
-                  dark ? "bg-white/5" : "bg-white"
+                aria-label="Notifications"
+                className={`relative inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl transition ${
+                  dark ? "bg-white/5 hover:bg-white/10" : "bg-white ring-1 ring-slate-200 hover:bg-slate-50"
                 }`}
               >
-                <Bell size={18} />
+                <Bell size={17} />
                 {notifications.filter((item) => !item.read).length > 0 && (
-                  <span className="absolute right-1 top-1 min-w-5 rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  <span className="absolute right-1 top-1 min-w-4 rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
                     {notifications.filter((item) => !item.read).length}
                   </span>
                 )}
@@ -677,31 +652,31 @@ export default function LectureNotesMarketplace({ dark }) {
 
               {showNotifications && (
                 <div
-                  className={`absolute right-0 top-14 z-20 w-80 overflow-hidden rounded-3xl border p-3 shadow-2xl ${
+                  className={`absolute right-0 top-12 z-20 w-72 sm:w-80 overflow-hidden rounded-2xl sm:rounded-3xl border p-3 shadow-2xl ${
                     dark
                       ? "border-white/10 bg-slate-950"
                       : "border-slate-200 bg-white"
                   }`}>
-                  <div className="mb-3 flex items-center justify-between px-2">
-                    <p className="font-bold">Notifications</p>
-                    <span className="text-xs opacity-60">{notifications.length} items</span>
+                  <div className="mb-2 flex items-center justify-between px-2">
+                    <p className="font-bold text-xs sm:text-sm">Notifications</p>
+                    <span className="text-[11px] opacity-60">{notifications.length} items</span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {notifications.slice(0, 5).map((item) => (
                       <div
                         key={item.id}
-                        className={`rounded-2xl px-3 py-3 text-sm ${
+                        className={`rounded-xl px-2.5 py-2 text-xs ${
                           dark ? "bg-white/5" : "bg-slate-50"
                         }`}
                       >
                         <p className="font-semibold">{item.title || "New alert"}</p>
-                        <p className="mt-1 text-xs opacity-60">{item.message || "You have a new update."}</p>
+                        <p className="mt-0.5 text-[11px] opacity-60">{item.message || "You have a new update."}</p>
                       </div>
                     ))}
 
                     {notifications.length === 0 && (
-                      <div className="rounded-2xl px-3 py-8 text-center text-sm opacity-60">
+                      <div className="rounded-xl px-3 py-6 text-center text-xs opacity-60">
                         No notifications yet.
                       </div>
                     )}
@@ -710,56 +685,98 @@ export default function LectureNotesMarketplace({ dark }) {
               )}
             </div>
           </div>
-        </div>
 
-        {tab === "notes" && (
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <select
-              value={courseFilter}
-              onChange={(event) => setCourseFilter(event.target.value)}
-              aria-label="Filter notes by course"
-              className={`h-11 min-w-48 rounded-xl border px-3 text-sm outline-none ${
-                dark ? "border-white/10 bg-slate-950" : "border-slate-200 bg-white"
+          {/* Sub Row: Notes/Requests Toggle + Filters & Refresh */}
+          <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+            <div
+              role="tablist"
+              aria-label="View"
+              className={`grid grid-cols-2 gap-0.5 rounded-xl p-0.5 ${
+                dark ? "bg-white/5" : "bg-slate-100"
               }`}
             >
-              <option value="">All courses</option>
-              {courses.map((course) => <option key={course} value={course}>{course}</option>)}
-            </select>
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value)}
-              aria-label="Sort lecture notes"
-              className={`h-11 min-w-44 rounded-xl border px-3 text-sm outline-none ${
-                dark ? "border-white/10 bg-slate-950" : "border-slate-200 bg-white"
-              }`}
-            >
-              <option value="newest">Newest first</option>
-              <option value="title_asc">Title A - Z</option>
-              <option value="title_desc">Title Z - A</option>
-            </select>
-            <button
-              type="button"
-              onClick={loadNotes}
-              disabled={loading}
-              aria-label="Refresh lecture notes"
-              className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50 ${
-                dark ? "bg-white/5 hover:bg-white/10" : "bg-white ring-1 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-              Refresh
-            </button>
-            {(search || courseFilter || sort !== "newest") && (
               <button
-                type="button"
-                onClick={() => { setSearch(""); setCourseFilter(""); setSort("newest"); }}
-                className="text-sm font-semibold text-indigo-500 hover:underline"
+                role="tab"
+                aria-selected={tab === "notes"}
+                onClick={() => setTab("notes")}
+                className={`inline-flex h-8 sm:h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-4 text-xs font-semibold transition-all duration-200 ${
+                  tab === "notes"
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
+                    : dark
+                      ? "text-slate-300 hover:text-white"
+                      : "text-slate-500 hover:text-slate-900"
+                }`}
               >
-                Clear filters
+                <LayoutGrid size={14} className={tab === "notes" ? "opacity-100" : "opacity-60"} />
+                Notes
               </button>
+              <button
+                role="tab"
+                aria-selected={tab === "requests"}
+                onClick={() => setTab("requests")}
+                className={`inline-flex h-8 sm:h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-4 text-xs font-semibold transition-all duration-200 ${
+                  tab === "requests"
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
+                    : dark
+                      ? "text-slate-300 hover:text-white"
+                      : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <MessageSquareMore size={14} className={tab === "requests" ? "opacity-100" : "opacity-60"} />
+                Requests
+              </button>
+            </div>
+
+            {tab === "notes" && (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                <select
+                  value={courseFilter}
+                  onChange={(event) => setCourseFilter(event.target.value)}
+                  aria-label="Filter notes by course"
+                  className={`h-8 sm:h-9 max-w-[130px] sm:max-w-44 flex-1 rounded-xl border px-2 text-xs outline-none truncate ${
+                    dark ? "border-white/10 bg-slate-950" : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <option value="">All courses</option>
+                  {courses.map((course) => <option key={course} value={course}>{course}</option>)}
+                </select>
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value)}
+                  aria-label="Sort lecture notes"
+                  className={`h-8 sm:h-9 max-w-[110px] sm:max-w-36 flex-1 rounded-xl border px-2 text-xs outline-none truncate ${
+                    dark ? "border-white/10 bg-slate-950" : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="title_asc">Title A - Z</option>
+                  <option value="title_desc">Title Z - A</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={loadNotes}
+                  disabled={loading}
+                  aria-label="Refresh lecture notes"
+                  className={`inline-flex h-8 w-8 sm:h-9 sm:w-auto items-center justify-center gap-1.5 rounded-xl sm:px-3 text-xs font-semibold disabled:opacity-50 shrink-0 ${
+                    dark ? "bg-white/5 hover:bg-white/10" : "bg-white ring-1 ring-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+                {(search || courseFilter || sort !== "newest") && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearch(""); setCourseFilter(""); setSort("newest"); }}
+                    className="text-xs font-semibold text-indigo-500 hover:underline shrink-0 ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-24">
