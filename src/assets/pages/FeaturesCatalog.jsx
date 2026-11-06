@@ -64,6 +64,14 @@ const FeaturesCatalog = ({ dark }) => {
               <p className={`mt-3 max-w-2xl text-sm md:text-base leading-7 ${theme.textSoft}`}>
                 Discover the complete set of academic, marketplace, and smart student tools built to simplify your campus life.
               </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link to="/register" className="inline-flex min-h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                  Get started
+                </Link>
+                <Link to="/academic-tools" className={`inline-flex min-h-10 items-center rounded-xl border px-4 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${theme.card}`}>
+                  Explore academic tools
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -129,6 +137,11 @@ const FeaturesCatalog = ({ dark }) => {
         {/* ================================================= */}
         {/* RESULTS GRID */}
         {/* ================================================= */}
+
+        <div className="mb-4">
+          <h2 className="text-xl font-black">Browse UniHelp features</h2>
+          <p className={`mt-1 text-sm ${theme.textSoft}`}>Select a feature to continue to its app page. Some features require sign-in.</p>
+        </div>
 
         {visibleFeatures.length === 0 ? (
           <div className={`rounded-3xl p-10 text-center ${theme.soft}`}>

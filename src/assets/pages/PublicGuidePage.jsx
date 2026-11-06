@@ -21,7 +21,7 @@ export default function PublicGuidePage({ guideId, dark = false }) {
           </nav>
 
           <header className="max-w-3xl">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1.5 text-sm font-bold text-indigo-600 dark:text-indigo-300">
+            <div className={`mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1.5 text-sm font-bold ${dark ? 'text-indigo-300' : 'text-indigo-600'}`}>
               <BookOpenCheck size={16} aria-hidden="true" />
               UniHelp student guide
             </div>
@@ -42,7 +42,7 @@ export default function PublicGuidePage({ guideId, dark = false }) {
               <section key={section.title} className={`rounded-2xl border p-5 sm:p-7 ${surface}`}>
                 <h2 className="text-xl font-black sm:text-2xl">{section.title}</h2>
                 <p className={`mt-3 max-w-3xl leading-7 ${text}`}>{section.text}</p>
-                <Link to={section.link} className="mt-4 inline-flex items-center gap-2 font-bold text-indigo-600 hover:underline dark:text-indigo-300">
+                <Link to={section.link} className={`mt-4 inline-flex items-center gap-2 font-bold hover:underline ${dark ? 'text-indigo-300' : 'text-indigo-600'}`}>
                   {section.linkLabel} <ArrowRight size={16} aria-hidden="true" />
                 </Link>
               </section>
@@ -54,7 +54,7 @@ export default function PublicGuidePage({ guideId, dark = false }) {
             <p className={`mt-3 leading-7 ${text}`}>
               Create an account or sign in to use account-based tools. UniHelp features are designed to support study and campus life; check your institution’s guidance for official academic requirements.
             </p>
-            <Link to="/register" className="mt-4 inline-flex min-h-10 items-center font-bold text-indigo-600 hover:underline dark:text-indigo-300">
+            <Link to="/register" className={`mt-4 inline-flex min-h-10 items-center font-bold hover:underline ${dark ? 'text-indigo-300' : 'text-indigo-600'}`}>
               Get started <ArrowRight className="ml-2" size={16} aria-hidden="true" />
             </Link>
           </aside>

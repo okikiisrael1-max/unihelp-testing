@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { canonicalUrl, seoPages } from "./src/assets/data/seoPages.js";
+import { publicGuides, publicGuideRoutes } from "./src/assets/data/publicGuides.js";
 
 const escapeAttribute = (value) => String(value)
   .replaceAll("&", "&amp;")
@@ -17,6 +18,31 @@ const replaceMeta = (html, attribute, key, content) => {
   const pattern = new RegExp(`<meta\\s+${attribute}="${key}"\\s+content="[^"]*"\\s*\\/?>`, "i");
   const tag = `<meta ${attribute}="${key}" content="${escapeAttribute(content)}" />`;
   return pattern.test(html) ? html.replace(pattern, tag) : html.replace("</head>", `  ${tag}\n  </head>`);
+};
+
+const escapeHtml = (value) => String(value)
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#39;");
+
+const renderStaticContent = (page) => {
+  const guideRoute = publicGuideRoutes.find((route) => route.path === page.path);
+  const guide = guideRoute ? publicGuides[guideRoute.guide] : null;
+
+  if (guide) {
+    const sections = guide.sections.map((section) => `
+      <section><h2>${escapeHtml(section.title)}</h2>
+      <p>${escapeHtml(section.text)}</p>
+      <p><a href="${escapeHtml(section.link)}">${escapeHtml(section.linkLabel)}</a></p></section>`).join("");
+    return `<main><article><h1>${escapeHtml(guide.title)}</h1><p>${escapeHtml(guide.intro)}</p>${sections}<p><a href="/register">Create a UniHelp account</a></p></article></main>`;
+  }
+
+  const homeLinks = page.path === "/"
+    ? '<nav aria-label="UniHelp features"><a href="/features">Explore features</a> <a href="/academic-tools">Academic tools</a> <a href="/ai-tutor">AI study assistance</a> <a href="/student-community">Student community</a> <a href="/student-marketplace">Student marketplace</a> <a href="/register">Get started</a></nav>'
+    : '<p><a href="/features">Explore UniHelp features</a> <a href="/register">Create an account</a></p>';
+  return `<main><article><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p>${homeLinks}</article></main>`;
 };
 
 const withRouteMetadata = (html, page) => {
@@ -35,6 +61,7 @@ const withRouteMetadata = (html, page) => {
   output = output.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${canonicalUrl(page.path)}" />`);
   const jsonLd = JSON.stringify(page.schema).replaceAll("<", "\\u003c");
   output = output.replace("</head>", `  <script id="unihelp-structured-data" type="application/ld+json">${jsonLd}</script>\n  </head>`);
+  output = output.replace('<div id="root"></div>', `<div id="root">${renderStaticContent(page)}</div>`);
   return output;
 };
 

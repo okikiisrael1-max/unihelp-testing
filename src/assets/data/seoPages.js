@@ -60,6 +60,8 @@ export const seoPages = [
   page('/', "UniHelp – Nigeria's Student Super App | Academic Tools & Student Services", 'Discover UniHelp, a student super app designed for Nigerian university students. Access academic tools, CBT practice, past questions, AI tutoring, student communities, and more.', 'SoftwareApplication'),
   page('/about', 'About UniHelp | Student Super App for Nigerian Universities', 'Learn how UniHelp helps Nigerian university students with academic tools, learning resources, campus services, and student communities.'),
   page('/features', 'UniHelp Features | Academic Tools and Student Services', 'Explore UniHelp features including GPA and CGPA tools, study resources, CBT practice, AI assistance, Formula Hub, and student communities.'),
+  page('/formula-hub', 'Formula Hub | University Study Formulas by Subject | UniHelp', 'Browse UniHelp Formula Hub for study formulas organized by subject, with related flashcards and learning tools.', 'TechArticle'),
+  page('/watch', 'Educational Videos and Study Tutorials | UniHelp', 'Search educational videos and tutorials in UniHelp to support your coursework, revision, and practical learning.'),
   page('/faq', 'UniHelp FAQ | Student App, Study Tools, and Account Help', 'Find answers about UniHelp accounts, academic tools, study resources, marketplace access, Premium, and student communities.'),
   page('/help-center', 'UniHelp Help Center | Account, File, and Payment Support', 'Browse UniHelp guidance for file uploads, downloads, account access, subscriptions, and common technical issues.'),
   page('/privacy', 'UniHelp Privacy Policy | Data and Account Privacy', 'Read how UniHelp handles account information, uploaded content, learning activity, and your privacy choices.'),

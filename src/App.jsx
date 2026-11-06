@@ -117,7 +117,7 @@ const App = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    const path = location.pathname;
+    const path = location.pathname.replace(/\/+$/, "") || "/";
     const publicPage = seoPageByPath[path];
     const title = path.startsWith("/profile/")
       ? "Student profile | UniHelp"
