@@ -601,43 +601,9 @@ export default function LectureNotesMarketplace({ dark }) {
         <div className="absolute bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-violet-600/10 blur-[120px]" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:py-8">
-        <div className={`${card} rounded-[32px] p-5 sm:p-6 shadow-2xl`}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              {stats.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.label}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 ${softCard}`}
-                  >
-                    <div className="rounded-xl bg-indigo-500/10 p-1.5 text-indigo-400">
-                      <Icon size={16} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 leading-none">
-                        {item.label}
-                      </p>
-                      <p className="mt-0.5 text-sm font-bold leading-none">{item.value}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => setShowUpload(true)}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 font-medium text-white hover:bg-indigo-700 text-[13px]"
-            >
-              <Upload size={18} />
-              Upload PDF
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${card}`}>
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 md:py-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className={`flex flex-1 items-center gap-3 rounded-2xl px-4 py-3 ${card}`}>
             <Search size={18} className="opacity-60" />
             <input
               value={search}
@@ -647,7 +613,14 @@ export default function LectureNotesMarketplace({ dark }) {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button
+              onClick={() => setShowUpload(true)}
+              className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 font-semibold text-white hover:bg-indigo-700 text-xs sm:text-sm shrink-0 shadow-sm shadow-indigo-600/30"
+            >
+              <Upload size={16} />
+              <span>Upload Note</span>
+            </button>
             <div
               role="tablist"
               aria-label="View"

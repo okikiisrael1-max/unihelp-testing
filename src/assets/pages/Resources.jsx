@@ -75,7 +75,7 @@ export default function Resources({ dark }) {
           <div
             role="tablist"
             aria-label="Resource type"
-            className={`grid grid-cols-2 gap-1 rounded-2xl p-1 sm:inline-grid ${
+            className={`grid grid-cols-3 gap-1 rounded-2xl p-1 w-full sm:w-auto ${
               dark ? "bg-white/5 ring-1 ring-white/10" : "bg-slate-100 ring-1 ring-slate-200"
             }`}
           >
@@ -88,7 +88,7 @@ export default function Resources({ dark }) {
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setTab(t.key)}
-                  className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all duration-200 ${
+                  className={`inline-flex h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     isActive
                       ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
                       : dark
@@ -96,22 +96,25 @@ export default function Resources({ dark }) {
                       : "text-slate-500 hover:bg-white hover:text-slate-900"
                   }`}
                 >
-                  <Icon size={16} className={isActive ? "opacity-100" : "opacity-60"} />
-                  {t.label}
+                  <Icon size={16} className={`shrink-0 ${isActive ? "opacity-100" : "opacity-60"}`} />
+                  <span className="truncate">{t.label}</span>
                 </button>
               );
             })}
+            <button
+              type="button"
+              role="tab"
+              onClick={() => navigate("/cbt-practice")}
+              className={`inline-flex h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                dark
+                  ? "text-slate-300 hover:bg-white/5 hover:text-white"
+                  : "text-slate-500 hover:bg-white hover:text-slate-900"
+              }`}
+            >
+              <Computer size={16} className="shrink-0 opacity-60" />
+              <span className="truncate">CBT practice</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate("/cbt-practice")}
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
-              dark ? "bg-white/5 text-slate-200 hover:bg-white/10" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            <Computer size={16} />
-            CBT practice
-          </button>
         </div>
 
         {/* Content */}
@@ -126,14 +129,12 @@ export default function Resources({ dark }) {
 
       {/* Floating Action Buttons */}
       <div className="fixed right-4 bottom-20 md:bottom-10 z-50 flex flex-col gap-3">
-          {tab !== "notes" && (
-            <button 
-              onClick={() => navigate('/uploadquestion')}
-              className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'>
-              <PlusCircleIcon size={24}/>
-              <span className="hidden sm:inline">Upload PDF</span>
-            </button>
-          )}
+        <button 
+          onClick={() => navigate('/uploadquestion')}
+          className='flex items-center gap-2 p-3 px-5 bg-purple-600 shadow-lg shadow-purple-500/30 rounded-full text-white hover:bg-purple-700 transition font-bold'>
+          <PlusCircleIcon size={24}/>
+          <span className="hidden sm:inline">Upload PDF</span>
+        </button>
         <button 
           onClick={() => {
             setRequestData((current) => ({ ...current, type: tab === "notes" ? "note" : "question" }));

@@ -42,6 +42,7 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
   const { pathname } = useLocation();
   const showFooter = pathname === "/" || pathname === "/profile";
   const isGroupRoom = /^\/community\/[^/]+$/.test(pathname);
+  const isAppView = pathname === "/ai" || pathname === "/calculator";
 
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -104,17 +105,21 @@ const DashboardLayout = ({ dark, setDark, menuOpen, setMenuOpen }) => {
 
       <div className="relative z-50 lg:hidden">
         <SideBar dark={dark} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-        <BottomBar dark={dark} />
+        {!isAppView && <BottomBar dark={dark} />}
       </div>
 
       <main
         onClick={() => setMenuOpen(false)}
-        className={`flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pb-28 md:pb-0 ${isGroupRoom ? "pt-0" : "pt-16 md:pt-0"} ${
+        className={`flex-1 min-w-0 h-full ${
+          isAppView ? "overflow-hidden pb-0" : "overflow-y-auto pb-28 md:pb-0"
+        } overflow-x-hidden ${isGroupRoom ? "pt-0" : "pt-16 md:pt-0"} ${
           dark ? "bg-[#0b0f1a] text-white" : "bg-gray-100 text-gray-900"
         }`}>
         <Outlet />
-        {showFooter && <Footer dark={dark} />}
-        <DraggableCalculatorButton dark={dark} onClick={() => navigate("/calculator")} />
+        {showFooter && !isAppView && <Footer dark={dark} />}
+        {pathname !== "/calculator" && (
+          <DraggableCalculatorButton dark={dark} onClick={() => navigate("/calculator")} />
+        )}
       </main>
     </div>
   );

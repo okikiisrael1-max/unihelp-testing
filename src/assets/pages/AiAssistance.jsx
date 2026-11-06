@@ -35,6 +35,7 @@ import {
   ChevronRight,
   MessageSquarePlus,
   Paperclip,
+  ArrowLeft,
 } from "lucide-react";
 
 import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
@@ -160,6 +161,8 @@ const capabilityGroups = [
 ===================================================== */
 
 export default function AIAssistant({ dark = false }) {
+  const navigate = useNavigate();
+
   /* =====================================================
      STATES
   ===================================================== */
@@ -671,18 +674,18 @@ RULES:
   ===================================================== */
 
   const markdownComponents = {
-    h1: ({ children }) => <h1 className="text-2xl font-black mb-5 mt-2">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-xl font-bold mb-4 mt-6">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-[18px] font-bold mb-3 mt-5">{children}</h3>,
-    p: ({ children }) => <p className="leading-8 mb-4 text-[13px]">{children}</p>,
+    h1: ({ children }) => <h1 className="text-xl sm:text-2xl font-black mb-3 mt-4 first:mt-0">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-lg sm:text-xl font-bold mb-2.5 mt-3 first:mt-0">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-base sm:text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h3>,
+    p: ({ children }) => <p className="leading-relaxed mb-3 text-[14px] sm:text-[15px]">{children}</p>,
     strong: ({ children }) => (
-      <strong className="font-black text-indigo-500">{children}</strong>
+      <strong className="font-bold text-indigo-500 dark:text-indigo-400">{children}</strong>
     ),
-    ul: ({ children }) => <ul className="list-disc pl-6 space-y-2 mb-5">{children}</ul>,
-    ol: ({ children }) => <ol className="list-decimal pl-6 space-y-2 mb-5">{children}</ol>,
-    li: ({ children }) => <li className="leading-8">{children}</li>,
+    ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 mb-3">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 mb-3">{children}</ol>,
+    li: ({ children }) => <li className="leading-relaxed text-[14px] sm:text-[15px]">{children}</li>,
     table: ({ children }) => (
-      <div className="overflow-x-auto mb-5 rounded-xl border border-black/10 dark:border-white/10">
+      <div className="overflow-x-auto mb-4 rounded-xl border border-black/10 dark:border-white/10">
         <table className="w-full text-[13px]">{children}</table>
       </div>
     ),
@@ -704,7 +707,7 @@ RULES:
       </code>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-indigo-500 pl-4 italic opacity-80 my-4">
+      <blockquote className="border-l-4 border-indigo-500 pl-4 italic opacity-80 my-3">
         {children}
       </blockquote>
     ),
@@ -716,15 +719,22 @@ RULES:
 
   return (
     <div
-      className={`relative min-h-screen md:pt-20 overflow-hidden flex flex-col ${theme.bg} ${theme.text}`}
+      className={`relative h-full max-h-full overflow-hidden flex flex-col ${theme.bg} ${theme.text}`}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {/* ============ HEADER ============ */}
       <div
-        className={`relative z-30 border-b backdrop-blur-3xl px-4 md:px-8 py-3 flex items-center justify-between gap-3 ${theme.border} ${theme.card}`}
+        className={`relative z-30 border-b backdrop-blur-3xl px-3 sm:px-4 md:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3 shrink-0 ${theme.border} ${theme.card}`}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className={`p-2 -ml-1 rounded-xl transition-colors md:hidden ${theme.card2}`}
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
             <Bot size={18} />
           </div>
           <div className="min-w-0">
@@ -801,7 +811,7 @@ RULES:
       </div>
 
       {/* Usage bar */}
-      <div className={`px-4 md:px-8 py-2 border-b ${theme.border} ${theme.card}`}>
+      <div className={`px-4 md:px-8 py-2 border-b shrink-0 ${theme.border} ${theme.card}`}>
         <div className="flex items-center justify-between mb-1.5">
           <span className={`text-[11px] font-medium ${theme.subtext}`}>Usage</span>
           <span className={`text-[11px] font-medium ${theme.subtext}`}>
@@ -819,7 +829,7 @@ RULES:
       {/* ============ CHAT AREA ============ */}
       <div
         ref={chatRef}
-        className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-8"
+        className="relative z-10 flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 md:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8"
       >
         {isWelcomeState ? (
           /* ============ WELCOME STATE ============ */
@@ -878,7 +888,7 @@ RULES:
                       </ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="leading-8 whitespace-pre-wrap text-[14px]">{msg.text}</p>
+                    <p className="leading-relaxed whitespace-pre-wrap text-[14px] sm:text-[15px]">{msg.text}</p>
                   )}
                 </div>
 
@@ -982,7 +992,7 @@ RULES:
       </div>
 
       {/* ============ QUICK ACTIONS ============ */}
-      <div className="relative z-20 px-4 md:px-8 pb-2">
+      <div className="relative z-20 px-3 sm:px-4 md:px-8 pb-2 shrink-0">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {quickActions.map((qa, i) => {
             const Icon = qa.icon;
@@ -1012,7 +1022,7 @@ RULES:
 
       {/* ============ INPUT AREA ============ */}
       <div
-        className="relative z-20 px-4 md:px-8 pb-4"
+        className="relative z-20 px-3 sm:px-4 md:px-8 pb-3 sm:pb-4 shrink-0"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
       >
         {activePDF && (

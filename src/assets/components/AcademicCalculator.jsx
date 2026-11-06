@@ -258,18 +258,18 @@ export default function AcademicCalculator({ dark }) {
           {/* TOPBAR */}
 
           <div className={`sticky top-0 z-30 backdrop-blur-xl border-b ${theme.border} ${theme.card}/80`}>
-            <div className="flex items-center justify-between px-4 md:px-8 py-4">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className={`lg:hidden p-3 rounded-2xl ${theme.soft}`}
+                  className={`lg:hidden p-2.5 sm:p-3 rounded-2xl ${theme.soft}`}
                 >
                   <FaBars />
                 </button>
 
                 <div>
-                  <h2 className="text-xl md:text-2xl font-black">{tabs.find((tab) => tab.id === activeTab)?.title}</h2>
-                  <p className={`text-sm ${theme.muted}`}>{tabs.find((tab) => tab.id === activeTab)?.desc}</p>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black">{tabs.find((tab) => tab.id === activeTab)?.title}</h2>
+                  <p className={`text-xs sm:text-sm ${theme.muted}`}>{tabs.find((tab) => tab.id === activeTab)?.desc}</p>
                 </div>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function AcademicCalculator({ dark }) {
 
           {/* CONTENT */}
 
-          <div className="p-4 md:p-8">
+          <div className="p-2 sm:p-4 md:p-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -537,7 +537,7 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
         key={key}
         whileTap={{ scale: 0.92 }}
         onClick={() => (btn.action ? btn.action() : appendValue(btn.value))}
-        className={`h-14 md:h-16 rounded-2xl font-bold text-base md:text-lg transition-colors ${base}`}
+        className={`h-10 sm:h-12 md:h-14 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg transition-colors ${base}`}
       >
         {btn.label}
       </motion.button>
@@ -545,9 +545,9 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header row: title + history + overflow menu */}
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-3 sm:space-y-6">
+      {/* Header row: title + history + overflow menu (desktop only) */}
+      <div className="hidden sm:flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-black">Scientific Calculator</h2>
           <p className={`mt-2 ${theme.muted}`}>Everyday and advanced math, in one clean keypad.</p>
@@ -615,14 +615,14 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-2 gap-8">
-        <div className={`rounded-3xl p-5 md:p-6 ${theme.card} border ${theme.border}`}>
-          {/* Basic / Scientific separation + angle mode */}
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className={`inline-flex rounded-2xl p-1 ${theme.soft}`}>
+      <div className="grid xl:grid-cols-2 gap-4 lg:gap-8">
+        <div className={`rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 ${theme.card} border ${theme.border}`}>
+          {/* Basic / Scientific separation + angle mode + mobile history/menu */}
+          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-4">
+            <div className={`inline-flex rounded-xl sm:rounded-2xl p-0.5 sm:p-1 ${theme.soft}`}>
               <button
                 onClick={() => setSciOpen(false)}
-                className={`h-9 px-4 rounded-xl text-xs font-bold transition-colors ${
+                className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs font-bold transition-colors ${
                   !sciOpen ? `${theme.primary} text-white` : theme.muted
                 }`}
               >
@@ -630,7 +630,7 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
               </button>
               <button
                 onClick={() => setSciOpen(true)}
-                className={`h-9 px-4 rounded-xl text-xs font-bold transition-colors ${
+                className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs font-bold transition-colors ${
                   sciOpen ? `${theme.primary} text-white` : theme.muted
                 }`}
               >
@@ -638,44 +638,107 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
               </button>
             </div>
 
-            <button
-              onClick={() => setAngleMode((m) => (m === "deg" ? "rad" : "deg"))}
-              aria-label="Toggle degrees or radians"
-              className={`h-9 px-4 rounded-xl text-xs font-black tracking-wide transition-colors ${theme.soft} ${theme.softHover}`}
-            >
-              {angleMode === "deg" ? "DEG" : "RAD"}
-            </button>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                onClick={() => setAngleMode((m) => (m === "deg" ? "rad" : "deg"))}
+                aria-label="Toggle degrees or radians"
+                className={`h-8 sm:h-9 px-2.5 sm:px-4 rounded-lg sm:rounded-xl text-xs font-black tracking-wide transition-colors ${theme.soft} ${theme.softHover}`}
+              >
+                {angleMode === "deg" ? "DEG" : "RAD"}
+              </button>
+
+              <button
+                onClick={() => setHistoryOpen(true)}
+                aria-label="View calculation history"
+                className={`sm:hidden h-8 w-8 flex items-center justify-center rounded-lg text-xs transition-colors ${theme.soft} ${theme.softHover}`}
+              >
+                <FaHistory />
+              </button>
+
+              <div className="relative sm:hidden">
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="More options"
+                  className={`h-8 w-8 flex items-center justify-center rounded-lg text-xs transition-colors ${theme.soft} ${theme.softHover}`}
+                >
+                  <FaEllipsisV />
+                </button>
+
+                <AnimatePresence>
+                  {menuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute right-0 mt-2 w-52 z-50 rounded-2xl border p-2 shadow-2xl ${theme.card} ${theme.border}`}
+                      >
+                        <button
+                          onClick={copyResult}
+                          className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold text-left transition-colors ${theme.softHover}`}
+                        >
+                          <FaCopy /> Copy result
+                        </button>
+                        <button
+                          onClick={shareResult}
+                          className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold text-left transition-colors ${theme.softHover}`}
+                        >
+                          <FaShareAlt /> Share result
+                        </button>
+                        <button
+                          onClick={convertToFraction}
+                          className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold text-left transition-colors ${theme.softHover}`}
+                        >
+                          <FaEquals /> Convert to fraction
+                        </button>
+                        <div className={`my-1 border-t ${theme.border}`} />
+                        <button
+                          onClick={handleClearHistory}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold text-left text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          <FaTrash /> Clear all history
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
 
           {/* Display */}
-          <div className={`rounded-3xl p-5 md:p-6 ${theme.input} border ${theme.border}`}>
-            <div className={`text-right text-base md:text-lg overflow-x-auto whitespace-nowrap ${theme.muted}`}>
+          <div className={`rounded-2xl sm:rounded-3xl p-3 sm:p-5 ${theme.input} border ${theme.border}`}>
+            <div className={`text-right text-xs sm:text-base md:text-lg overflow-x-auto whitespace-nowrap ${theme.muted}`}>
               {expression || "0"}
             </div>
 
-            <div
-              className={`text-right font-black mt-4 break-all ${
-                isError ? "text-red-500 text-lg md:text-xl" : "text-3xl md:text-5xl"
-              }`}
-            >
-              {result}
-            </div>
+            <div className="flex items-end justify-between gap-2 mt-1 sm:mt-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={copyResult}
+                  aria-label="Copy result"
+                  className={`${theme.muted} hover:text-indigo-500 transition-colors p-1`}
+                >
+                  <FaCopy size={13} />
+                </button>
+                <button
+                  onClick={shareResult}
+                  aria-label="Share result"
+                  className={`${theme.muted} hover:text-indigo-500 transition-colors p-1`}
+                >
+                  <FaShareAlt size={13} />
+                </button>
+              </div>
 
-            <div className="flex justify-end gap-4 mt-3">
-              <button
-                onClick={copyResult}
-                aria-label="Copy result"
-                className={`${theme.muted} hover:text-indigo-500 transition-colors`}
+              <div
+                className={`text-right font-black break-all ${
+                  isError ? "text-red-500 text-sm sm:text-lg" : "text-2xl sm:text-4xl md:text-5xl"
+                }`}
               >
-                <FaCopy size={14} />
-              </button>
-              <button
-                onClick={shareResult}
-                aria-label="Share result"
-                className={`${theme.muted} hover:text-indigo-500 transition-colors`}
-              >
-                <FaShareAlt size={14} />
-              </button>
+                {result}
+              </div>
             </div>
           </div>
 
@@ -689,9 +752,9 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 space-y-2">
+                <div className="mt-2 sm:mt-4 space-y-1.5 sm:space-y-2">
                   {sciRows.map((row, rowIndex) => (
-                    <div key={rowIndex} className="grid grid-cols-4 gap-2">
+                    <div key={rowIndex} className="grid grid-cols-4 gap-1.5 sm:gap-2">
                       {row.map((btn, i) => renderKey(btn, `sci-${rowIndex}-${i}`))}
                     </div>
                   ))}
@@ -701,9 +764,9 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
           </AnimatePresence>
 
           {/* Basic keypad */}
-          <div className="mt-4 space-y-2">
+          <div className="mt-2 sm:mt-4 space-y-1.5 sm:space-y-2">
             {basicRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="grid grid-cols-4 gap-2 md:gap-3">
+              <div key={rowIndex} className="grid grid-cols-4 gap-1.5 sm:gap-2 md:gap-3">
                 {row.map((btn, i) => renderKey(btn, `basic-${rowIndex}-${i}`))}
               </div>
             ))}
@@ -711,7 +774,7 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={calculate}
-              className={`w-full h-14 md:h-16 rounded-2xl text-white font-black text-lg md:text-xl flex items-center justify-center gap-3 transition-colors ${theme.primary}`}
+              className={`w-full h-11 sm:h-13 md:h-14 rounded-xl sm:rounded-2xl text-white font-black text-base sm:text-lg md:text-xl flex items-center justify-center gap-2 sm:gap-3 transition-colors ${theme.primary}`}
             >
               <FaEquals />
               Calculate
@@ -719,7 +782,7 @@ function ScientificCalculator({ theme, history, addHistoryItem, deleteHistoryIte
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="hidden xl:block space-y-6">
           <div className={`rounded-3xl p-6 ${theme.card} border ${theme.border}`}>
             <div className="flex items-start gap-3 mb-5">
               <FaInfoCircle className="mt-1" />
