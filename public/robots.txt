@@ -28,7 +28,7 @@ Disallow: /gpa$
 Disallow: /uploadquestion
 Disallow: /resources
 Disallow: /studentmarketplace
-Disallow: /ai
+Disallow: /ai$
 Disallow: /adminpanel
 Disallow: /api/
 

@@ -30,7 +30,7 @@ const rawFaqs = [
     icon: <GraduationCap size={20} />,
     question: "What is UniHelp?",
     answer:
-      "UniHelp is an all-in-one student ecosystem designed to streamline campus life. It provides direct access to crowdsourced lecture notes, verified past questions, GPA/CGPA calculators, learning videos, a student marketplace, and campus discussion forums."
+      "UniHelp brings together crowdsourced lecture notes, available past questions, GPA and CGPA tools, educational video search, a student marketplace, and student groups."
   },
   {
     id: 2,
@@ -46,7 +46,7 @@ const rawFaqs = [
     icon: <BookOpen size={20} />,
     question: "Can I download lecture notes for free?",
     answer:
-      "Basic notes and foundational study guides are accessible to all free users. Advanced study guides, verified solution keys, and bulk PDF downloads require an active UniHelp Premium subscription."
+      "Download access depends on the resource and your account plan. Some lecture-note downloads require Premium access; the app shows availability for each resource."
   },
   {
     id: 4,
@@ -54,7 +54,7 @@ const rawFaqs = [
     icon: <GraduationCap size={20} />,
     question: "How accurate is the GPA & CGPA Calculator?",
     answer:
-      "Our calculator supports custom grade-point scale settings (4.0, 5.0, or custom institutional scales). Simply select your university scale, input your course unit load along with earned letter grades, and the algorithm instantly calculates semester GPA and cumulative CGPA."
+      "Enter course units and the grade points used by your institution. UniHelp calculates GPA from total grade points and course units. Check important results against your university's grading rules."
   },
   {
     id: 5,
@@ -62,7 +62,7 @@ const rawFaqs = [
     icon: <BookOpen size={20} />,
     question: "Can I request specific lecture notes if they are missing?",
     answer:
-      "Yes! Use the 'Request Note' feature inside the study hub. Fill in the course code and university name. Fellow students and verified contributors from your institution will be notified to upload matching material."
+      "Yes. Open the request option in the resources area and provide the course and material details. Your request is shared with the community for a limited time so students can respond."
   },
   {
     id: 6,
@@ -70,7 +70,7 @@ const rawFaqs = [
     icon: <BookOpen size={20} />,
     question: "Are learning videos vetted for curriculum relevance?",
     answer:
-      "Curated videos undergo community rating and automated verification to ensure they match standard university course syllabi."
+      "UniHelp lets you search available educational videos. Check each video's topic and source to decide whether it fits your course and syllabus."
   },
 
   // Marketplace
@@ -80,15 +80,15 @@ const rawFaqs = [
     icon: <ShoppingBag size={20} />,
     question: "Can I sell textbooks and gadgets on UniHelp?",
     answer:
-      "Absolutely. The Student Marketplace allows you to list textbooks, electronics, dorm accessories, or freelance services directly to peers on your campus."
+      "Signed-in students can create product listings with details such as category, price, location, condition, availability, and seller contact information."
   },
   {
     id: 10,
     category: "Marketplace",
     icon: <ShoppingBag size={20} />,
-    question: "Does UniHelp charge seller commissions?",
+    question: "How do marketplace listings and promotions work?",
     answer:
-      "Peer-to-peer listings on the basic marketplace are 100% commission-free. Featured top-of-page listings can be boosted for a minor promotional fee."
+      "The marketplace supports student product listings and paid promotions for eligible listings. Review the current in-app terms and any displayed charges before paying or arranging a transaction."
   },
 
   // Billing
@@ -98,7 +98,7 @@ const rawFaqs = [
     icon: <CreditCard size={20} />,
     question: "How do I become a Premium user?",
     answer:
-      "Go to the 'Upgrade to Premium' section in your account dashboard, pick a monthly or annual plan, and complete checkout via secure card payment or manual bank proof upload."
+      "Open Premium in your UniHelp account to review the available plans, benefits, and payment options shown for your account."
   },
   {
     id: 12,
@@ -106,7 +106,7 @@ const rawFaqs = [
     icon: <CreditCard size={20} />,
     question: "What is manual payment verification?",
     answer:
-      "If you choose bank transfer or campus agent payment methods, upload your transaction receipt under 'Payment Verification'. Our support team verifies proof within 1–3 hours."
+      "If the payment flow asks for proof of payment, follow its instructions and submit the requested receipt there. Processing times can vary; contact UniHelp support if a payment remains pending."
   },
 
   // Community & Security
@@ -116,7 +116,7 @@ const rawFaqs = [
     icon: <MessageCircle size={20} />,
     question: "What is Community Chat?",
     answer:
-      "Community Chat offers campus-specific channels where students discuss academic challenges, share project ideas, collaborate on assignments, and post extracurricular announcements."
+      "UniHelp provides student groups and direct messaging for signed-in users. The groups you can access depend on the communities available to your account."
   },
   {
     id: 14,
@@ -124,7 +124,7 @@ const rawFaqs = [
     icon: <ShieldCheck size={20} />,
     question: "Is my personal data and uploaded content secure?",
     answer:
-      "Yes. UniHelp utilizes end-to-end TLS encryption for data transmission and row-level access controls for uploaded documents and payment information."
+      "UniHelp uses account sign-in and access controls for app data. Review the Privacy Policy to understand how information is handled, and avoid sharing sensitive personal information in public content."
   }
 ];
 
