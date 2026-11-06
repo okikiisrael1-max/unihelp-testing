@@ -58,24 +58,24 @@ export default function Resources({ dark }) {
 
   return (
     <div className="w-full md:mt-20 min-h-screen relative">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:py-8">
+      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-6">
         {/* Header */}
-        <div className="mb-6 flex flex-col gap-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-3 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.3em] ${dark ? "text-indigo-400" : "text-indigo-600"}`}>
+            <p className={`mb-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] ${dark ? "text-indigo-400" : "text-indigo-600"}`}>
               Resource center
             </p>
-            <h1 className={`text-2xl font-bold sm:text-3xl ${dark ? "text-white" : "text-slate-900"}`}>
+            <h1 className={`text-xl sm:text-3xl font-bold ${dark ? "text-white" : "text-slate-900"}`}>
               {active.label}
             </h1>
-            <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>{active.blurb}</p>
+            <p className={`mt-0.5 text-xs sm:text-sm hidden sm:block ${dark ? "text-slate-400" : "text-slate-500"}`}>{active.blurb}</p>
           </div>
 
           {/* Segmented toggle */}
           <div
             role="tablist"
             aria-label="Resource type"
-            className={`grid grid-cols-3 gap-1 rounded-2xl p-1 w-full sm:w-auto ${
+            className={`grid grid-cols-3 gap-1 rounded-xl p-1 w-full sm:w-auto ${
               dark ? "bg-white/5 ring-1 ring-white/10" : "bg-slate-100 ring-1 ring-slate-200"
             }`}
           >
@@ -88,7 +88,7 @@ export default function Resources({ dark }) {
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setTab(t.key)}
-                  className={`inline-flex h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                  className={`inline-flex h-9 sm:h-10 items-center justify-center gap-1 sm:gap-2 rounded-lg px-1 sm:px-4 text-[11px] sm:text-sm font-semibold transition-all duration-200 ${
                     isActive
                       ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
                       : dark
@@ -96,7 +96,7 @@ export default function Resources({ dark }) {
                       : "text-slate-500 hover:bg-white hover:text-slate-900"
                   }`}
                 >
-                  <Icon size={16} className={`shrink-0 ${isActive ? "opacity-100" : "opacity-60"}`} />
+                  <Icon size={14} className={`shrink-0 ${isActive ? "opacity-100" : "opacity-60"}`} />
                   <span className="truncate">{t.label}</span>
                 </button>
               );
@@ -105,13 +105,13 @@ export default function Resources({ dark }) {
               type="button"
               role="tab"
               onClick={() => navigate("/cbt-practice")}
-              className={`inline-flex h-11 items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 text-xs sm:text-sm font-semibold transition-all duration-200 ${
+              className={`inline-flex h-9 sm:h-10 items-center justify-center gap-1 sm:gap-2 rounded-lg px-1 sm:px-4 text-[11px] sm:text-sm font-semibold transition-all duration-200 ${
                 dark
                   ? "text-slate-300 hover:bg-white/5 hover:text-white"
                   : "text-slate-500 hover:bg-white hover:text-slate-900"
               }`}
             >
-              <Computer size={16} className="shrink-0 opacity-60" />
+              <Computer size={14} className="shrink-0 opacity-60" />
               <span className="truncate">CBT practice</span>
             </button>
           </div>

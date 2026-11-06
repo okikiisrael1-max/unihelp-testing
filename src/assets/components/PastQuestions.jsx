@@ -381,9 +381,9 @@ const Questions = ({ dark }) => {
               onClick={fetchQuestions}
               disabled={loading}
               aria-label="Refresh past questions"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${ghost} ${focusRing}`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 sm:px-3 text-xs font-bold disabled:opacity-50 ${ghost} ${focusRing}`}
             >
-              <RefreshCw size={14} className={loading ? "motion-safe:animate-spin" : ""} /> Refresh
+              <RefreshCw size={14} className={loading ? "motion-safe:animate-spin" : ""} /> <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </header>
