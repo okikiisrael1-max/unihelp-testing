@@ -76,6 +76,7 @@ import FeaturesCatalog from "./assets/pages/FeaturesCatalog";
 import ViewProfile from "./assets/pages/ViewProfile";
 import TutorialSearchPage from "./assets/pages/Tutorials";
 import SharedContentDetails from "./assets/pages/SharedContentDetails";
+import SharedFeedPost from "./assets/pages/SharedFeedPost";
 import { updateShareMetadata } from "./assets/utils/shareMetadata";
 
 const App = () => {
@@ -312,7 +313,9 @@ const App = () => {
             <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
             <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />
-            <Route path="/feed" element={<ProtectedRoute><NewsFeed dark={dark} /></ProtectedRoute>} />
+            <Route path="/feed" element={currentUser
+              ? <ProtectedRoute><NewsFeed dark={dark} /></ProtectedRoute>
+              : <SharedFeedPost dark={dark} />} />
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
             <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />
             <Route path="/challenge" element={ <ProtectedRoute> <ChallengeDashboard dark={dark} /> </ProtectedRoute> } />
@@ -327,7 +330,7 @@ const App = () => {
             <Route path="/marketplace/:id" element={<MarketplaceProductDetails dark={dark} />} />
             <Route path="/studentmarketplace" element={ <ProtectedRoute> <StudentMarketplace dark={dark} /> </ProtectedRoute> } />
             <Route path="/hostels/:id" element={<SharedContentDetails type="hostel" dark={dark} />} />
-            <Route path="/past-questions/:id" element={<ProtectedRoute><SharedContentDetails type="question" dark={dark} /></ProtectedRoute>} />
+            <Route path="/past-questions/:id" element={<SharedContentDetails type="question" dark={dark} />} />
             <Route path="/ai" element={ <ProtectedRoute> <AiAssistance dark={dark} /> </ProtectedRoute> }/>
             <Route path="/adminpanel" element={ <ProtectedRoute><AdminRoute dark={dark}><AdminPanel dark={dark} /></AdminRoute></ProtectedRoute> } />
           </Route>

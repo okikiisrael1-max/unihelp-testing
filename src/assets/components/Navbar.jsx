@@ -443,7 +443,7 @@ const Navbar = ({ dark, setDark, setMenuOpen, menuOpen }) => {
         >
           <img
             src={Images.logo}
-            alt="unihelp.ng"
+            alt="UniHelp"
             className="h-9 w-auto sm:h-10 md:h-11"
           />
         </Link>

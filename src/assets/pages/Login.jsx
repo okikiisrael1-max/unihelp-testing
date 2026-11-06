@@ -408,7 +408,7 @@ const Login = ({ dark }) => {
 
           <p className={`text-center text-sm font-medium mt-8 ${dark ? "text-slate-300" : "text-slate-600"}`}>
             Don't have an account?{" "}
-            <Link to="/register" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+            <Link to="/register" state={{ from: returnLocation }} className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
               Sign up
             </Link>
           </p>
@@ -526,13 +526,13 @@ const Login = ({ dark }) => {
                         onComplete={() => {
                           const userId = passwordSetupUser.uid;
                           setPasswordSetupUser(null);
-                          getUserRole(userId).then((role) => navigate(role ? "/" : "/complete-profile"));
+                          getUserRole(userId).then((role) => continueAfterLogin(Boolean(role)));
                         }}
                         onCancel={() => {
                           const userId = passwordSetupUser.uid;
                           setPasswordSetupUser(null);
                           toast.info("You can set a password later by signing in with Google again.");
-                          getUserRole(userId).then((role) => navigate(role ? "/" : "/complete-profile"));
+                          getUserRole(userId).then((role) => continueAfterLogin(Boolean(role)));
                         }}
                       />
                     ) : null}

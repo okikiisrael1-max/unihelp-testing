@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { auth } from "../../firebase/config";
 import { deleteJson, getJson, postJson, uploadFeatureMedia } from "../../services/api";
+import { buildShareUrl, shareContent } from "../utils/share";
 import { updateShareMetadata } from "../utils/shareMetadata";
 
 /* =====================================================================
@@ -1130,15 +1131,6 @@ export default function NewsFeed({ dark = false }) {
       highlightTimer = window.setTimeout(() => setHighlightId(""), 3500);
     };
 
-    const existing = items.find((post) => post.id === id);
-    if (existing) {
-      showPost(existing);
-      return () => {
-        cancelled = true;
-        window.clearTimeout(highlightTimer);
-      };
-    }
-
     deepLinkHandled.current = `${id}:loading`;
     getJson(`/api/feed/posts/${encodeURIComponent(id)}`)
       .then((response) => {
@@ -1328,19 +1320,15 @@ export default function NewsFeed({ dark = false }) {
 
   const sharePost = useCallback(
     async (item) => {
-      const url = `${window.location.origin}/feed?post=${encodeURIComponent(item.id)}`;
+      const url = buildShareUrl("/feed", { post: item.id });
       try {
-        if (navigator.share) {
-          await navigator.share({
-            title: `${item.authorName || "UniHelp student"} on UniHelp`,
-            text: item.content || "View this post on UniHelp.",
-            url,
-          });
-        } else if (navigator.clipboard) {
-          await navigator.clipboard.writeText(url);
+        const result = await shareContent({
+          title: `${item.authorName || "UniHelp student"} on UniHelp`,
+          text: item.content || "View this post on UniHelp.",
+          url,
+        });
+        if (result === "copied") {
           notify("Link copied.", { duration: 2000 });
-        } else {
-          throw new Error("Sharing isn't available in this browser.");
         }
       } catch (err) {
         if (err?.name !== "AbortError") notify(err.message || "Could not share this post.", { type: "error" });

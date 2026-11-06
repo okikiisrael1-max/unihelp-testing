@@ -24,6 +24,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { db } from "../../firebase/config";
 import { updateShareMetadata } from "../utils/shareMetadata";
+import { getJson } from "../../services/api";
 import { AuthContext } from "../context/AuthContext";
 import {
   listenFriends,
@@ -86,17 +87,20 @@ export default function ViewProfile({ dark = false }) {
     if (!uid) return;
     setLoading(true);
     setNotFound(false);
-    getDoc(doc(db, "users", uid))
-      .then((snap) => {
-        if (!snap.exists()) {
+    const loadProfile = user
+      ? getDoc(doc(db, "users", uid)).then((snap) => snap.exists() ? { id: snap.id, ...snap.data() } : null)
+      : getJson(`/api/users/public/${encodeURIComponent(uid)}`).then((response) => response?.profile || null);
+    loadProfile
+      .then((profile) => {
+        if (!profile) {
           setNotFound(true);
           return;
         }
-        setTargetProfile({ id: snap.id, ...snap.data() });
+        setTargetProfile(profile);
       })
       .catch(() => setNotice("Could not load this profile."))
       .finally(() => setLoading(false));
-  }, [uid]);
+  }, [uid, user]);
 
   // Friendship listeners — same pattern as Messenger
   useEffect(() => {

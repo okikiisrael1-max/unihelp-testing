@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Lock, User, Mail, Sparkles, ShieldCheck, Check } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
 import GoogleMobilePasswordModal from "../components/GoogleMobilePasswordModal";
 import { auth, db } from "../../firebase/config";
@@ -36,6 +36,8 @@ const STRENGTH_META = [
 
 const SignUp = ({ dark }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnLocation = location.state?.from;
 
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -113,7 +115,7 @@ const SignUp = ({ dark }) => {
       await signOut(auth);
 
       toast.success("Account created! Please check your email to verify before logging in.");
-      navigate("/login");
+      navigate("/login", { state: { from: returnLocation } });
     } catch (error) {
       if (auth.currentUser) {
         await signOut(auth).catch((signOutError) => {
@@ -169,7 +171,7 @@ const SignUp = ({ dark }) => {
         setPasswordSetupUser(result.user);
         return;
       }
-      navigate("/complete-profile");
+      navigate("/complete-profile", { state: { from: returnLocation } });
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
@@ -456,7 +458,7 @@ const SignUp = ({ dark }) => {
 
           <p className={`text-center text-sm font-medium mt-8 ${dark ? "text-slate-300" : "text-slate-600"}`}>
             Already have an account?{" "}
-            <Link to="/login" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+            <Link to="/login" state={{ from: returnLocation }} className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
               Login
             </Link>
           </p>
@@ -475,12 +477,12 @@ const SignUp = ({ dark }) => {
           dark={dark}
           onComplete={() => {
             setPasswordSetupUser(null);
-            navigate("/complete-profile");
+            navigate("/complete-profile", { state: { from: returnLocation } });
           }}
           onCancel={() => {
             setPasswordSetupUser(null);
             toast.info("You can set a password later by signing in with Google again.");
-            navigate("/complete-profile");
+            navigate("/complete-profile", { state: { from: returnLocation } });
           }}
         />
       ) : null}

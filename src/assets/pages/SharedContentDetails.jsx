@@ -26,17 +26,19 @@ export default function SharedContentDetails({ type, dark = false }) {
   const border = dark ? "border-white/10" : "border-slate-200";
 
   useEffect(() => {
-    if (!id || (!hostel && !user)) {
+    if (!id) {
       setLoading(false);
-      setError(!hostel && !user ? "Sign in to view this past question." : "This link is invalid.");
+      setError("This link is invalid.");
       return undefined;
     }
 
     let cancelled = false;
     setLoading(true);
     setError("");
-    const endpoint = hostel ? "hostels" : "past-questions";
-    getJson(`/api/${endpoint}/${encodeURIComponent(id)}`)
+    const endpoint = hostel
+      ? `/api/hostels/${encodeURIComponent(id)}`
+      : `/api/past-questions/${encodeURIComponent(id)}${user ? "" : "/public"}`;
+    getJson(endpoint)
       .then((response) => {
         const record = response?.item || response;
         if (!record?.id) throw new Error("This content is unavailable.");
@@ -88,7 +90,7 @@ export default function SharedContentDetails({ type, dark = false }) {
             <p className={`mt-3 ${muted}`}>{error}</p>
             {!user && !hostel ? (
               <Link to="/login" state={{ from: { pathname: window.location.pathname, search: window.location.search } }} className="mt-5 inline-flex font-semibold text-indigo-500">
-                Sign in to continue
+                Sign in to view more resources
               </Link>
             ) : null}
           </section>

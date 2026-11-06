@@ -1,6 +1,42 @@
 {
   "rewrites": [
     {
+      "source": "/feed",
+      "has": [
+        { "type": "query", "key": "post", "value": "(?<post>[^&]+)" },
+        { "type": "header", "key": "user-agent", "value": "(WhatsApp|TelegramBot|facebookexternalhit|Facebot|Twitterbot|Slackbot|Discordbot|LinkedInBot)" }
+      ],
+      "destination": "/api/share-preview?kind=feed&post=:post"
+    },
+    {
+      "source": "/profile/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(WhatsApp|TelegramBot|facebookexternalhit|Facebot|Twitterbot|Slackbot|Discordbot|LinkedInBot)" }
+      ],
+      "destination": "/api/share-preview?kind=profile&id=:id"
+    },
+    {
+      "source": "/marketplace/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(WhatsApp|TelegramBot|facebookexternalhit|Facebot|Twitterbot|Slackbot|Discordbot|LinkedInBot)" }
+      ],
+      "destination": "/api/share-preview?kind=marketplace&id=:id"
+    },
+    {
+      "source": "/hostels/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(WhatsApp|TelegramBot|facebookexternalhit|Facebot|Twitterbot|Slackbot|Discordbot|LinkedInBot)" }
+      ],
+      "destination": "/api/share-preview?kind=hostel&id=:id"
+    },
+    {
+      "source": "/past-questions/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(WhatsApp|TelegramBot|facebookexternalhit|Facebot|Twitterbot|Slackbot|Discordbot|LinkedInBot)" }
+      ],
+      "destination": "/api/share-preview?kind=past-question&id=:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
