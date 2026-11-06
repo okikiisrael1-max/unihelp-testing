@@ -1,5 +1,7 @@
+const SHARE_BASE = "https://myunihelp.com.ng";
+
 export const buildShareUrl = (pathname, params = {}) => {
-  const url = new URL(pathname, window.location.origin);
+  const url = new URL(String(pathname || "").replace(/^\//, ""), `${SHARE_BASE}/`);
 
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === null || value === "") return;

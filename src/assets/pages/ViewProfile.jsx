@@ -23,6 +23,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { db } from "../../firebase/config";
+import { updateShareMetadata } from "../utils/shareMetadata";
 import { AuthContext } from "../context/AuthContext";
 import {
   listenFriends,
@@ -128,6 +129,17 @@ export default function ViewProfile({ dark = false }) {
   );
 
   const canSeeFullProfile = isOwnProfile || areFriends;
+
+  useEffect(() => {
+    if (!targetProfile) return;
+    const name = targetProfile.username || targetProfile.displayName || "UniHelp student";
+    updateShareMetadata({
+      title: `${name} | UniHelp profile`,
+      description: targetProfile.bio || `View ${name}'s public student profile on UniHelp.`,
+      url: `https://myunihelp.com.ng/profile/${encodeURIComponent(uid)}`,
+      image: targetProfile.photo || targetProfile.photoURL || "/logo.png",
+    });
+  }, [targetProfile, uid]);
 
   const handleSendRequest = async () => {
     if (!user?.uid || !uid) return;

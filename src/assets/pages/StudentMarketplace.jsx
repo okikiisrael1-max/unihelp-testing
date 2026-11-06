@@ -871,7 +871,7 @@ export default function StudentMarketplace({ dark }) {
   };
 
   const shareProduct = async (item) => {
-    const shareUrl = buildShareUrl(`/studentmarketplace/${encodeURIComponent(item.id)}`);
+    const shareUrl = buildShareUrl(`/marketplace/${encodeURIComponent(item.id)}`);
     try {
       await shareContent({
         title: item.title,

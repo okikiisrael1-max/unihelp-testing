@@ -25,6 +25,7 @@ import ImageCarousel from "../components/ImageCarousel";
 import { db } from "../../firebase/config";
 import { getJson, postJson } from "../../services/api";
 import { buildShareUrl, shareContent } from "../utils/share";
+import { updateShareMetadata } from "../utils/shareMetadata";
 
 /* =====================================================
    HELPERS
@@ -236,6 +237,16 @@ export default function MarketplaceProductDetails({ dark = false }) {
   }, [loadDetails]);
 
   useEffect(() => {
+    if (!item) return;
+    updateShareMetadata({
+      title: `${itemTitle} | UniHelp Marketplace`,
+      description: [item.category, pickupLocation, item.description].filter(Boolean).join(" · ").slice(0, 200),
+      url: `https://myunihelp.com.ng/marketplace/${encodeURIComponent(id)}`,
+      image: images[0] || "/logo.png",
+    });
+  }, [id, images, item, itemTitle, pickupLocation]);
+
+  useEffect(() => {
     setReviews([]);
     loadReviews();
   }, [loadReviews]);
@@ -255,7 +266,7 @@ export default function MarketplaceProductDetails({ dark = false }) {
       item.category && `Category: ${item.category}`,
       item.condition && `Condition: ${item.condition}`,
       pickupLocation && `Pickup: ${pickupLocation}`,
-      `Listing: ${buildShareUrl(`/studentmarketplace/${id}`)}`,
+      `Listing: ${buildShareUrl(`/marketplace/${encodeURIComponent(id)}`)}`,
     ].filter(Boolean).join("\n");
     navigate(`/messages?user=${encodeURIComponent(sellerId)}&message=${encodeURIComponent(message)}`);
   };
@@ -276,7 +287,7 @@ export default function MarketplaceProductDetails({ dark = false }) {
       await shareContent({
         title: itemTitle,
         text: `Check out ${itemTitle} on UniHelp Marketplace.`,
-        url: buildShareUrl(`/studentmarketplace/${id}`),
+        url: buildShareUrl(`/marketplace/${encodeURIComponent(id)}`),
       });
       if (!navigator.share) toast.success("Link copied to clipboard.");
     } catch (error) {

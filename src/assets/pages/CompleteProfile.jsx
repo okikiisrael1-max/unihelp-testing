@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase/config';
 import { doc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
@@ -246,6 +246,7 @@ const AvatarUpload = ({ dark, previewUrl, uploading, onSelect, onRemove }) => {
 
 const CompleteProfile = ({ dark = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -451,7 +452,7 @@ const CompleteProfile = ({ dark = false }) => {
 
       await updateProfile(user, { displayName: form.username.trim() });
       toast.success('Profile completed');
-      navigate('/');
+      navigate(location.state?.from || '/', { replace: true });
     } catch (err) {
       console.error(err);
       toast.error('Failed to save profile');
@@ -628,7 +629,7 @@ const CompleteProfile = ({ dark = false }) => {
                   <>Save and continue <ArrowRight size={18} /> </>)}
               </button>
 
-              <button onClick={() => navigate('/')} className={`px-5 py-4 rounded-xl border-2 font-bold text-[15px] transition-all ${ dark ? 'border-slate-700 hover:bg-slate-800 text-slate-300' : 'border-gray-200 hover:bg-gray-50 text-slate-600' }`}> Skip </button>
+              <button onClick={() => navigate(location.state?.from || '/', { replace: true })} className={`px-5 py-4 rounded-xl border-2 font-bold text-[15px] transition-all ${ dark ? 'border-slate-700 hover:bg-slate-800 text-slate-300' : 'border-gray-200 hover:bg-gray-50 text-slate-600' }`}> Skip </button>
             </div>
             <p className="text-sm text-center text-slate-500">
               By completing your profile, you'll get personalized recommendations and a better experience on UniHelp.

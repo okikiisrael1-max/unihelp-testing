@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import { useLocation } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 import { auth } from "../../firebase/config";
 import { deleteJson, getJson, postJson, uploadFeatureMedia } from "../../services/api";
+import { updateShareMetadata } from "../utils/shareMetadata";
 
 /* =====================================================================
    READ-REDUCTION NOTES
@@ -931,6 +933,7 @@ const PostCard = memo(function PostCard({
    FEED
    ===================================================================== */
 export default function NewsFeed({ dark = false }) {
+  const location = useLocation();
   const t = useMemo(() => getTheme(dark), [dark]);
   const { toasts, notify, dismiss } = useToasts();
 
@@ -964,7 +967,7 @@ export default function NewsFeed({ dark = false }) {
   const sentinelRef = useRef(null);
   const loadSeq = useRef(0);
   const appendLock = useRef(false);
-  const deepLinkHandled = useRef(false);
+  const deepLinkHandled = useRef("");
   const pendingDeletes = useRef(new Map());
 
   /* ---------- auth ---------- */
@@ -1091,20 +1094,55 @@ export default function NewsFeed({ dark = false }) {
 
   // Share links look like /feed?post=<id>.
   useEffect(() => {
-    if (deepLinkHandled.current || items.length === 0) return;
-    const id = new URLSearchParams(window.location.search).get("post");
-    if (!id) {
-      deepLinkHandled.current = true;
-      return;
+    const id = new URLSearchParams(location.search).get("post")?.trim() || "";
+    if (!id || !authReady || loading || deepLinkHandled.current === id || deepLinkHandled.current === `${id}:loading`) return undefined;
+
+    let cancelled = false;
+    let highlightTimer;
+    const showPost = (post) => {
+      if (cancelled) return;
+      deepLinkHandled.current = id;
+      setHighlightId(id);
+      updateShareMetadata({
+        title: `${post.authorName || "UniHelp student"} on UniHelp`,
+        description: String(post.content || "View this student post on UniHelp.").slice(0, 200),
+        url: `https://myunihelp.com.ng/feed?post=${encodeURIComponent(id)}`,
+      });
+      requestAnimationFrame(() =>
+        document.getElementById(`post-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+      );
+      highlightTimer = window.setTimeout(() => setHighlightId(""), 3500);
+    };
+
+    const existing = items.find((post) => post.id === id);
+    if (existing) {
+      showPost(existing);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(highlightTimer);
+      };
     }
-    if (!items.some((e) => e.id === id)) return;
-    deepLinkHandled.current = true;
-    setHighlightId(id);
-    requestAnimationFrame(() =>
-      document.getElementById(`post-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
-    );
-    setTimeout(() => setHighlightId(""), 3500);
-  }, [items]);
+
+    deepLinkHandled.current = `${id}:loading`;
+    getJson(`/api/feed/posts/${encodeURIComponent(id)}`)
+      .then((response) => {
+        const post = response?.item || response?.post;
+        if (!post?.id) throw new Error("This post is unavailable.");
+        if (cancelled) return;
+        updateItems((current) => [post, ...current.filter((item) => item.id !== post.id)]);
+        showPost(post);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        deepLinkHandled.current = id;
+        notify(error?.message || "This post is unavailable or not accessible to your account.");
+      });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(highlightTimer);
+    };
+  }, [authReady, items, loading, location.search, notify, updateItems]);
 
   /* ---------- derived ---------- */
   const filtersActive = Boolean(query.trim()) || typeFilter !== "all" || timeFilter !== "all" || mine;

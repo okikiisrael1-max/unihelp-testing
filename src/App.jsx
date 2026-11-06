@@ -75,42 +75,8 @@ import CompleteProfile from "./assets/pages/CompleteProfile";
 import FeaturesCatalog from "./assets/pages/FeaturesCatalog";
 import ViewProfile from "./assets/pages/ViewProfile";
 import TutorialSearchPage from "./assets/pages/Tutorials";
-
-const SharedLinkFallback = ({ dark }) => {
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const postId = params.get("post") || params.get("id") || params.get("postId");
-  const title = postId ? "Open in UniHelp" : "Open UniHelp";
-
-  return (
-    <div className={`min-h-screen ${dark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
-      <div className="mx-auto max-w-xl px-6 py-16">
-        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-600">UniHelp</p>
-          <h1 className="mt-4 text-3xl font-black">{title}</h1>
-          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-            This shared link opens directly in the UniHelp app when it is installed on your device.
-          </p>
-
-          <div className="mt-8 space-y-3">
-            <a
-              href="https://unihelp.app"
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500"
-            >
-              Open the app or web app
-            </a>
-            <a
-              href={postId ? `unihelp://feed?post=${encodeURIComponent(postId)}` : "unihelp://"}
-              className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 dark:border-slate-700 dark:text-slate-100"
-            >
-              Open in UniHelp app
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import SharedContentDetails from "./assets/pages/SharedContentDetails";
+import { updateShareMetadata } from "./assets/utils/shareMetadata";
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -144,6 +110,25 @@ const App = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname]);
+
+  useEffect(() => {
+    const path = location.pathname;
+    const title = path.startsWith("/profile/")
+      ? "Student profile | UniHelp"
+      : path.startsWith("/marketplace/")
+        ? "Marketplace listing | UniHelp"
+        : path.startsWith("/hostels/")
+          ? "Student hostel | UniHelp"
+          : path.startsWith("/past-questions/")
+            ? "Past question | UniHelp"
+            : path === "/feed" || path === "/newsfeed"
+              ? "Student feed | UniHelp"
+              : "UniHelp | Nigeria's Student Super App";
+    updateShareMetadata({
+      title,
+      description: "Discover student communities, campus listings, learning resources, and more on UniHelp.",
+    });
+  }, [location.pathname, location.search]);
 
   const updateUserPresence = async (user) => {
     if (!user) return;
@@ -300,7 +285,7 @@ const App = () => {
         <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
             <Route path="/" element={ <Dashboard dark={dark} /> }/>
             <Route path="/profile" element={ <ProtectedRoute> <Profile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
-            <Route path="/profile/:uid" element={ <ProtectedRoute> <ViewProfile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
+            <Route path="/profile/:uid" element={<ViewProfile dark={dark} toggleTheme={() => setDark(!dark)} />}/>
             <Route path="/announcements" element={<ProtectedRoute><Announcements dark={dark} /> </ProtectedRoute>}/>
             <Route path="/cbt-practice" element={ <ProtectedRoute> <CBTPracticePage dark={dark} /> </ProtectedRoute>}/>
             <Route path="/faq" element={<FAQPage dark={dark} />} />
@@ -327,7 +312,7 @@ const App = () => {
             <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
             <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />
-            <Route path="/feed" element={<SharedLinkFallback dark={dark} />} />
+            <Route path="/feed" element={<ProtectedRoute><NewsFeed dark={dark} /></ProtectedRoute>} />
             <Route path="/premium" element={ <ProtectedRoute> <PremiumSubscriptionPage dark={dark} /> </ProtectedRoute> }/>
             <Route path="/tasks" element={ <ProtectedRoute> <Tasks dark={dark} /> </ProtectedRoute> } />
             <Route path="/challenge" element={ <ProtectedRoute> <ChallengeDashboard dark={dark} /> </ProtectedRoute> } />
@@ -339,7 +324,10 @@ const App = () => {
             <Route path="/uploadquestion" element={ <ProtectedRoute> <Upload dark={dark} /> </ProtectedRoute> } />
             <Route path="/resources" element={ <ProtectedRoute> <Resources dark={dark} /> </ProtectedRoute> } />
             <Route path="/studentmarketplace/:id" element={ <ProtectedRoute> <MarketplaceProductDetails dark={dark} /> </ProtectedRoute> } />
+            <Route path="/marketplace/:id" element={<MarketplaceProductDetails dark={dark} />} />
             <Route path="/studentmarketplace" element={ <ProtectedRoute> <StudentMarketplace dark={dark} /> </ProtectedRoute> } />
+            <Route path="/hostels/:id" element={<SharedContentDetails type="hostel" dark={dark} />} />
+            <Route path="/past-questions/:id" element={<ProtectedRoute><SharedContentDetails type="question" dark={dark} /></ProtectedRoute>} />
             <Route path="/ai" element={ <ProtectedRoute> <AiAssistance dark={dark} /> </ProtectedRoute> }/>
             <Route path="/adminpanel" element={ <ProtectedRoute><AdminRoute dark={dark}><AdminPanel dark={dark} /></AdminRoute></ProtectedRoute> } />
           </Route>

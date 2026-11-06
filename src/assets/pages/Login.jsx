@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Lock, CheckCircle2, X, Mail, Sparkles, ShieldCheck } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Images } from "../data/data";
 import customPadlock from "../images/padlock.png";
 import successVideo from "../images/success.mp4";
@@ -20,6 +20,16 @@ import { toast } from "react-toastify";
 
 const Login = ({ dark }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnLocation = location.state?.from;
+  const returnPath = returnLocation
+    ? `${returnLocation.pathname || "/"}${returnLocation.search || ""}${returnLocation.hash || ""}`
+    : "/";
+
+  const continueAfterLogin = (hasProfile) => {
+    if (hasProfile) navigate(returnPath, { replace: true });
+    else navigate("/complete-profile", { replace: true, state: { from: returnLocation } });
+  };
 
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -101,11 +111,7 @@ const Login = ({ dark }) => {
       const role = await getUserRole(credential.user.uid);
 
       toast.success("Login successful");
-      if (role) {
-        navigate("/");
-      } else {
-        navigate("/complete-profile");
-      }
+      continueAfterLogin(Boolean(role));
     } catch (error) {
       switch (error.code) {
         case "auth/user-not-found":
@@ -152,7 +158,7 @@ const Login = ({ dark }) => {
         setPasswordSetupUser(result.user);
         return;
       }
-      navigate(profile.role ? "/" : "/complete-profile");
+      continueAfterLogin(Boolean(profile.role));
     } catch (error) {
       if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
         toast.error("Google popup closed");
@@ -184,11 +190,7 @@ const Login = ({ dark }) => {
       toast.success("Accounts linked successfully!");
       setShowLinkModal(false);
       
-      if (role) {
-        navigate("/");
-      } else {
-        navigate("/complete-profile");
-      }
+      continueAfterLogin(Boolean(role));
     } catch (error) {
       if (error.code === "auth/wrong-password") {
         toast.error("Incorrect password");
