@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://unihelp-app.firebaseapp.com/__/auth/:path*"
+    },
+    {
       "source": "/feed",
       "has": [
         { "type": "query", "key": "post", "value": "(?<post>[^&]+)" },
