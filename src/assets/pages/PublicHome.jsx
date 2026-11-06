@@ -12,7 +12,7 @@ const guides = [
 
 export default function PublicHome() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <div className="min-h-screen bg-slate-50 text-slate-950">
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-24">
           <div className="max-w-3xl">
@@ -90,6 +90,6 @@ export default function PublicHome() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   )
 }

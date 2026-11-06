@@ -12,7 +12,7 @@ export default function PublicGuidePage({ guideId, dark = false }) {
 
   return (
     <>
-      <main className={dark ? 'min-h-screen bg-[#070b14] text-white' : 'min-h-screen bg-slate-50 text-slate-950'}>
+      <div className={dark ? 'min-h-screen bg-[#070b14] text-white' : 'min-h-screen bg-slate-50 text-slate-950'}>
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8">
           <nav aria-label="Breadcrumb" className={`mb-8 text-sm ${text}`}>
             <Link to="/" className="font-semibold text-indigo-500 hover:underline">Home</Link>
@@ -59,7 +59,7 @@ export default function PublicGuidePage({ guideId, dark = false }) {
             </Link>
           </aside>
         </div>
-      </main>
+      </div>
       <Footer dark={dark} />
     </>
   )
