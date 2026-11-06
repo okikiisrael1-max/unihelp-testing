@@ -16,6 +16,8 @@ export const updateShareMetadata = ({
   description = "Discover student communities, campus listings, learning resources, and more on UniHelp.",
   url,
   image = DEFAULT_IMAGE,
+  schema,
+  indexable = true,
 } = {}) => {
   if (typeof document === "undefined") return;
 
@@ -23,12 +25,14 @@ export const updateShareMetadata = ({
   const imageUrl = new URL(image, SHARE_BASE).toString();
   document.title = title;
   setMeta("name", "description", description);
+  setMeta("name", "robots", indexable ? "index, follow, max-image-preview:large" : "noindex, nofollow");
   setMeta("property", "og:type", "website");
   setMeta("property", "og:site_name", "UniHelp");
   setMeta("property", "og:title", title);
   setMeta("property", "og:description", description);
   setMeta("property", "og:url", pageUrl);
   setMeta("property", "og:image", imageUrl);
+  setMeta("property", "og:image:alt", "UniHelp logo");
   setMeta("name", "twitter:card", "summary_large_image");
   setMeta("name", "twitter:title", title);
   setMeta("name", "twitter:description", description);
@@ -41,4 +45,17 @@ export const updateShareMetadata = ({
     document.head.appendChild(canonical);
   }
   canonical.href = pageUrl;
+
+  let structuredData = document.head.querySelector("#unihelp-structured-data");
+  if (schema) {
+    if (!structuredData) {
+      structuredData = document.createElement("script");
+      structuredData.id = "unihelp-structured-data";
+      structuredData.type = "application/ld+json";
+      document.head.appendChild(structuredData);
+    }
+    structuredData.textContent = JSON.stringify(schema);
+  } else {
+    structuredData?.remove();
+  }
 };

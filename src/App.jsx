@@ -77,7 +77,11 @@ import ViewProfile from "./assets/pages/ViewProfile";
 import TutorialSearchPage from "./assets/pages/Tutorials";
 import SharedContentDetails from "./assets/pages/SharedContentDetails";
 import SharedFeedPost from "./assets/pages/SharedFeedPost";
+import PublicGuidePage from "./assets/pages/PublicGuidePage";
+import PublicHome from "./assets/pages/PublicHome";
 import { updateShareMetadata } from "./assets/utils/shareMetadata";
+import { canonicalUrl, seoPageByPath } from "./assets/data/seoPages";
+import { publicGuideRoutes } from "./assets/data/publicGuides";
 
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -114,6 +118,7 @@ const App = () => {
 
   useEffect(() => {
     const path = location.pathname;
+    const publicPage = seoPageByPath[path];
     const title = path.startsWith("/profile/")
       ? "Student profile | UniHelp"
       : path.startsWith("/marketplace/")
@@ -124,10 +129,13 @@ const App = () => {
             ? "Past question | UniHelp"
             : path === "/feed" || path === "/newsfeed"
               ? "Student feed | UniHelp"
-              : "UniHelp | Nigeria's Student Super App";
+                : publicPage?.title || "UniHelp | Nigeria's Student Super App";
     updateShareMetadata({
       title,
-      description: "Discover student communities, campus listings, learning resources, and more on UniHelp.",
+      description: publicPage?.description || "Discover student communities, campus listings, learning resources, and more on UniHelp.",
+      url: publicPage ? canonicalUrl(path) : undefined,
+      schema: publicPage?.schema,
+      indexable: Boolean(publicPage) || path.startsWith("/marketplace/") || path.startsWith("/hostels/") || path.startsWith("/past-questions/"),
     });
   }, [location.pathname, location.search]);
 
@@ -284,7 +292,7 @@ const App = () => {
           <Route path="/community" element={ <ProtectedRoute> <CommunityHub dark={dark} /> </ProtectedRoute> } />
 
         <Route element={ <DashboardLayout menuOpen={menuOpen} setMenuOpen={setMenuOpen} dark={dark} setDark={setDark}/>}>
-            <Route path="/" element={ <Dashboard dark={dark} /> }/>
+            <Route path="/" element={currentUser ? <Dashboard dark={dark} /> : <PublicHome />} />
             <Route path="/profile" element={ <ProtectedRoute> <Profile dark={dark} toggleTheme={() => setDark(!dark)} /> </ProtectedRoute>}/>
             <Route path="/profile/:uid" element={<ViewProfile dark={dark} toggleTheme={() => setDark(!dark)} />}/>
             <Route path="/announcements" element={<ProtectedRoute><Announcements dark={dark} /> </ProtectedRoute>}/>
@@ -310,6 +318,9 @@ const App = () => {
             <Route path="/community-settings" element={ <ProtectedRoute> <CommunitySettings dark={dark} /> </ProtectedRoute>}/>
             <Route path="/coming-soon" element={ <ProtectedRoute> <ComingSoon dark={dark} /> </ProtectedRoute>} />
             <Route path="/features" element={<FeaturesCatalog dark={dark} />} />
+            {publicGuideRoutes.map(({ path, guide }) => (
+              <Route key={path} path={path} element={<PublicGuidePage guideId={guide} dark={dark} />} />
+            ))}
             <Route path="/watch" element={<TutorialSearchPage dark={dark} />} />
             <Route path="/calculator" element={<ProtectedRoute><AcademicCalculator dark={dark}/></ProtectedRoute> }/>
             <Route path="/newsfeed" element={ <ProtectedRoute> <NewsFeed dark={dark} /> </ProtectedRoute> } />
